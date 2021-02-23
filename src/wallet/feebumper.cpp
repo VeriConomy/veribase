@@ -58,54 +58,6 @@ static feebumper::Result PreconditionChecks(const CWallet& wallet, const CWallet
 
 //! Check if the user provided a valid feeRate
 static feebumper::Result CheckFeeRate(const CWallet& wallet, const CWalletTx& wtx, const CFeeRate& newFeerate, const int64_t maxTxSize, std::vector<std::string>& errors) {
-    // check that fee rate is higher than mempool's minimum fee
-    // (no point in bumping fee if we know that the new tx won't be accepted to the mempool)
-    // This may occur if the user set fee_rate or paytxfee too low, if fallbackfee is too low, or, perhaps,
-    // in a rare situation where the mempool minimum fee increased significantly since the fee estimation just a
-    // moment earlier. In this case, we report an error to the user, who may adjust the fee.
-    CFeeRate minMempoolFeeRate = wallet.chain().mempoolMinFee();
-
-    if (newFeerate.GetFeePerK() < minMempoolFeeRate.GetFeePerK()) {
-        errors.push_back(strprintf(
-            "New fee rate (%s) is lower than the minimum fee rate (%s) to get into the mempool -- ",
-            FormatMoney(newFeerate.GetFeePerK()),
-            FormatMoney(minMempoolFeeRate.GetFeePerK())));
-        return feebumper::Result::WALLET_ERROR;
-    }
-
-    CAmount new_total_fee = newFeerate.GetFee(maxTxSize);
-
-    CFeeRate incrementalRelayFee = std::max(wallet.chain().relayIncrementalFee(), CFeeRate(WALLET_INCREMENTAL_RELAY_FEE));
-
-    // Given old total fee and transaction size, calculate the old feeRate
-    isminefilter filter = wallet.GetLegacyScriptPubKeyMan() && wallet.IsWalletFlagSet(WALLET_FLAG_DISABLE_PRIVATE_KEYS) ? ISMINE_WATCH_ONLY : ISMINE_SPENDABLE;
-    CAmount old_fee = wtx.GetDebit(filter) - wtx.tx->GetValueOut();
-    const int64_t txSize = GetVirtualTransactionSize(*(wtx.tx));
-    CFeeRate nOldFeeRate(old_fee, txSize);
-    // Min total fee is old fee + relay fee
-    CAmount minTotalFee = nOldFeeRate.GetFee(maxTxSize) + incrementalRelayFee.GetFee(maxTxSize);
-
-    if (new_total_fee < minTotalFee) {
-        errors.push_back(strprintf("Insufficient total fee %s, must be at least %s (oldFee %s + incrementalFee %s)",
-            FormatMoney(new_total_fee), FormatMoney(minTotalFee), FormatMoney(nOldFeeRate.GetFee(maxTxSize)), FormatMoney(incrementalRelayFee.GetFee(maxTxSize))));
-        return feebumper::Result::INVALID_PARAMETER;
-    }
-
-    CAmount requiredFee = GetRequiredFee(wallet, maxTxSize);
-    if (new_total_fee < requiredFee) {
-        errors.push_back(strprintf("Insufficient total fee (cannot be less than required fee %s)",
-            FormatMoney(requiredFee)));
-        return feebumper::Result::INVALID_PARAMETER;
-    }
-
-    // Check that in all cases the new fee doesn't violate maxTxFee
-    const CAmount max_tx_fee = wallet.m_default_max_tx_fee;
-    if (new_total_fee > max_tx_fee) {
-        errors.push_back(strprintf("Specified or calculated fee %s is too high (cannot be higher than -maxtxfee %s)",
-                            FormatMoney(new_total_fee), FormatMoney(max_tx_fee)));
-        return feebumper::Result::WALLET_ERROR;
-    }
-
     return feebumper::Result::OK;
 }
 
@@ -118,22 +70,7 @@ static CFeeRate EstimateFeeRate(const CWallet& wallet, const CWalletTx& wtx, con
     CFeeRate feerate(old_fee, txSize);
     feerate += CFeeRate(1);
 
-    // The node has a configurable incremental relay fee. Increment the fee by
-    // the minimum of that and the wallet's conservative
-    // WALLET_INCREMENTAL_RELAY_FEE value to future proof against changes to
-    // network wide policy for incremental relay fee that our node may not be
-    // aware of. This ensures we're over the required relay fee rate
-    // (BIP 125 rule 4).  The replacement tx will be at least as large as the
-    // original tx, so the total fee will be greater (BIP 125 rule 3)
-    CFeeRate node_incremental_relay_fee = wallet.chain().relayIncrementalFee();
-    CFeeRate wallet_incremental_relay_fee = CFeeRate(WALLET_INCREMENTAL_RELAY_FEE);
-    feerate += std::max(node_incremental_relay_fee, wallet_incremental_relay_fee);
-
-    // Fee rate must also be at least the wallet's GetMinimumFeeRate
-    CFeeRate min_feerate(GetMinimumFeeRate(wallet, coin_control, /* feeCalc */ nullptr));
-
-    // Set the required fee rate for the replacement transaction in coin control.
-    return std::max(feerate, min_feerate);
+    return feerate;
 }
 
 namespace feebumper {

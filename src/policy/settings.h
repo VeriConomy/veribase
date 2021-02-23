@@ -12,7 +12,6 @@ class CFeeRate;
 class CTransaction;
 
 // Policy settings which are configurable at runtime.
-extern CFeeRate incrementalRelayFee;
 extern CFeeRate dustRelayFee;
 extern unsigned int nBytesPerSigOp;
 extern bool fIsBareMultisigStd;

@@ -180,11 +180,8 @@ public:
     //! Mempool minimum fee.
     virtual CFeeRate mempoolMinFee() = 0;
 
-    //! Relay current minimum fee (from -minrelaytxfee and -incrementalrelayfee settings).
+    //! Relay current minimum fee (from -minrelaytxfee settings).
     virtual CFeeRate relayMinFee() = 0;
-
-    //! Relay incremental fee setting (-incrementalrelayfee), reflecting cost of relay.
-    virtual CFeeRate relayIncrementalFee() = 0;
 
     //! Relay dust fee setting (-dustrelayfee), reflecting lowest rate it's economical to spend.
     virtual CFeeRate relayDustFee() = 0;

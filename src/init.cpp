@@ -533,7 +533,6 @@ void SetupServerArgs()
     SetupChainParamsBaseOptions();
 
     gArgs.AddArg("-acceptnonstdtxn", strprintf("Relay and mine \"non-standard\" transactions (%sdefault: %u)", "testnet/regtest only; ", !testnetChainParams->RequireStandard()), ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::NODE_RELAY);
-    gArgs.AddArg("-incrementalrelayfee=<amt>", strprintf("Fee rate (in %s/kB) used to define cost of relay, used for mempool limiting and BIP 125 replacement. (default: %s)", CURRENCY_UNIT, FormatMoney(DEFAULT_INCREMENTAL_RELAY_FEE)), ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::NODE_RELAY);
     gArgs.AddArg("-dustrelayfee=<amt>", strprintf("Fee rate (in %s/kB) used to define dust, the value of an output such that it will cost more than its value in fees at this fee rate to spend it. (default: %s)", CURRENCY_UNIT, FormatMoney(DUST_RELAY_TX_FEE)), ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::NODE_RELAY);
     gArgs.AddArg("-bytespersigop", strprintf("Equivalent bytes per sigop in transactions for relay and mining (default: %u)", DEFAULT_BYTES_PER_SIGOP), ArgsManager::ALLOW_ANY, OptionsCategory::NODE_RELAY);
     gArgs.AddArg("-datacarrier", strprintf("Relay and mine data carrier transactions (default: %u)", DEFAULT_ACCEPT_DATACARRIER), ArgsManager::ALLOW_ANY, OptionsCategory::NODE_RELAY);
@@ -1062,15 +1061,6 @@ bool AppInitParameterInteraction()
     int64_t nMempoolSizeMin = gArgs.GetArg("-limitdescendantsize", DEFAULT_DESCENDANT_SIZE_LIMIT) * 1000 * 40;
     if (nMempoolSizeMax < 0 || nMempoolSizeMax < nMempoolSizeMin)
         return InitError(strprintf(_("-maxmempool must be at least %d MB").translated, std::ceil(nMempoolSizeMin / 1000000.0)));
-    // incremental relay fee sets the minimum feerate increase necessary for BIP 125 replacement in the mempool
-    // and the amount the mempool min fee increases above the feerate of txs evicted due to mempool limiting.
-    if (gArgs.IsArgSet("-incrementalrelayfee"))
-    {
-        CAmount n = 0;
-        if (!ParseMoney(gArgs.GetArg("-incrementalrelayfee", ""), n))
-            return InitError(AmountErrMsg("incrementalrelayfee", gArgs.GetArg("-incrementalrelayfee", "")).translated);
-        incrementalRelayFee = CFeeRate(n);
-    }
 
     // block pruning; get the amount of disk space (in MiB) to allot for block & undo files
     int64_t nPruneArg = gArgs.GetArg("-prune", 0);
@@ -1107,10 +1097,6 @@ bool AppInitParameterInteraction()
         }
         // High fee check is done afterward in CWallet::CreateWalletFromFile()
         ::minRelayTxFee = CFeeRate(n);
-    } else if (incrementalRelayFee > ::minRelayTxFee) {
-        // Allow only setting incrementalRelayFee to control both
-        ::minRelayTxFee = incrementalRelayFee;
-        LogPrintf("Increasing minrelaytxfee to %s to match incrementalrelayfee\n",::minRelayTxFee.ToString());
     }
 
     // Sanity check argument for min fee for including tx in block
