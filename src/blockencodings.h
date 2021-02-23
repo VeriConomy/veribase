@@ -99,6 +99,7 @@ protected:
 
 public:
     CBlockHeader header;
+    std::vector<unsigned char> vchBlockSig;
 
     // Dummy for deserialization
     CBlockHeaderAndShortTxIDs() {}
@@ -111,7 +112,7 @@ public:
 
     SERIALIZE_METHODS(CBlockHeaderAndShortTxIDs, obj)
     {
-        READWRITE(obj.header, obj.nonce, Using<VectorFormatter<CustomUintFormatter<SHORTTXIDS_LENGTH>>>(obj.shorttxids), obj.prefilledtxn);
+        READWRITE(obj.header, obj.nonce, obj.vchBlockSig, Using<VectorFormatter<CustomUintFormatter<SHORTTXIDS_LENGTH>>>(obj.shorttxids), obj.prefilledtxn);
         if (ser_action.ForRead()) {
             if (obj.BlockTxCount() > std::numeric_limits<uint16_t>::max()) {
                 throw std::ios_base::failure("indexes overflowed 16 bits");
@@ -128,6 +129,7 @@ protected:
     CTxMemPool* pool;
 public:
     CBlockHeader header;
+    std::vector<unsigned char> vchBlockSig;
     explicit PartiallyDownloadedBlock(CTxMemPool* poolIn) : pool(poolIn) {}
 
     // extra_txn is a list of extra transactions to look at, in <witness hash, reference> form

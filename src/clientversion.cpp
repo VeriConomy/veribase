@@ -6,6 +6,24 @@
 
 #include <tinyformat.h>
 
+bool IsVerium()
+{
+#if CLIENT_IS_VERIUM
+    return true;
+#else
+    return false;
+#endif
+}
+
+bool IsVericoin()
+{
+#if CLIENT_IS_VERIUM
+    return false;
+#else
+    return true;
+#endif
+}
+
 
 /**
  * Name of client reported in the 'version' message. Report the same name

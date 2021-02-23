@@ -391,7 +391,17 @@ crypto_libbitcoin_crypto_base_a_SOURCES = \
   crypto/sha512.cpp \
   crypto/sha512.h \
   crypto/siphash.cpp \
-  crypto/siphash.h
+  crypto/siphash.h \
+  crypto/sha512.h \
+  crypto/sha2-arm.S \
+  crypto/sha2-x86.S \
+  crypto/sha2-x64.S \
+  crypto/scrypt-arm.S \
+  crypto/scrypt-x86.S \
+  crypto/scrypt-x64.S \
+  crypto/scrypt.cpp \
+  crypto/scrypt.h \
+  crypto/scrypt-armv8.c
 
 if USE_ASM
 crypto_libbitcoin_crypto_base_a_SOURCES += crypto/sha256_sse4.cpp

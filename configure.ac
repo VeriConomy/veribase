@@ -13,12 +13,25 @@ AC_CONFIG_SRCDIR([src/validation.cpp])
 AC_CONFIG_HEADERS([src/config/bitcoin-config.h])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([build-aux/m4])
+AM_PROG_AS
 
-BITCOIN_DAEMON_NAME=bitcoind
-BITCOIN_GUI_NAME=bitcoin-qt
-BITCOIN_CLI_NAME=bitcoin-cli
-BITCOIN_TX_NAME=bitcoin-tx
-BITCOIN_WALLET_TOOL_NAME=bitcoin-wallet
+BITCOIN_DAEMON_NAME=vericoind
+BITCOIN_GUI_NAME=vericoin-qt
+BITCOIN_CLI_NAME=vericoin-cli
+BITCOIN_TX_NAME=vericoin-tx
+BITCOIN_WALLET_TOOL_NAME=vericoin-wallet
+
+dnl Define Verium as default coin type
+client_is_verium=no
+if test "x$client_is_verium" = xyes; then
+  AC_DEFINE(CLIENT_IS_VERIUM, 1, [Set verium as default coin type])
+  BITCOIN_DAEMON_NAME=veriumd
+  BITCOIN_GUI_NAME=verium-qt
+  BITCOIN_CLI_NAME=verium-cli
+  BITCOIN_TX_NAME=verium-tx
+  BITCOIN_WALLET_TOOL_NAME=vericoin-wallet
+fi
+AM_CONDITIONAL([CLIENT_IS_VERIUM],[test x$client_is_verium = xyes])
 
 dnl Unless the user specified ARFLAGS, force it to be cr
 AC_ARG_VAR(ARFLAGS, [Flags for the archiver, defaults to <cr> if not set])
@@ -1649,6 +1662,7 @@ esac
 
 echo
 echo "Options used to compile and link:"
+echo "  is verium     = $client_is_verium"
 echo "  with wallet   = $enable_wallet"
 echo "  with gui / qt = $bitcoin_enable_qt"
 if test x$bitcoin_enable_qt != xno; then

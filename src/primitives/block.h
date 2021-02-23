@@ -28,6 +28,11 @@ public:
     uint32_t nBits;
     uint32_t nNonce;
 
+    // ppcoin: A copy from CBlockIndex.nFlags from other clients. We need this information because we are using headers-first syncronization.
+    int32_t nFlags;
+
+    static const int32_t CURRENT_VERSION=7;
+
     CBlockHeader()
     {
         SetNull();
@@ -43,16 +48,21 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
+
+        // peercoin: do not serialize nFlags when computing hash
+        if (!(s.GetType() & SER_GETHASH) && s.GetType() & SER_POSMARKER)
+            READWRITE(nFlags);
     }
 
     void SetNull()
     {
-        nVersion = 0;
+        nVersion = CURRENT_VERSION;
         hashPrevBlock.SetNull();
         hashMerkleRoot.SetNull();
         nTime = 0;
         nBits = 0;
         nNonce = 0;
+        nFlags = 0;
     }
 
     bool IsNull() const
@@ -61,6 +71,7 @@ public:
     }
 
     uint256 GetHash() const;
+    uint256 GetWorkHash() const;
 
     int64_t GetBlockTime() const
     {
@@ -74,6 +85,9 @@ class CBlock : public CBlockHeader
 public:
     // network and disk
     std::vector<CTransactionRef> vtx;
+
+    // peercoin: block signature - signed by coin base txout[0]'s owner
+    std::vector<unsigned char> vchBlockSig;
 
     // memory only
     mutable bool fChecked;
@@ -95,6 +109,7 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITEAS(CBlockHeader, *this);
         READWRITE(vtx);
+        READWRITE(vchBlockSig);
     }
 
     void SetNull()
@@ -102,6 +117,7 @@ public:
         CBlockHeader::SetNull();
         vtx.clear();
         fChecked = false;
+        vchBlockSig.clear();
     }
 
     CBlockHeader GetBlockHeader() const
@@ -113,8 +129,36 @@ public:
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
+        block.nFlags         = nFlags;
         return block;
     }
+
+    // peercoin: two types of block: proof-of-work or proof-of-stake
+    bool IsProofOfStake() const
+    {
+        return (vtx.size() > 1 && vtx[1]->IsCoinStake());
+    }
+
+    bool IsProofOfWork() const
+    {
+        return !IsProofOfStake();
+    }
+
+    std::pair<COutPoint, unsigned int> GetProofOfStake() const
+    {
+        return IsProofOfStake() ? std::make_pair(vtx[1]->vin[0].prevout, vtx[1]->nTime) : std::make_pair(COutPoint(), (unsigned int)0);
+    }
+
+    // ppcoin: get max transaction timestamp
+    int64_t GetMaxTransactionTime() const
+    {
+        int64_t maxTransactionTime = 0;
+        for (const auto& tx : vtx)
+            maxTransactionTime = std::max(maxTransactionTime, (int64_t)tx->nTime);
+        return maxTransactionTime;
+    }
+
+    unsigned int GetStakeEntropyBit() const; // ppcoin: entropy bit for stake modifier if chosen by modifier
 
     std::string ToString() const;
 };

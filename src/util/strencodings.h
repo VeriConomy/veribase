@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#define BEGIN(a)            ((char*)&(a))
 #define ARRAYLEN(array)     (sizeof(array)/sizeof((array)[0]))
 
 /** Used by SanitizeString() */

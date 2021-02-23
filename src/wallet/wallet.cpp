@@ -2796,7 +2796,7 @@ bool CWallet::CreateTransaction(interfaces::Chain::Lock& locked_chain, const std
                 scriptChange = GetScriptForDestination(dest);
             }
             CTxOut change_prototype_txout(0, scriptChange);
-            coin_selection_params.change_output_size = GetSerializeSize(change_prototype_txout);
+            coin_selection_params.change_output_size = GetSerializeSize(change_prototype_txout, SER_DISK);
 
             CFeeRate discard_rate = GetDiscardRate(*this);
 
