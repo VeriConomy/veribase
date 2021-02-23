@@ -183,6 +183,5 @@ QT_TRANSLATE_NOOP("bitcoin-core", "User Agent comment (%s) contains unsafe chara
 QT_TRANSLATE_NOOP("bitcoin-core", "Verifying blocks..."),
 QT_TRANSLATE_NOOP("bitcoin-core", "Verifying wallet(s)..."),
 QT_TRANSLATE_NOOP("bitcoin-core", "Wallet needed to be rewritten: restart %s to complete"),
-QT_TRANSLATE_NOOP("bitcoin-core", "Warning: unknown new rules activated (versionbit %i)"),
 QT_TRANSLATE_NOOP("bitcoin-core", "Zapping all transactions from wallet..."),
 };
