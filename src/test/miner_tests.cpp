@@ -160,17 +160,6 @@ void MinerTestingSetup::TestPackageSelection(const CChainParams& chainparams, co
         BOOST_CHECK(pblocktemplate->block.vtx[i]->GetHash() != hashLowFeeTx);
     }
 
-    // Test that packages above the min relay fee do get included, even if one
-    // of the transactions is below the min relay fee
-    // Remove the low fee transaction and replace with a higher fee transaction
-    m_node.mempool->removeRecursive(CTransaction(tx), MemPoolRemovalReason::REPLACED);
-    tx.vout[0].nValue -= 2; // Now we should be just over the min relay fee
-    hashLowFeeTx = tx.GetHash();
-    m_node.mempool->addUnchecked(entry.Fee(feeToUse+2).FromTx(tx));
-    pblocktemplate = AssemblerForTest(chainparams).CreateNewBlock(scriptPubKey);
-    BOOST_CHECK(pblocktemplate->block.vtx[4]->GetHash() == hashFreeTx);
-    BOOST_CHECK(pblocktemplate->block.vtx[5]->GetHash() == hashLowFeeTx);
-
     // Test that transaction selection properly updates ancestor fee
     // calculations as ancestor transactions get included in a block.
     // Add a 0-fee transaction that has 2 outputs.

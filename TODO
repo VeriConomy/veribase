@@ -1,1 +1,2 @@
 - Version Bits -> Clean *.ts to remove "Warning: unknown new rules activated (versionbit %i)" lines
+- Remove RBF Checkbox from UI

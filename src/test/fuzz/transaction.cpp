@@ -15,7 +15,6 @@
 #include <streams.h>
 #include <test/fuzz/fuzz.h>
 #include <univalue.h>
-#include <util/rbf.h>
 #include <validation.h>
 #include <version.h>
 
@@ -91,7 +90,6 @@ void test_one_input(const std::vector<uint8_t>& buffer)
     (void)IsFinalTx(tx, /* nBlockHeight= */ 1024, /* nBlockTime= */ 1024);
     (void)IsStandardTx(tx, reason);
     (void)RecursiveDynamicUsage(tx);
-    (void)SignalsOptInRBF(tx);
 
     CCoinsView coins_view;
     const CCoinsViewCache coins_view_cache(&coins_view);

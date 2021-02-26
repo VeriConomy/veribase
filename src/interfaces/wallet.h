@@ -149,26 +149,6 @@ public:
     //! Abandon transaction.
     virtual bool abandonTransaction(const uint256& txid) = 0;
 
-    //! Return whether transaction can be bumped.
-    virtual bool transactionCanBeBumped(const uint256& txid) = 0;
-
-    //! Create bump transaction.
-    virtual bool createBumpTransaction(const uint256& txid,
-        const CCoinControl& coin_control,
-        std::vector<std::string>& errors,
-        CAmount& old_fee,
-        CAmount& new_fee,
-        CMutableTransaction& mtx) = 0;
-
-    //! Sign bump transaction.
-    virtual bool signBumpTransaction(CMutableTransaction& mtx) = 0;
-
-    //! Commit bump transaction.
-    virtual bool commitBumpTransaction(const uint256& txid,
-        CMutableTransaction&& mtx,
-        std::vector<std::string>& errors,
-        uint256& bumped_txid) = 0;
-
     //! Get a transaction.
     virtual CTransactionRef getTx(const uint256& txid) = 0;
 
