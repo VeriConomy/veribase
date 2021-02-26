@@ -155,7 +155,6 @@ const CLogCategoryDesc LogCategories[] =
     {BCLog::REINDEX, "reindex"},
     {BCLog::CMPCTBLOCK, "cmpctblock"},
     {BCLog::RAND, "rand"},
-    {BCLog::PRUNE, "prune"},
     {BCLog::PROXY, "proxy"},
     {BCLog::MEMPOOLREJ, "mempoolrej"},
     {BCLog::LIBEVENT, "libevent"},

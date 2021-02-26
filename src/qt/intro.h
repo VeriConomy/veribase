@@ -47,7 +47,7 @@ public:
      * @note do NOT call global GetDataDir() before calling this function, this
      * will cause the wrong path to be cached.
      */
-    static bool showIfNeeded(interfaces::Node& node, bool& did_show_intro, bool& prune);
+    static bool showIfNeeded(interfaces::Node& node, bool& did_show_intro);
 
 Q_SIGNALS:
     void requestCheck();
@@ -69,15 +69,13 @@ private:
     QString pathToCheck;
     const int64_t m_blockchain_size_gb;
     const int64_t m_chain_state_size_gb;
-    //! Total required space (in GB) depending on user choice (prune or not prune).
+    //! Total required space (in GB) depending on user choice.
     int64_t m_required_space_gb{0};
     uint64_t m_bytes_available{0};
-    const int64_t m_prune_target_gb;
 
     void startThread();
     void checkPath(const QString &dataDir);
     QString getPathToCheck();
-    void UpdatePruneLabels(bool prune_checked);
     void UpdateFreeSpaceLabel();
 
     friend class FreespaceChecker;

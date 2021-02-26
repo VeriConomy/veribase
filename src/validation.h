@@ -166,13 +166,6 @@ extern arith_uint256 nMinimumChainWork;
 /** Best header we've seen so far (used for getheaders queries' starting points). */
 extern CBlockIndex *pindexBestHeader;
 
-/** Pruning-related variables and constants */
-/** True if any block files have ever been pruned. */
-extern bool fHavePruned;
-/** True if we're running in -prune mode. */
-extern bool fPruneMode;
-/** Number of MiB of block files that we're trying to stay below. */
-extern uint64_t nPruneTarget;
 /** Block files containing a block-height within MIN_BLOCKS_TO_KEEP of ::ChainActive().Tip() will not be pruned. */
 static const unsigned int MIN_BLOCKS_TO_KEEP = 288;
 /** Minimum blocks required to signal NODE_NETWORK_LIMITED */
@@ -257,19 +250,6 @@ double GuessVerificationProgress(const ChainTxData& data, const CBlockIndex* pin
 
 /** Calculate the amount of disk space the block & undo files currently use */
 uint64_t CalculateCurrentUsage();
-
-/**
- *  Mark one block file as pruned.
- */
-void PruneOneBlockFile(const int fileNumber) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
-
-/**
- *  Actually unlink the specified files
- */
-void UnlinkPrunedFiles(const std::set<int>& setFilesToPrune);
-
-/** Prune block files up to a given height */
-void PruneBlockFilesManual(int nManualPruneHeight);
 
 /** (try to) add transaction to memory pool
  * plTxnReplaced will be appended to with all transactions replaced from mempool **/
@@ -646,22 +626,16 @@ public:
      * or always and in all cases if we're in prune mode and are deleting files.
      *
      * If FlushStateMode::NONE is used, then FlushStateToDisk(...) won't do anything
-     * besides checking if we need to prune.
      *
      * @returns true unless a system error occurred
      */
     bool FlushStateToDisk(
         const CChainParams& chainparams,
         BlockValidationState &state,
-        FlushStateMode mode,
-        int nManualPruneHeight = 0);
+        FlushStateMode mode);
 
     //! Unconditionally flush all changes to disk.
     void ForceFlushStateToDisk();
-
-    //! Prune blockfiles from the disk if necessary and then flush chainstate changes
-    //! if we pruned.
-    void PruneAndFlush();
 
     /**
      * Make the best chain active, in multiple steps. The result is either failure
@@ -789,11 +763,5 @@ bool DumpMempool(const CTxMemPool& pool);
 
 /** Load the mempool from disk. */
 bool LoadMempool(CTxMemPool& pool);
-
-//! Check whether the block associated with this index entry is pruned or not.
-inline bool IsBlockPruned(const CBlockIndex* pblockindex)
-{
-    return (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0);
-}
 
 #endif // BITCOIN_VALIDATION_H

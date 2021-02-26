@@ -86,20 +86,12 @@ public:
         //! will abort.
         virtual int64_t getBlockMedianTimePast(int height) = 0;
 
-        //! Check that the block is available on disk (i.e. has not been
-        //! pruned), and contains transactions.
-        virtual bool haveBlockOnDisk(int height) = 0;
-
         //! Return height of the first block in the chain with timestamp equal
         //! or greater than the given time and height equal or greater than the
         //! given height, or nullopt if there is no block with a high enough
         //! timestamp and height. Also return the block hash as an optional output parameter
         //! (to avoid the cost of a second lookup in case this information is needed.)
         virtual Optional<int> findFirstBlockWithTimeAndHeight(int64_t time, int height, uint256* hash) = 0;
-
-        //! Return height of last block in the specified range which is pruned, or
-        //! nullopt if no block in the range is pruned. Range is inclusive.
-        virtual Optional<int> findPruned(int start_height = 0, Optional<int> stop_height = nullopt) = 0;
 
         //! Return height of the specified block if it is on the chain, otherwise
         //! return the height of the highest block on chain that's an ancestor
@@ -181,9 +173,6 @@ public:
 
     //! Relay dust fee setting (-dustrelayfee), reflecting lowest rate it's economical to spend.
     virtual CFeeRate relayDustFee() = 0;
-
-    //! Check if any block has been pruned.
-    virtual bool havePruned() = 0;
 
     //! Check if the node is ready to broadcast transactions.
     virtual bool isReadyToBroadcast() = 0;

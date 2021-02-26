@@ -281,13 +281,6 @@ void BitcoinApplication::parameterSetup()
     m_node.initParameterInteraction();
 }
 
-void BitcoinApplication::InitializePruneSetting(bool prune)
-{
-    // If prune is set, intentionally override existing prune size with
-    // the default size since this is called when choosing a new datadir.
-    optionsModel->SetPruneTargetGB(prune ? DEFAULT_PRUNE_TARGET_GB : 0, true);
-}
-
 void BitcoinApplication::requestInitialize()
 {
     qDebug() << __func__ << ": Requesting initialize";
@@ -486,9 +479,8 @@ int GuiMain(int argc, char* argv[])
     /// 5. Now that settings and translations are available, ask user for data directory
     // User language is set up: pick a data directory
     bool did_show_intro = false;
-    bool prune = false; // Intro dialog prune check box
     // Gracefully exit if the user cancels
-    if (!Intro::showIfNeeded(*node, did_show_intro, prune)) return EXIT_SUCCESS;
+    if (!Intro::showIfNeeded(*node, did_show_intro)) return EXIT_SUCCESS;
 
     /// 6. Determine availability of data directory and parse bitcoin.conf
     /// - Do not call GetDataDir(true) before this step finishes
@@ -562,11 +554,6 @@ int GuiMain(int argc, char* argv[])
     GUIUtil::LogQtInfo();
     // Load GUI settings from QSettings
     app.createOptionsModel(gArgs.GetBoolArg("-resetguisettings", false));
-
-    if (did_show_intro) {
-        // Store intro dialog settings other than datadir (network specific)
-        app.InitializePruneSetting(prune);
-    }
 
     if (gArgs.GetBoolArg("-splash", DEFAULT_SPLASHSCREEN) && !gArgs.GetBoolArg("-min", false))
         app.createSplashScreen(networkStyle.data());

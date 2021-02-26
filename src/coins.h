@@ -116,7 +116,7 @@ struct CCoinsCacheEntry
 
     enum Flags {
         DIRTY = (1 << 0), // This cache entry is potentially different from the version in the parent view.
-        FRESH = (1 << 1), // The parent view does not have this entry (or it is pruned).
+        FRESH = (1 << 1), // The parent view does not have this entry.
         /* Note that FRESH is a performance optimization with which we can
          * erase coins that are fully spent if we know we do not need to
          * flush the changes to the parent cache.  It is always safe to

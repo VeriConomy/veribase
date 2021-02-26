@@ -47,7 +47,6 @@ namespace BCLog {
         REINDEX     = (1 << 11),
         CMPCTBLOCK  = (1 << 12),
         RAND        = (1 << 13),
-        PRUNE       = (1 << 14),
         PROXY       = (1 << 15),
         MEMPOOLREJ  = (1 << 16),
         LIBEVENT    = (1 << 17),
