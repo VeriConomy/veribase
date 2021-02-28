@@ -15,7 +15,6 @@
 #include <merkleblock.h>
 #include <netmessagemaker.h>
 #include <netbase.h>
-#include <policy/fees.h>
 #include <policy/policy.h>
 #include <primitives/block.h>
 #include <primitives/transaction.h>
@@ -4095,14 +4094,12 @@ bool PeerLogicValidation::SendMessages(CNode* pto)
         // We don't want white listed peers to filter txs to us if we have -whitelistforcerelay
         if (pto->m_tx_relay != nullptr && pto->nVersion >= FEEFILTER_VERSION && gArgs.GetBoolArg("-feefilter", DEFAULT_FEEFILTER) &&
             !pto->HasPermission(PF_FORCERELAY)) {
-            CAmount currentFilter = m_mempool.GetMinFee(gArgs.GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFeePerK();
+            CAmount currentFilter = m_mempool.GetMinFee().GetFeePerK();
             int64_t timeNow = GetTimeMicros();
             if (timeNow > pto->m_tx_relay->nextSendTimeFeeFilter) {
                 static CFeeRate default_feerate(DEFAULT_MIN_RELAY_TX_FEE);
-                static FeeFilterRounder filterRounder(default_feerate);
-                CAmount filterToSend = filterRounder.round(currentFilter);
                 // We always have a fee filter of at least minRelayTxFee
-                filterToSend = std::max(filterToSend, ::minRelayTxFee.GetFeePerK());
+                CAmount filterToSend = std::max(default_feerate.GetFeePerK(), GetMinRelayTxFeeRate().GetFeePerK());
                 if (filterToSend != pto->m_tx_relay->lastSentFeeFilter) {
                     connman->PushMessage(pto, msgMaker.Make(NetMsgType::FEEFILTER, filterToSend));
                     pto->m_tx_relay->lastSentFeeFilter = filterToSend;

@@ -222,9 +222,6 @@ public:
         int* returned_target,
         FeeReason* reason) = 0;
 
-    //! Get tx confirm target.
-    virtual unsigned int getConfirmTarget() = 0;
-
     // Return whether HD enabled.
     virtual bool hdEnabled() = 0;
 

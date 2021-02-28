@@ -1245,8 +1245,8 @@ UniValue MempoolInfoToJSON(const CTxMemPool& pool)
     ret.pushKV("usage", (int64_t)pool.DynamicMemoryUsage());
     size_t maxmempool = gArgs.GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000;
     ret.pushKV("maxmempool", (int64_t) maxmempool);
-    ret.pushKV("mempoolminfee", ValueFromAmount(std::max(pool.GetMinFee(maxmempool), ::minRelayTxFee).GetFeePerK()));
-    ret.pushKV("minrelaytxfee", ValueFromAmount(::minRelayTxFee.GetFeePerK()));
+    ret.pushKV("mempoolminfee", ValueFromAmount(std::max(pool.GetMinFee(), GetMinRelayTxFeeRate()).GetFeePerK()));
+    ret.pushKV("minrelaytxfee", ValueFromAmount(GetMinRelayTxFeeRate().GetFeePerK()));
 
     return ret;
 }

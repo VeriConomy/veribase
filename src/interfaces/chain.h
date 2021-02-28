@@ -22,7 +22,6 @@ class Coin;
 class uint256;
 enum class MemPoolRemovalReason;
 struct CBlockLocator;
-struct FeeCalculation;
 struct NodeContext;
 
 namespace interfaces {
@@ -32,7 +31,7 @@ class Wallet;
 
 //! Interface giving clients (wallet processes, maybe other analysis tools in
 //! the future) ability to access to the chain state, receive notifications,
-//! estimate fees, and submit transactions.
+//! and submit transactions.
 //!
 //! TODO: Current chain methods are too low level, exposing too much of the
 //! internal workings of the bitcoin node, and not being very convenient to use.
@@ -163,17 +162,14 @@ public:
     //! Check if transaction will pass the mempool's chain limits.
     virtual bool checkChainLimits(const CTransactionRef& tx) = 0;
 
-    //! Estimate smart fee.
-    virtual CFeeRate estimateSmartFee(int num_blocks, bool conservative, FeeCalculation* calc = nullptr) = 0;
-
-    //! Fee estimator max target.
-    virtual unsigned int estimateMaxBlocks() = 0;
-
     //! Mempool minimum fee.
     virtual CFeeRate mempoolMinFee() = 0;
 
     //! Relay current minimum fee (from -minrelaytxfee settings).
     virtual CFeeRate relayMinFee() = 0;
+
+    //! current minimum transaction fee .
+    virtual CFeeRate getMinTxFeeRate() = 0;
 
     //! Relay dust fee setting (-dustrelayfee), reflecting lowest rate it's economical to spend.
     virtual CFeeRate relayDustFee() = 0;

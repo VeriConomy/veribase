@@ -40,7 +40,6 @@ void DummyWalletInit::AddWalletOptions() const
         "-rescan",
         "-salvagewallet",
         "-spendzeroconfchange",
-        "-txconfirmtarget=<n>",
         "-upgradewallet",
         "-wallet=<path>",
         "-walletbroadcast",
