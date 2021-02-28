@@ -105,6 +105,7 @@ BITCOIN_CORE_H = \
   attributes.h \
   banman.h \
   base58.h \
+  bignum.h \
   bech32.h \
   bloom.h \
   blockencodings.h \
@@ -432,6 +433,7 @@ libbitcoin_consensus_a_SOURCES = \
   hash.cpp \
   hash.h \
   prevector.h \
+  timedatadummy.cpp \
   primitives/block.cpp \
   primitives/block.h \
   primitives/transaction.cpp \
@@ -589,7 +591,9 @@ bitcoin_cli_LDADD += $(BOOST_LIBS) $(EVENT_LIBS)
 #
 
 # bitcoin-tx binary #
-bitcoin_tx_SOURCES = bitcoin-tx.cpp
+bitcoin_tx_SOURCES = \
+  bitcoin-tx.cpp \
+  timedatadummy.cpp
 bitcoin_tx_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 bitcoin_tx_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 bitcoin_tx_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
@@ -622,7 +626,9 @@ endif
 bitcoin_wallet_LDADD = \
   $(LIBBITCOIN_WALLET_TOOL) \
   $(LIBBITCOIN_WALLET) \
+  $(LIBBITCOIN_SERVER) \
   $(LIBBITCOIN_COMMON) \
+  $(LIBBITCOIN_SERVER) \
   $(LIBBITCOIN_CONSENSUS) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \

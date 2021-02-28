@@ -1410,10 +1410,8 @@ bool CWallet::SetWalletFlags(uint64_t overwriteFlags, bool memonly)
 
 int64_t CWalletTx::GetTxTime() const
 {
-    int64_t n = nTimeSmart;
-    return n ? n : nTimeReceived;
+    return tx->nTime;
 }
-
 // Helper for producing a max-sized low-S low-R signature (eg 71 bytes)
 // or a max-sized low-S signature (e.g. 72 bytes) if use_max_sig is true
 bool CWallet::DummySignInput(CTxIn &tx_in, const CTxOut &txout, bool use_max_sig) const

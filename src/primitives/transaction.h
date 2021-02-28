@@ -12,6 +12,8 @@
 #include <serialize.h>
 #include <uint256.h>
 
+#include <version.h>
+
 static const int SERIALIZE_TRANSACTION_NO_WITNESS = 0x40000000;
 
 /** An outpoint - a combination of a transaction hash and an index n into its vout */
@@ -276,7 +278,6 @@ inline void SerializeTransaction(const TxType& tx, Stream& s) {
     s << tx.nLockTime;
 }
 
-
 /** The basic transaction that is broadcasted on the network and contained in
  * blocks.  A transaction can contain multiple inputs and outputs.
  */
@@ -297,10 +298,10 @@ public:
     // actually immutable; deserialization and assignment are implemented,
     // and bypass the constness. This is safe, as they update the entire
     // structure, including the hash.
-    const uint32_t nTime;
     const std::vector<CTxIn> vin;
     const std::vector<CTxOut> vout;
     const int32_t nVersion;
+    const uint32_t nTime;
     const uint32_t nLockTime;
 
 private:
@@ -385,10 +386,10 @@ public:
 /** A mutable version of CTransaction. */
 struct CMutableTransaction
 {
-    uint32_t nTime;
     std::vector<CTxIn> vin;
     std::vector<CTxOut> vout;
     int32_t nVersion;
+    uint32_t nTime;
     uint32_t nLockTime;
 
     CMutableTransaction();

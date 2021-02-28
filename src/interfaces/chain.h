@@ -86,6 +86,10 @@ public:
         //! will abort.
         virtual int64_t getBlockMedianTimePast(int height) = 0;
 
+        //! Check that the block is available on disk (i.e. has not been
+        //! pruned), and contains transactions.
+        virtual bool haveBlockOnDisk(int height) = 0;
+
         //! Return height of the first block in the chain with timestamp equal
         //! or greater than the given time and height equal or greater than the
         //! given height, or nullopt if there is no block with a high enough

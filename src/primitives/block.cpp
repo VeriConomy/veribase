@@ -30,7 +30,7 @@ std::string CBlock::ToString() const
         hashPrevBlock.ToString(),
         hashMerkleRoot.ToString(),
         nTime, nBits, nNonce,
-        nFlags,     vtx.size());
+        nFlags, vtx.size());
     for (const auto& tx : vtx) {
         s << "  " << tx->ToString() << "\n";
     }
