@@ -48,6 +48,12 @@ struct DisconnectedBlockTransactions;
 struct PrecomputedTransactionData;
 struct LockPoints;
 
+/** Fee Settings */
+/** Original Min fee to authorize a TX */
+static const unsigned int MIN_TX_FEE = 20000000;
+/** VIP1 Min fee */
+static const unsigned int VIP1_MIN_TX_FEE = 100000;
+
 /** Default for -minrelaytxfee, minimum relay fee for transactions */
 static const unsigned int DEFAULT_MIN_RELAY_TX_FEE = 1000;
 /** Default for -limitancestorcount, max number of in-mempool ancestors */
@@ -127,6 +133,14 @@ static const int MAX_UNCONNECTING_HEADERS = 10;
 /** Default for -stopatheight */
 static const int DEFAULT_STOPATHEIGHT = 0;
 
+/**
+ * Compute minimum transaction fee by KB base on the current block height
+ * Implement VIP1
+ */
+unsigned int GetMinTxFee(int nBlockHeight = 0);
+CFeeRate GetMinTxFeeRate(int nBlockHeight = 0);
+CFeeRate GetMinRelayTxFeeRate();
+
 struct BlockHasher
 {
     // this used to call `GetCheapHash()` in uint256, which was later moved; the
@@ -135,8 +149,9 @@ struct BlockHasher
     size_t operator()(const uint256& hash) const { return ReadLE64(hash.begin()); }
 };
 
+/** If false, overide the minRelayTxfee when fee change **/
+extern bool fEnforceMinRelayTxFee;
 extern RecursiveMutex cs_main;
-extern CBlockPolicyEstimator feeEstimator;
 extern CTxMemPool mempool;
 typedef std::unordered_map<uint256, CBlockIndex*, BlockHasher> BlockMap;
 extern Mutex g_best_block_mutex;

@@ -249,15 +249,6 @@ UniValue DescribeAddress(const CTxDestination& dest)
     return boost::apply_visitor(DescribeAddressVisitor(), dest);
 }
 
-unsigned int ParseConfirmTarget(const UniValue& value, unsigned int max_target)
-{
-    int target = value.get_int();
-    if (target < 1 || (unsigned int)target > max_target) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Invalid conf_target, must be between %u - %u", 1, max_target));
-    }
-    return (unsigned int)target;
-}
-
 RPCErrorCode RPCErrorFromTransactionError(TransactionError terr)
 {
     switch (terr) {

@@ -8,7 +8,6 @@
 #include <optional.h>
 #include <outputtype.h>
 #include <policy/feerate.h>
-#include <policy/fees.h>
 #include <primitives/transaction.h>
 #include <script/standard.h>
 
@@ -34,14 +33,10 @@ public:
     bool fOverrideFeeRate;
     //! Override the wallet's m_pay_tx_fee if set
     Optional<CFeeRate> m_feerate;
-    //! Override the default confirmation target if set
-    Optional<unsigned int> m_confirm_target;
     //! Avoid partial use of funds sent to a given address
     bool m_avoid_partial_spends;
     //! Forbids inclusion of dirty (previously used) addresses
     bool m_avoid_address_reuse;
-    //! Fee estimation mode to control arguments to estimateSmartFee
-    FeeEstimateMode m_fee_mode;
     //! Minimum chain depth value for coin availability
     int m_min_depth = DEFAULT_MIN_DEPTH;
     //! Maximum chain depth value for coin availability

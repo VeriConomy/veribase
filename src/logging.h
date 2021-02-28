@@ -41,7 +41,6 @@ namespace BCLog {
         ZMQ         = (1 <<  5),
         WALLETDB    = (1 <<  6),
         RPC         = (1 <<  7),
-        ESTIMATEFEE = (1 <<  8),
         ADDRMAN     = (1 <<  9),
         SELECTCOINS = (1 << 10),
         REINDEX     = (1 << 11),

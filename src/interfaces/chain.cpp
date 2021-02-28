@@ -13,7 +13,6 @@
 #include <node/coin.h>
 #include <node/context.h>
 #include <node/transaction.h>
-#include <policy/fees.h>
 #include <policy/policy.h>
 #include <policy/settings.h>
 #include <primitives/block.h>
@@ -299,19 +298,12 @@ public:
         return ::mempool.CalculateMemPoolAncestors(entry, ancestors, limit_ancestor_count, limit_ancestor_size,
             limit_descendant_count, limit_descendant_size, unused_error_string);
     }
-    CFeeRate estimateSmartFee(int num_blocks, bool conservative, FeeCalculation* calc) override
-    {
-        return ::feeEstimator.estimateSmartFee(num_blocks, calc, conservative);
-    }
-    unsigned int estimateMaxBlocks() override
-    {
-        return ::feeEstimator.HighestTargetTracked(FeeEstimateHorizon::LONG_HALFLIFE);
-    }
     CFeeRate mempoolMinFee() override
     {
-        return ::mempool.GetMinFee(gArgs.GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000);
+        return ::mempool.GetMinFee();
     }
-    CFeeRate relayMinFee() override { return ::minRelayTxFee; }
+    CFeeRate relayMinFee() override { return GetMinRelayTxFeeRate(); }
+    CFeeRate getMinTxFeeRate() override { return GetMinTxFeeRate(); }
     CFeeRate relayDustFee() override { return ::dustRelayFee; }
     bool isReadyToBroadcast() override { return !::fImporting && !::fReindex && !isInitialBlockDownload(); }
     bool isInitialBlockDownload() override { return ::ChainstateActive().IsInitialBlockDownload(); }

@@ -169,7 +169,6 @@ BITCOIN_CORE_H = \
   optional.h \
   outputtype.h \
   policy/feerate.h \
-  policy/fees.h \
   policy/policy.h \
   policy/settings.h \
   pow.h \
@@ -214,7 +213,6 @@ BITCOIN_CORE_H = \
   util/bytevectorhash.h \
   util/check.h \
   util/error.h \
-  util/fees.h \
   util/spanparsing.h \
   util/system.h \
   util/macros.h \
@@ -291,7 +289,6 @@ libbitcoin_server_a_SOURCES = \
   node/psbt.cpp \
   node/transaction.cpp \
   noui.cpp \
-  policy/fees.cpp \
   policy/settings.cpp \
   pow.cpp \
   rest.cpp \
@@ -515,7 +512,6 @@ libbitcoin_util_a_SOURCES = \
   util/bip32.cpp \
   util/bytevectorhash.cpp \
   util/error.cpp \
-  util/fees.cpp \
   util/system.cpp \
   util/message.cpp \
   util/moneystr.cpp \
