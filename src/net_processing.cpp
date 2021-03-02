@@ -8,10 +8,10 @@
 #include <addrman.h>
 #include <banman.h>
 #include <blockencodings.h>
+#include <chain.h>
 #include <chainparams.h>
 #include <consensus/validation.h>
 #include <hash.h>
-#include <validation.h>
 #include <merkleblock.h>
 #include <netmessagemaker.h>
 #include <netbase.h>
@@ -25,6 +25,7 @@
 #include <txmempool.h>
 #include <util/system.h>
 #include <util/strencodings.h>
+#include <validation.h>
 
 #include <memory>
 #include <typeinfo>
@@ -162,6 +163,13 @@ namespace {
         std::unique_ptr<PartiallyDownloadedBlock> partialBlock;  //!< Optional, used for CMPCTBLOCK downloads
     };
     std::map<uint256, std::pair<NodeId, std::list<QueuedBlock>::iterator> > mapBlocksInFlight GUARDED_BY(cs_main);
+
+    /** peercoin: blocks that are waiting to be processed, the key points to previous CBlockIndex entry */
+    struct WaitElement {
+        std::shared_ptr<CBlock> pblock;
+            int64_t time;
+    };
+    std::map<CBlockIndex*, WaitElement> mapBlocksWait;
 
     /** Stack of nodes which we have set to announce using compact blocks */
     std::list<NodeId> lNodesAnnouncingHeaderAndIDs GUARDED_BY(cs_main);
@@ -556,7 +564,7 @@ static void MaybeSetPeerAsAnnouncingHeaderAndIDs(NodeId nodeid, CConnman* connma
         }
         connman->ForNode(nodeid, [connman](CNode* pfrom){
             AssertLockHeld(cs_main);
-            uint64_t nCMPCTBLOCKVersion = (pfrom->GetLocalServices() & NODE_WITNESS) ? 2 : 1;
+            uint64_t nCMPCTBLOCKVersion = 1;
             if (lNodesAnnouncingHeaderAndIDs.size() >= 3) {
                 // As per BIP152, we only get 3 of our peers to announce
                 // blocks using compact encodings.
@@ -1201,7 +1209,8 @@ static bool fWitnessesPresentInMostRecentCompactBlock GUARDED_BY(cs_most_recent_
  * to compatible peers.
  */
 void PeerLogicValidation::NewPoWValidBlock(const CBlockIndex *pindex, const std::shared_ptr<const CBlock>& pblock) {
-    std::shared_ptr<const CBlockHeaderAndShortTxIDs> pcmpctblock = std::make_shared<const CBlockHeaderAndShortTxIDs> (*pblock, true);
+    std::shared_ptr<CBlockHeaderAndShortTxIDs> pcmpctblock = std::make_shared<CBlockHeaderAndShortTxIDs> (*pblock, true);
+
     const CNetMsgMaker msgMaker(PROTOCOL_VERSION);
 
     LOCK(cs_main);
@@ -1549,7 +1558,7 @@ void static ProcessGetBlockData(CNode* pfrom, const CChainParams& chainparams, c
             // and we want it right after the last block so they don't
             // wait for other stuff first.
             std::vector<CInv> vInv;
-            vInv.push_back(CInv(MSG_BLOCK, ::ChainActive().Tip()->GetBlockHash()));
+            vInv.push_back(CInv(MSG_BLOCK, GetLastBlockIndex(::ChainActive().Tip(), false)->GetBlockHash()));
             connman->PushMessage(pfrom, msgMaker.Make(NetMsgType::INV, vInv));
             pfrom->hashContinue.SetNull();
         }
@@ -1650,11 +1659,7 @@ void static ProcessGetData(CNode* pfrom, const CChainParams& chainparams, CConnm
 }
 
 static uint32_t GetFetchFlags(CNode* pfrom) EXCLUSIVE_LOCKS_REQUIRED(cs_main) {
-    uint32_t nFetchFlags = 0;
-    if ((pfrom->GetLocalServices() & NODE_WITNESS) && State(pfrom->GetId())->fHaveWitness) {
-        nFetchFlags |= MSG_WITNESS_FLAG;
-    }
-    return nFetchFlags;
+    return 0;
 }
 
 inline void static SendBlockTransactions(const CBlock& block, const BlockTransactionsRequest& req, CNode* pfrom, CConnman* connman) {
@@ -1732,13 +1737,15 @@ bool static ProcessHeadersMessage(CNode* pfrom, CConnman* connman, CTxMemPool& m
         }
     }
 
+    int32_t& nPoSTemperature = mapPoSTemperature[pfrom->addr];
     BlockValidationState state;
-    if (!ProcessNewBlockHeaders(headers, state, chainparams, &pindexLast)) {
+    if (!ProcessNewBlockHeaders(headers, state, chainparams, &pindexLast, nPoSTemperature, pfrom->lastAcceptedHeader)) {
         if (state.IsInvalid()) {
             MaybePunishNodeForBlock(pfrom->GetId(), state, via_compact_block, "invalid header received");
             return false;
         }
     }
+    pfrom->lastAcceptedHeader = headers.back().GetHash();
 
     {
         LOCK(cs_main);
@@ -1855,7 +1862,7 @@ bool static ProcessHeadersMessage(CNode* pfrom, CConnman* connman, CTxMemPool& m
     return true;
 }
 
-void static ProcessOrphanTx(CConnman* connman, CTxMemPool& mempool, std::set<uint256>& orphan_work_set, std::list<CTransactionRef>& removed_txn) EXCLUSIVE_LOCKS_REQUIRED(cs_main, g_cs_orphans)
+void static ProcessOrphanTx(CConnman* connman, CTxMemPool& mempool, std::set<uint256>& orphan_work_set) EXCLUSIVE_LOCKS_REQUIRED(cs_main, g_cs_orphans)
 {
     AssertLockHeld(cs_main);
     AssertLockHeld(g_cs_orphans);
@@ -1877,7 +1884,7 @@ void static ProcessOrphanTx(CConnman* connman, CTxMemPool& mempool, std::set<uin
         TxValidationState orphan_state;
 
         if (setMisbehaving.count(fromPeer)) continue;
-        if (AcceptToMemoryPool(mempool, orphan_state, porphanTx, &removed_txn, false /* bypass_limits */, 0 /* nAbsurdFee */)) {
+        if (AcceptToMemoryPool(mempool, orphan_state, porphanTx, false /* bypass_limits */)) {
             LogPrint(BCLog::MEMPOOL, "   accepted orphan tx %s\n", orphanHash.ToString());
             RelayTransaction(orphanHash, *connman);
             for (unsigned int i = 0; i < orphanTx.vout.size(); i++) {
@@ -1945,6 +1952,11 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
     }
 
     if (msg_type == NetMsgType::VERSION) {
+        if(chainparams.IsVericoin()) {
+            auto it = mapPoSTemperature.find(pfrom->addr);
+            if (it == mapPoSTemperature.end())
+                mapPoSTemperature[pfrom->addr] = MAX_CONSECUTIVE_POS_HEADERS/4;
+        }
         // Each connection can only send one version message
         if (pfrom->nVersion != 0)
         {
@@ -2040,12 +2052,6 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
         pfrom->SetSendVersion(nSendVersion);
         pfrom->nVersion = nVersion;
 
-        if((nServices & NODE_WITNESS))
-        {
-            LOCK(cs_main);
-            State(pfrom->GetId())->fHaveWitness = true;
-        }
-
         // Potentially mark this peer as a preferred download peer.
         {
         LOCK(cs_main);
@@ -2113,6 +2119,12 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
         return false;
     }
 
+    // peercoin: set/unset network serialization mode for new clients
+    if (pfrom->nVersion <= POS_INFO_HEADERS_VERSION)
+        vRecv.SetType(vRecv.GetType() & ~SER_POSMARKER);
+    else
+        vRecv.SetType(vRecv.GetType() | SER_POSMARKER);
+
     // At this point, the outgoing message serialization version can't change.
     const CNetMsgMaker msgMaker(pfrom->GetSendVersion());
 
@@ -2147,8 +2159,6 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
             // they may wish to request compact blocks from us
             bool fAnnounceUsingCMPCTBLOCK = false;
             uint64_t nCMPCTBLOCKVersion = 2;
-            if (pfrom->GetLocalServices() & NODE_WITNESS)
-                connman->PushMessage(pfrom, msgMaker.Make(NetMsgType::SENDCMPCT, fAnnounceUsingCMPCTBLOCK, nCMPCTBLOCKVersion));
             nCMPCTBLOCKVersion = 1;
             connman->PushMessage(pfrom, msgMaker.Make(NetMsgType::SENDCMPCT, fAnnounceUsingCMPCTBLOCK, nCMPCTBLOCKVersion));
         }
@@ -2228,7 +2238,7 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
         bool fAnnounceUsingCMPCTBLOCK = false;
         uint64_t nCMPCTBLOCKVersion = 0;
         vRecv >> fAnnounceUsingCMPCTBLOCK >> nCMPCTBLOCKVersion;
-        if (nCMPCTBLOCKVersion == 1 || ((pfrom->GetLocalServices() & NODE_WITNESS) && nCMPCTBLOCKVersion == 2)) {
+        if (nCMPCTBLOCKVersion == 1) {
             LOCK(cs_main);
             // fProvidesHeaderAndIDs is used to "lock in" version of compact blocks we send (fWantsCmpctWitness)
             if (!State(pfrom->GetId())->fProvidesHeaderAndIDs) {
@@ -2238,10 +2248,7 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
             if (State(pfrom->GetId())->fWantsCmpctWitness == (nCMPCTBLOCKVersion == 2)) // ignore later version announces
                 State(pfrom->GetId())->fPreferHeaderAndIDs = fAnnounceUsingCMPCTBLOCK;
             if (!State(pfrom->GetId())->fSupportsDesiredCmpctVersion) {
-                if (pfrom->GetLocalServices() & NODE_WITNESS)
-                    State(pfrom->GetId())->fSupportsDesiredCmpctVersion = (nCMPCTBLOCKVersion == 2);
-                else
-                    State(pfrom->GetId())->fSupportsDesiredCmpctVersion = (nCMPCTBLOCKVersion == 1);
+                State(pfrom->GetId())->fSupportsDesiredCmpctVersion = (nCMPCTBLOCKVersion == 1);
             }
         }
         return true;
@@ -2379,6 +2386,10 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
             if (pindex->GetBlockHash() == hashStop)
             {
                 LogPrint(BCLog::NET, "  getblocks stopping at %d %s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
+                // ppcoin: tell downloading node about the latest block if it's
+                // without risk being rejected due to stake connection check
+                if (hashStop != ::ChainActive().Tip()->GetBlockHash() && pindex->GetBlockTime() + Params().GetConsensus().nStakeMinAge > ::ChainActive().Tip()->GetBlockTime())
+                    pfrom->PushInventory(CInv(MSG_BLOCK, ::ChainActive().Tip()->GetBlockHash()));
                 break;
             }
             pfrom->PushInventory(CInv(MSG_BLOCK, pindex->GetBlockHash()));
@@ -2537,10 +2548,8 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
         nodestate->m_tx_download.m_tx_in_flight.erase(inv.hash);
         EraseTxRequest(inv.hash);
 
-        std::list<CTransactionRef> lRemovedTxn;
-
         if (!AlreadyHave(inv, mempool) &&
-            AcceptToMemoryPool(mempool, state, ptx, &lRemovedTxn, false /* bypass_limits */, 0 /* nAbsurdFee */)) {
+            AcceptToMemoryPool(mempool, state, ptx, false /* bypass_limits */)) {
             mempool.check(&::ChainstateActive().CoinsTip());
             RelayTransaction(tx.GetHash(), *connman);
             for (unsigned int i = 0; i < tx.vout.size(); i++) {
@@ -2560,7 +2569,7 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
                 mempool.size(), mempool.DynamicMemoryUsage() / 1000);
 
             // Recursively process any orphan transactions that depended on this one
-            ProcessOrphanTx(connman, mempool, pfrom->orphan_work_set, lRemovedTxn);
+            ProcessOrphanTx(connman, mempool, pfrom->orphan_work_set);
         }
         else if (state.GetResult() == TxValidationResult::TX_MISSING_INPUTS)
         {
@@ -2627,9 +2636,6 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
             }
         }
 
-        for (const CTransactionRef& removedTx : lRemovedTxn)
-            AddToCompactExtraTransactions(removedTx);
-
         // If a tx has been detected by recentRejects, we will have reached
         // this point and the tx will have been ignored. Because we haven't run
         // the tx through AcceptToMemoryPool, we won't have computed a DoS
@@ -2685,15 +2691,27 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
         }
         }
 
+        int32_t& nPoSTemperature = mapPoSTemperature[pfrom->addr];
         const CBlockIndex *pindex = nullptr;
         BlockValidationState state;
-        if (!ProcessNewBlockHeaders({cmpctblock.header}, state, chainparams, &pindex)) {
+
+        if (!ProcessNewBlockHeaders({cmpctblock.header}, state, chainparams, &pindex, nPoSTemperature, ::ChainActive().Tip()->GetBlockHash())) {
             if (state.IsInvalid()) {
                 MaybePunishNodeForBlock(pfrom->GetId(), state, /*via_compact_block*/ true, "invalid header via cmpctblock");
                 return true;
             }
         }
 
+        if( chainparams.IsVericoin() ) {
+            if (nPoSTemperature >= MAX_CONSECUTIVE_POS_HEADERS) {
+                nPoSTemperature = (MAX_CONSECUTIVE_POS_HEADERS*3)/4;
+                if (Params().NetworkIDString() != "test") {
+                    LOCK(cs_main);
+                    Misbehaving(pfrom->GetId(), 100, "too many consecutive pos headers");
+                    return error("too many consecutive pos headers");
+                }
+            }
+        }
         // When we succeed in decoding a block's txids from a cmpctblock
         // message we typically jump to the BLOCKTXN handling code, with a
         // dummy (empty) BLOCKTXN message, to re-use the logic there in
@@ -2981,6 +2999,7 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
         for (unsigned int n = 0; n < nCount; n++) {
             vRecv >> headers[n];
             ReadCompactSize(vRecv); // ignore tx count; assume it is 0.
+            ReadCompactSize(vRecv); // needed for vchBlockSig.
         }
 
         return ProcessHeadersMessage(pfrom, connman, mempool, headers, chainparams, /*via_compact_block=*/false);
@@ -2994,6 +3013,133 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
             return true;
         }
 
+        if(chainparams.IsVericoin()) {
+            std::shared_ptr<CBlock> pblock2 = std::make_shared<CBlock>();
+            vRecv >> *pblock2;
+
+            LogPrint(BCLog::NET, "received block %s peer=%d\n", pblock2->GetHash().ToString(), pfrom->GetId());
+
+            int64_t nTimeNow = GetSystemTimeInSeconds();
+
+            LogPrint(BCLog::NET, "received block %s peer=%d\n", pblock2->GetHash().ToString(), pfrom->GetId());
+
+            {
+                const uint256 hash2(pblock2->GetHash());
+                LOCK(cs_main);
+                bool fRequested = mapBlocksInFlight.count(hash2);
+
+                CBlockIndex* headerPrev = LookupBlockIndex(pblock2->hashPrevBlock);
+                if (!headerPrev) {
+                    return error("previous header not found");
+                }
+
+                if (!fRequested) {
+                    int32_t& nPoSTemperature = mapPoSTemperature[pfrom->addr];
+                    if (nPoSTemperature >= MAX_CONSECUTIVE_POS_HEADERS) {
+                        nPoSTemperature = (MAX_CONSECUTIVE_POS_HEADERS*3)/4;
+                        if (Params().NetworkIDString() != "test") {
+                            Misbehaving(pfrom->GetId(), 100, "too many consecutive pos headers");
+                            return error("too many consecutive pos headers");
+                        }
+                    }
+
+                    if (pblock2->IsProofOfStake() && !::ChainstateActive().IsInitialBlockDownload())
+                        nPoSTemperature += 1;
+
+                    if (!headerPrev->IsValid(BLOCK_VALID_TRANSACTIONS)) {
+                        MarkBlockAsReceived(hash2);
+                        return error("this block does not connect to any valid known blocks");
+                    }
+                }
+                // peercoin: store in memory until we can connect it to some chain
+                WaitElement we; we.pblock = pblock2; we.time = nTimeNow;
+                mapBlocksWait[headerPrev] = we;
+            }
+
+            static CBlockIndex* pindexLastAccepted = nullptr;
+            if (pindexLastAccepted == nullptr)
+                pindexLastAccepted = ::ChainActive().Tip();
+            bool fContinue = true;
+
+            // peercoin: accept as many blocks as we possibly can from mapBlocksWait
+            while (fContinue) {
+                fContinue = false;
+                bool fSelected = false;
+                bool forceProcessing = false;
+                CBlockIndex* pindexPrev;
+                std::shared_ptr<CBlock> pblock;
+
+                {
+                LOCK(cs_main);
+                // peercoin: try to select next block in a constant time
+                std::map<CBlockIndex*, WaitElement>::iterator it = mapBlocksWait.find(pindexLastAccepted);
+                if (it != mapBlocksWait.end() && pindexLastAccepted != nullptr) {
+                    pindexPrev = it->first;
+                    pblock = it->second.pblock;
+                    mapBlocksWait.erase(pindexPrev);
+                    fContinue = true;
+                    fSelected = true;
+                } else
+                // otherwise: try to scan for it
+                for (auto& pair : mapBlocksWait) {
+                    pindexPrev = pair.first;
+                    pblock = pair.second.pblock;
+                    const uint256 hash(pblock->GetHash());
+                    // remove blocks that were not connected in 60 seconds
+                    if (nTimeNow > pair.second.time + 60) {
+                        mapBlocksWait.erase(pindexPrev);
+                        fContinue = true;
+                        MarkBlockAsReceived(hash);
+                        break;
+                    }
+                    if (!pindexPrev->IsValid(BLOCK_VALID_TRANSACTIONS)) {
+                        if (pindexPrev->nStatus & BLOCK_FAILED_MASK) {
+                            mapBlocksWait.erase(pindexPrev);  // prev block was rejected
+                            fContinue = true;
+                            MarkBlockAsReceived(hash);
+                            break;
+                        }
+                        continue;   // prev block was not (yet) accepted on disk, skip to next one
+                    }
+
+                    mapBlocksWait.erase(pindexPrev);
+                    fContinue = true;
+                    fSelected = true;
+                    break;
+                }
+                if (!fSelected)
+                    continue;
+
+                const uint256 hash(pblock->GetHash());
+
+                // Also always process if we requested the block explicitly, as we may
+                // need it even though it is not a candidate for a new best tip.
+                forceProcessing |= MarkBlockAsReceived(hash);
+                // mapBlockSource is only used for punishing peers and setting
+                // which peers send us compact blocks, so the race between here and
+                // cs_main in ProcessNewBlock is fine.
+                mapBlockSource.emplace(hash, std::make_pair(pfrom->GetId(), true));
+                }
+
+                bool fNewBlock = false;
+                bool fPoSDuplicate = false;
+                ProcessNewBlock(chainparams, pblock, forceProcessing, &fNewBlock, &pindexLastAccepted, &fPoSDuplicate);
+                if (fNewBlock) {
+                    pfrom->nLastBlockTime = GetTime();
+                } else {
+                    LOCK(cs_main);
+                    mapBlockSource.erase(pblock->GetHash());
+                }
+                if (fPoSDuplicate)
+                {
+                    LOCK(cs_main);
+                    int32_t& nPoSTemperature = mapPoSTemperature[pfrom->addr];
+                    nPoSTemperature += 100;
+                }
+            }
+            return true;
+        }
+
         std::shared_ptr<CBlock> pblock = std::make_shared<CBlock>();
         vRecv >> *pblock;
 
@@ -3002,14 +3148,14 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
         bool forceProcessing = false;
         const uint256 hash(pblock->GetHash());
         {
-            LOCK(cs_main);
-            // Also always process if we requested the block explicitly, as we may
-            // need it even though it is not a candidate for a new best tip.
-            forceProcessing |= MarkBlockAsReceived(hash);
-            // mapBlockSource is only used for punishing peers and setting
-            // which peers send us compact blocks, so the race between here and
-            // cs_main in ProcessNewBlock is fine.
-            mapBlockSource.emplace(hash, std::make_pair(pfrom->GetId(), true));
+        LOCK(cs_main);
+        // Also always process if we requested the block explicitly, as we may
+        // need it even though it is not a candidate for a new best tip.
+        forceProcessing |= MarkBlockAsReceived(hash);
+        // mapBlockSource is only used for punishing peers and setting
+        // which peers send us compact blocks, so the race between here and
+        // cs_main in ProcessNewBlock is fine.
+        mapBlockSource.emplace(hash, std::make_pair(pfrom->GetId(), true));
         }
         bool fNewBlock = false;
         ProcessNewBlock(chainparams, pblock, forceProcessing, &fNewBlock);
@@ -3305,12 +3451,8 @@ bool PeerLogicValidation::ProcessMessages(CNode* pfrom, std::atomic<bool>& inter
         ProcessGetData(pfrom, chainparams, connman, m_mempool, interruptMsgProc);
 
     if (!pfrom->orphan_work_set.empty()) {
-        std::list<CTransactionRef> removed_txn;
         LOCK2(cs_main, g_cs_orphans);
-        ProcessOrphanTx(connman, m_mempool, pfrom->orphan_work_set, removed_txn);
-        for (const CTransactionRef& removedTx : removed_txn) {
-            AddToCompactExtraTransactions(removedTx);
-        }
+        ProcessOrphanTx(connman, m_mempool, pfrom->orphan_work_set);
     }
 
     if (pfrom->fDisconnect)
@@ -4097,7 +4239,7 @@ bool PeerLogicValidation::SendMessages(CNode* pto)
             CAmount currentFilter = m_mempool.GetMinFee().GetFeePerK();
             int64_t timeNow = GetTimeMicros();
             if (timeNow > pto->m_tx_relay->nextSendTimeFeeFilter) {
-                static CFeeRate default_feerate(DEFAULT_MIN_RELAY_TX_FEE);
+                static CFeeRate default_feerate(GetMinTxFeeRate());
                 // We always have a fee filter of at least minRelayTxFee
                 CAmount filterToSend = std::max(default_feerate.GetFeePerK(), GetMinRelayTxFeeRate().GetFeePerK());
                 if (filterToSend != pto->m_tx_relay->lastSentFeeFilter) {

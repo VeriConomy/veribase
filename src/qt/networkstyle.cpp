@@ -17,9 +17,8 @@ static const struct {
     const int iconColorHueShift;
     const int iconColorSaturationReduction;
 } network_styles[] = {
-    {"main", QAPP_APP_NAME_DEFAULT, 0, 0},
-    {"test", QAPP_APP_NAME_TESTNET, 70, 30},
-    {"regtest", QAPP_APP_NAME_REGTEST, 160, 30}
+    {"vericoin", QAPP_APP_NAME_DEFAULT, 0, 0},
+    {"verium", QAPP_APP_NAME_TESTNET, 70, 30}
 };
 static const unsigned network_styles_count = sizeof(network_styles)/sizeof(*network_styles);
 
@@ -79,7 +78,12 @@ NetworkStyle::NetworkStyle(const QString &_appName, const int iconColorHueShift,
 
 const NetworkStyle* NetworkStyle::instantiate(const std::string& networkId)
 {
-    std::string titleAddText = networkId == CBaseChainParams::MAIN ? "" : strprintf("[%s]", networkId);
+    std::string titleAddText = " - Vericoin";
+    if (networkId == CBaseChainParams::VERIUM)
+        titleAddText = " - Verium";
+    else if (networkId != CBaseChainParams::VERICOIN)
+        titleAddText = strprintf("[%s]", networkId);
+
     for (unsigned x=0; x<network_styles_count; ++x)
     {
         if (networkId == network_styles[x].networkId)

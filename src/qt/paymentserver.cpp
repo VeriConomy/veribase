@@ -94,16 +94,31 @@ void PaymentServer::ipcParseCommandLine(interfaces::Node& node, int argc, char* 
             SendCoinsRecipient r;
             if (GUIUtil::parseBitcoinURI(arg, &r) && !r.address.isEmpty())
             {
-                auto tempChainParams = CreateChainParams(CBaseChainParams::MAIN);
+#if CLIENT_IS_VERIUM
+                auto tempChainParams = CreateChainParams(CBaseChainParams::VERIUM);
 
                 if (IsValidDestinationString(r.address.toStdString(), *tempChainParams)) {
-                    node.selectParams(CBaseChainParams::MAIN);
+                    // XXX: IF IS VERIUM
+                    node.selectParams(CBaseChainParams::VERIUM);
                 } else {
-                    tempChainParams = CreateChainParams(CBaseChainParams::TESTNET);
+                    tempChainParams = CreateChainParams(CBaseChainParams::VERICOIN);
                     if (IsValidDestinationString(r.address.toStdString(), *tempChainParams)) {
-                        node.selectParams(CBaseChainParams::TESTNET);
+                        node.selectParams(CBaseChainParams::VERICOIN);
                     }
                 }
+#else
+                auto tempChainParams = CreateChainParams(CBaseChainParams::VERICOIN);
+
+                if (IsValidDestinationString(r.address.toStdString(), *tempChainParams)) {
+                    // XXX: IF IS VERIUM
+                    node.selectParams(CBaseChainParams::VERICOIN);
+                } else {
+                    tempChainParams = CreateChainParams(CBaseChainParams::VERIUM);
+                    if (IsValidDestinationString(r.address.toStdString(), *tempChainParams)) {
+                        node.selectParams(CBaseChainParams::VERIUM);
+                    }
+                }
+#endif
             }
         }
     }

@@ -554,10 +554,10 @@ TableViewLastColumnResizingFixer::TableViewLastColumnResizingFixer(QTableView* t
 fs::path static StartupShortcutPath()
 {
     std::string chain = gArgs.GetChainName();
-    if (chain == CBaseChainParams::MAIN)
-        return GetSpecialFolderPath(CSIDL_STARTUP) / "Bitcoin.lnk";
-    if (chain == CBaseChainParams::TESTNET) // Remove this special case when CBaseChainParams::TESTNET = "testnet4"
-        return GetSpecialFolderPath(CSIDL_STARTUP) / "Bitcoin (testnet).lnk";
+    if (chain == CBaseChainParams::VERICOIN)
+        return GetSpecialFolderPath(CSIDL_STARTUP) / "Vericoin.lnk";
+    if (chain == CBaseChainParams::VERIUM)
+        return GetSpecialFolderPath(CSIDL_STARTUP) / "Verium.lnk";
     return GetSpecialFolderPath(CSIDL_STARTUP) / strprintf("Bitcoin (%s).lnk", chain);
 }
 
@@ -637,8 +637,10 @@ fs::path static GetAutostartDir()
 fs::path static GetAutostartFilePath()
 {
     std::string chain = gArgs.GetChainName();
-    if (chain == CBaseChainParams::MAIN)
-        return GetAutostartDir() / "bitcoin.desktop";
+    if (chain == CBaseChainParams::VERICOIN)
+        return GetAutostartDir() / "vericoin.desktop";
+    if (chain == CBaseChainParams::VERIUM)
+        return GetAutostartDir() / "verium.desktop";
     return GetAutostartDir() / strprintf("bitcoin-%s.desktop", chain);
 }
 
@@ -682,8 +684,10 @@ bool SetStartOnSystemStartup(bool fAutoStart)
         // Write a bitcoin.desktop file to the autostart directory:
         optionFile << "[Desktop Entry]\n";
         optionFile << "Type=Application\n";
-        if (chain == CBaseChainParams::MAIN)
-            optionFile << "Name=Bitcoin\n";
+        if (chain == CBaseChainParams::VERICOIN)
+            optionFile << "Name=Vericoin\n";
+        else if (chain == CBaseChainParams::VERIUM)
+            optionFile << "Name=Verium\n";
         else
             optionFile << strprintf("Name=Bitcoin (%s)\n", chain);
         optionFile << "Exec=" << pszExePath << strprintf(" -min -chain=%s\n", chain);

@@ -121,6 +121,13 @@ bool WalletInit::ParameterInteraction() const
     if (gArgs.GetBoolArg("-sysperms", false))
         return InitError("-sysperms is not allowed in combination with enabled wallet functionality");
 
+    if (gArgs.IsArgSet("-reservebalance"))
+    {
+        CAmount nReserveBalance = 0;
+        if (!ParseMoney(gArgs.GetArg("-reservebalance", ""), nReserveBalance))
+            return InitError(strprintf("Invalid amount for -reservebalance=<amount>: '%s'", gArgs.GetArg("-reservebalance", "")));
+    }
+
     return true;
 }
 

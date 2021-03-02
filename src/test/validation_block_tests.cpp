@@ -266,7 +266,7 @@ BOOST_AUTO_TEST_CASE(mempool_locks_reorg)
         }
 
         // Mature the inputs of the txs
-        for (int j = COINBASE_MATURITY; j > 0; --j) {
+        for (int j = 500; j > 0; --j) {
             last_mined = GoodBlock(last_mined->GetHash());
             BOOST_REQUIRE(ProcessBlock(last_mined));
         }
@@ -277,7 +277,7 @@ BOOST_AUTO_TEST_CASE(mempool_locks_reorg)
         std::vector<std::shared_ptr<const CBlock>> reorg;
         last_mined = GoodBlock(split_hash);
         reorg.push_back(last_mined);
-        for (size_t j = COINBASE_MATURITY + txs.size() + 1; j > 0; --j) {
+        for (size_t j = 500 + txs.size() + 1; j > 0; --j) {
             last_mined = GoodBlock(last_mined->GetHash());
             reorg.push_back(last_mined);
         }
@@ -286,15 +286,12 @@ BOOST_AUTO_TEST_CASE(mempool_locks_reorg)
         {
             LOCK(cs_main);
             TxValidationState state;
-            std::list<CTransactionRef> plTxnReplaced;
             for (const auto& tx : txs) {
                 BOOST_REQUIRE(AcceptToMemoryPool(
                     *m_node.mempool,
                     state,
                     tx,
-                    &plTxnReplaced,
-                    /* bypass_limits */ false,
-                    /* nAbsurdFee */ 0));
+                    /* bypass_limits */ false));
             }
         }
 

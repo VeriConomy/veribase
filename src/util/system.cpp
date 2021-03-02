@@ -72,7 +72,7 @@
 // Application startup time (used for uptime calculation)
 const int64_t nStartupTime = GetTime();
 
-const char * const BITCOIN_CONF_FILENAME = "bitcoin.conf";
+const char * const BITCOIN_CONF_FILENAME = "vericonomy.conf";
 
 ArgsManager gArgs;
 
@@ -242,7 +242,12 @@ const std::set<std::string> ArgsManager::GetUnsuitableSectionOnlyArgs() const
     if (m_network.empty()) return std::set<std::string> {};
 
     // if it's okay to use the default section for this network, don't worry
-    if (m_network == CBaseChainParams::MAIN) return std::set<std::string> {};
+    // XXX: Disable default section
+    //#if CLIENT_IS_VERIUM
+    //    if (m_network == CBaseChainParams::VERIUM) return std::set<std::string> {};
+    //#else
+    //    if (m_network == CBaseChainParams::VERICOIN) return std::set<std::string> {};
+    //#endif
 
     for (const auto& arg : m_network_only_args) {
         if (OnlyHasDefaultSectionSetting(m_settings, m_network, SettingName(arg))) {
@@ -256,9 +261,8 @@ const std::list<SectionInfo> ArgsManager::GetUnrecognizedSections() const
 {
     // Section names to be recognized in the config file.
     static const std::set<std::string> available_sections{
-        CBaseChainParams::REGTEST,
-        CBaseChainParams::TESTNET,
-        CBaseChainParams::MAIN
+        CBaseChainParams::VERIUM,
+        CBaseChainParams::VERICOIN
     };
 
     LOCK(cs_args);
@@ -556,12 +560,12 @@ void PrintExceptionContinue(const std::exception* pex, const char* pszThread)
 
 fs::path GetDefaultDataDir()
 {
-    // Windows: C:\Users\Username\AppData\Roaming\Bitcoin
-    // macOS: ~/Library/Application Support/Bitcoin
-    // Unix-like: ~/.bitcoin
+    // Windows: C:\Users\Username\AppData\Roaming\Vericonomy
+    // macOS: ~/Library/Application Support/Vericonomy
+    // Unix-like: ~/.vericonomy
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / "Bitcoin";
+    return GetSpecialFolderPath(CSIDL_APPDATA) / "Vericonomy";
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -571,10 +575,10 @@ fs::path GetDefaultDataDir()
         pathRet = fs::path(pszHome);
 #ifdef MAC_OSX
     // macOS
-    return pathRet / "Library/Application Support/Bitcoin";
+    return pathRet / "Library/Application Support/Vericonomy";
 #else
     // Unix-like
-    return pathRet / ".bitcoin";
+    return pathRet / ".vericonomy";
 #endif
 #endif
 }
@@ -845,23 +849,29 @@ std::string ArgsManager::GetChainName() const
         return value.isNull() ? false : value.isBool() ? value.get_bool() : InterpretBool(value.get_str());
     };
 
-    const bool fRegTest = get_net("-regtest");
-    const bool fTestNet = get_net("-testnet");
+    const bool fVericoin = get_net("-vericoin");
+    const bool fVerium = get_net("-verium");
     const bool is_chain_arg_set = IsArgSet("-chain");
 
-    if ((int)is_chain_arg_set + (int)fRegTest + (int)fTestNet > 1) {
-        throw std::runtime_error("Invalid combination of -regtest, -testnet and -chain. Can use at most one.");
+    if ((int)is_chain_arg_set + (int)fVericoin + (int)fVerium > 1) {
+        throw std::runtime_error("Invalid combination of -vericoin, -verium and -chain. Can use at most one.");
     }
-    if (fRegTest)
-        return CBaseChainParams::REGTEST;
-    if (fTestNet)
-        return CBaseChainParams::TESTNET;
-    return GetArg("-chain", CBaseChainParams::MAIN);
+    if (fVericoin)
+        return CBaseChainParams::VERICOIN;
+    if (fVerium)
+        return CBaseChainParams::VERIUM;
+#if CLIENT_IS_VERIUM
+    return GetArg("-chain", CBaseChainParams::VERIUM);
+#else
+    return GetArg("-chain", CBaseChainParams::VERICOIN);
+#endif
 }
 
 bool ArgsManager::UseDefaultSection(const std::string& arg) const
 {
-    return m_network == CBaseChainParams::MAIN || m_network_only_args.count(arg) == 0;
+    //return m_network == CBaseChainParams::MAIN || m_network_only_args.count(arg) == 0;
+    // XXX: Enforce usage of section for safety. Is it righ ???
+    return false;
 }
 
 util::SettingsValue ArgsManager::GetSetting(const std::string& arg) const
