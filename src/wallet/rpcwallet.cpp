@@ -6,15 +6,16 @@
 #include <amount.h>
 #include <core_io.h>
 #include <interfaces/chain.h>
+#include <interfaces/wallet.h>
 #include <key_io.h>
 #include <node/context.h>
 #include <outputtype.h>
-#include <policy/feerate.h>
 #include <rpc/rawtransaction_util.h>
 #include <rpc/server.h>
 #include <rpc/util.h>
 #include <script/descriptor.h>
 #include <script/sign.h>
+#include <timedata.h>
 #include <util/bip32.h>
 #include <util/message.h> // For MessageSign()
 #include <util/moneystr.h>
@@ -112,6 +113,8 @@ void EnsureWalletIsUnlocked(const CWallet* pwallet)
     if (pwallet->IsLocked()) {
         throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Error: Please enter the wallet passphrase with walletpassphrase first.");
     }
+    if (fWalletUnlockMintOnly)
+        throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Error: Wallet unlocked for block minting only.");
 }
 
 // also_create should only be set to true only when the RPC is expected to add things to a blank wallet and make it no longer blank
@@ -317,7 +320,10 @@ static CTransactionRef SendMoney(interfaces::Chain::Lock& locked_chain, CWallet 
     if (nValue > curBalance)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Insufficient funds");
 
-    // Parse Bitcoin address
+    if (fWalletUnlockMintOnly)
+        throw JSONRPCError(RPC_WALLET_ERROR, "Error: Wallet unlocked for block minting only, unable to create transaction.");
+
+    // Parse Peercoin address
     CScript scriptPubKey = GetScriptForDestination(address);
 
     // Create and send the transaction
@@ -346,7 +352,7 @@ static UniValue sendtoaddress(const JSONRPCRequest& request)
         return NullUniValue;
     }
 
-            RPCHelpMan{"sendtoaddress",
+           RPCHelpMan{"sendtoaddress",
                 "\nSend an amount to a given address." +
         HELP_REQUIRING_PASSPHRASE,
                 {
@@ -1222,6 +1228,16 @@ static void MaybePushAddress(UniValue & entry, const CTxDestination &dest)
     }
 }
 
+static void PushCoinStakeCategory(UniValue & entry, const CWalletTx &wtx)
+{
+    if (wtx.GetDepthInMainChain() < 1)
+        entry.pushKV("category", "stake-orphan");
+    else if (wtx.GetBlocksToMaturity() > 0)
+        entry.pushKV("category", "stake");
+    else
+        entry.pushKV("category", "stake-mint");
+}
+
 /**
  * List transactions based on the given criteria.
  *
@@ -1253,7 +1269,10 @@ static void ListTransactions(interfaces::Chain::Lock& locked_chain, const CWalle
                 entry.pushKV("involvesWatchonly", true);
             }
             MaybePushAddress(entry, s.destination);
-            entry.pushKV("category", "send");
+            if (wtx.IsCoinStake())
+                PushCoinStakeCategory(entry, wtx);
+            else
+                entry.pushKV("category", "send");
             entry.pushKV("amount", ValueFromAmount(-s.amount));
             const auto* address_book_entry = pwallet->FindAddressBookEntry(s.destination);
             if (address_book_entry) {
@@ -1293,6 +1312,10 @@ static void ListTransactions(interfaces::Chain::Lock& locked_chain, const CWalle
                     entry.pushKV("category", "immature");
                 else
                     entry.pushKV("category", "generate");
+            }
+            else if (wtx.IsCoinStake())
+            {
+                PushCoinStakeCategory(entry, wtx);
             }
             else
             {
@@ -1846,15 +1869,16 @@ static UniValue walletpassphrase(const JSONRPCRequest& request)
                 {
                     {"passphrase", RPCArg::Type::STR, RPCArg::Optional::NO, "The wallet passphrase"},
                     {"timeout", RPCArg::Type::NUM, RPCArg::Optional::NO, "The time to keep the decryption key in seconds; capped at 100000000 (~3 years)."},
+                    {"mintonly", RPCArg::Type::BOOL, RPCArg::Optional::OMITTED, "Unlock for staking only"},
                 },
                 RPCResult{RPCResult::Type::NONE, "", ""},
                 RPCExamples{
             "\nUnlock the wallet for 60 seconds\n"
-            + HelpExampleCli("walletpassphrase", "\"my pass phrase\" 60") +
+            + HelpExampleCli("walletpassphrase", "\"my pass phrase\", 60, false") +
             "\nLock the wallet again (before 60 seconds)\n"
             + HelpExampleCli("walletlock", "") +
             "\nAs a JSON-RPC call\n"
-            + HelpExampleRpc("walletpassphrase", "\"my pass phrase\", 60")
+            + HelpExampleRpc("walletpassphrase", "\"my pass phrase\", 60, false")
                 },
             }.Check(request);
 
@@ -1921,6 +1945,12 @@ static UniValue walletpassphrase(const JSONRPCRequest& request)
             shared_wallet->nRelockTime = 0;
         }
     }, nSleepTime);
+
+    // ppcoin: if user OS account compromised prevent trivial sendmoney commands
+    if (request.params.size() > 2)
+        fWalletUnlockMintOnly = request.params[2].get_bool();
+    else
+        fWalletUnlockMintOnly = false;
 
     return NullUniValue;
 }
@@ -2393,6 +2423,7 @@ static UniValue getwalletinfo(const JSONRPCRequest& request)
                         {RPCResult::Type::NUM, "keypoolsize", "how many new keys are pre-generated (only counts external keys)"},
                         {RPCResult::Type::NUM, "keypoolsize_hd_internal", "how many new keys are pre-generated for internal use (used for change outputs, only appears if the wallet is using this feature, otherwise external keys are used)"},
                         {RPCResult::Type::NUM_TIME, "unlocked_until", "the " + UNIX_EPOCH_TIME + " until which the wallet is unlocked for transfers, or 0 if the wallet is locked"},
+                        {RPCResult::Type::BOOL, "unlocked_minting_only", "true if the wallet is only unlocked for staking"},
                         {RPCResult::Type::STR_AMOUNT, "paytxfee", "the transaction fee configuration, set in " + CURRENCY_UNIT + "/kB"},
                         {RPCResult::Type::STR_HEX, "hdseedid", /* optional */ true, "the Hash160 of the HD seed (only present when HD is enabled)"},
                         {RPCResult::Type::BOOL, "private_keys_enabled", "false if privatekeys are disabled for this wallet (enforced watch-only wallet)"},
@@ -2443,8 +2474,8 @@ static UniValue getwalletinfo(const JSONRPCRequest& request)
     }
     if (pwallet->IsCrypted()) {
         obj.pushKV("unlocked_until", pwallet->nRelockTime);
+        obj.pushKV("unlocked_minting_only", fWalletUnlockMintOnly);
     }
-    obj.pushKV("paytxfee", ValueFromAmount(pwallet->m_pay_tx_fee.GetFeePerK()));
     obj.pushKV("private_keys_enabled", !pwallet->IsWalletFlagSet(WALLET_FLAG_DISABLE_PRIVATE_KEYS));
     obj.pushKV("avoid_reuse", pwallet->IsWalletFlagSet(WALLET_FLAG_AVOID_REUSE));
     if (pwallet->IsScanning()) {
@@ -3339,6 +3370,139 @@ UniValue rescanblockchain(const JSONRPCRequest& request)
     return response;
 }
 
+// XXX: Use RPC Help
+// UniValue listminting(const JSONRPCRequest& request)
+// {
+//     std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+//     const CWallet* const pwallet = wallet.get();
+
+//     if (!EnsureWalletIsAvailable(pwallet, request.fHelp)) {
+//         return NullUniValue;
+//     }
+
+//     if(request.fHelp || request.params.size() > 2)
+//         throw std::runtime_error(
+//                 "listminting [count=-1] [from=0]\n"
+//                 "Return all mintable outputs and provide details for each of them.");
+
+//     int64_t count = -1;
+//     if(request.params.size() > 0)
+//         count = request.params[0].get_int();
+
+// //    int64_t from = 0;
+// //    if(request.params.size() > 1)
+// //        from = request.params[1].get_int();
+
+//     UniValue ret(UniValue::VARR);
+// //    LOCK(pwallet->cs_wallet);
+//     const CBlockIndex *p = GetLastBlockIndex(::ChainActive().Tip(), true);
+//     double difficulty = p->GetBlockDifficulty();
+//     int64_t nStakeMinAge = Params().GetConsensus().nStakeMinAge;
+//     const CWallet::TxItems & txOrdered = pwallet->wtxOrdered;
+
+//     std::unique_ptr<interfaces::Wallet> iwallet = interfaces::MakeWallet(wallet);
+//     const auto& vwtx = iwallet->getWalletTxs();
+//     for(const auto& wtx : vwtx) {
+//         std::vector<KernelRecord> txList = KernelRecord::decomposeOutput(*iwallet, wtx);
+// /*
+//     for (CWallet::TxItems::const_iterator it = txOrdered.begin(); it != txOrdered.end(); ++it)
+//     {
+//         std::vector<KernelRecord> txList = KernelRecord::decomposeOutput(pwallet, MakeWalletTx(pwallet, *it->second));
+// */
+//         int64_t minAge = nStakeMinAge / 60 / 60 / 24;
+//         for (auto& kr : txList) {
+//             if(!kr.spent) {
+
+//                 if(count > 0 && (int32_t)ret.size() >= count) {
+//                     break;
+//                 }
+
+//                 std::string strTime = boost::lexical_cast<std::string>(kr.nTime);
+//                 std::string strAmount = boost::lexical_cast<std::string>(kr.nValue);
+//                 std::string strAge = boost::lexical_cast<std::string>(kr.getAge());
+//                 std::string strCoinAge = boost::lexical_cast<std::string>(kr.getCoinAge());
+
+// //                JSONRPCRequest request2;
+// //                request2.params = UniValue(UniValue::VARR);
+// //                request2.params.push_back(kr.address);
+// //                std::string account = AccountFromValue(getaccount(request2));
+
+//                 std::string status = "immature";
+//                 int searchInterval = 0;
+//                 int attemps = 0;
+//                 if(kr.getAge() >=  minAge)
+//                 {
+//                     status = "mature";
+//                     searchInterval = (int)nLastCoinStakeSearchInterval;
+//                     attemps = GetAdjustedTime() - kr.nTime - nStakeMinAge;
+//                 }
+
+//                 UniValue obj(UniValue::VOBJ);
+// //                obj.push_back(Pair("account",                   account));
+//                 obj.pushKV("address",                   kr.address);
+//                 obj.pushKV("input-txid",                kr.hash.ToString());
+//                 obj.pushKV("time",                      strTime);
+//                 obj.pushKV("amount",                    strAmount);
+//                 obj.pushKV("status",                    status);
+//                 obj.pushKV("age-in-day",                strAge);
+//                 obj.pushKV("coin-day-weight",           strCoinAge);
+//                 obj.pushKV("proof-of-stake-difficulty", difficulty);
+//                 obj.pushKV("minting-probability-10min", kr.getProbToMintWithinNMinutes(difficulty, 10));
+//                 obj.pushKV("minting-probability-24h",   kr.getProbToMintWithinNMinutes(difficulty, 60*24));
+//                 obj.pushKV("minting-probability-30d",   kr.getProbToMintWithinNMinutes(difficulty, 60*24*30));
+//                 obj.pushKV("minting-probability-90d",   kr.getProbToMintWithinNMinutes(difficulty, 60*24*90));
+//                 obj.pushKV("search-interval-in-sec",    searchInterval);
+//                 obj.pushKV("attempts",                  attemps);
+//                 ret.push_back(obj);
+//             }
+//         }
+//     }
+
+//     return ret;
+// }
+
+// XXX: Use RPC HELP
+// ppcoin: reserve balance from being staked for network protection
+UniValue reservebalance(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() > 2)
+        throw std::runtime_error(
+            "reservebalance [<reserve> [amount]]\n"
+            "<reserve> is true or false to turn balance reserve on or off.\n"
+            "<amount> is a real and rounded to cent.\n"
+            "Set reserve amount not participating in network protection.\n"
+            "If no parameters provided current setting is printed.\n");
+
+    if (request.params.size() > 0)
+    {
+        bool fReserve = request.params[0].get_bool();
+        if (fReserve)
+        {
+            if (request.params.size() == 1)
+                throw std::runtime_error("must provide amount to reserve balance.\n");
+            int64_t nAmount = AmountFromValue(request.params[1]);
+            nAmount = (nAmount / CENT) * CENT;  // round to cent
+            if (nAmount < 0)
+                throw std::runtime_error("amount cannot be negative.\n");
+            gArgs.ForceSetArg("-reservebalance", FormatMoney(nAmount));
+        }
+        else
+        {
+            if (request.params.size() > 1)
+                throw std::runtime_error("cannot specify amount to turn off reserve.\n");
+            gArgs.ForceSetArg("-reservebalance", "0");
+        }
+    }
+
+    UniValue result(UniValue::VOBJ);
+    CAmount nReserveBalance = 0;
+    if (gArgs.IsArgSet("-reservebalance") && !ParseMoney(gArgs.GetArg("-reservebalance", ""), nReserveBalance))
+        throw std::runtime_error("invalid reserve balance amount\n");
+    result.pushKV("reserve", (nReserveBalance > 0));
+    result.pushKV("amount", ValueFromAmount(nReserveBalance));
+    return result;
+}
+
 class DescribeWalletAddressVisitor : public boost::static_visitor<UniValue>
 {
 public:
@@ -3608,25 +3772,25 @@ static UniValue getaddressesbylabel(const JSONRPCRequest& request)
         return NullUniValue;
     }
 
-            RPCHelpMan{"getaddressesbylabel",
-                "\nReturns the list of addresses assigned the specified label.\n",
+    RPCHelpMan{"getaddressesbylabel",
+        "\nReturns the list of addresses assigned the specified label.\n",
+        {
+            {"label", RPCArg::Type::STR, RPCArg::Optional::NO, "The label."},
+        },
+        RPCResult{
+            RPCResult::Type::OBJ_DYN, "", "json object with addresses as keys",
+            {
+                {RPCResult::Type::OBJ, "address", "json object with information about address",
                 {
-                    {"label", RPCArg::Type::STR, RPCArg::Optional::NO, "The label."},
-                },
-                RPCResult{
-                    RPCResult::Type::OBJ_DYN, "", "json object with addresses as keys",
-                    {
-                        {RPCResult::Type::OBJ, "address", "json object with information about address",
-                        {
-                            {RPCResult::Type::STR, "purpose", "Purpose of address (\"send\" for sending address, \"receive\" for receiving address)"},
-                        }},
-                    }
-                },
-                RPCExamples{
-                    HelpExampleCli("getaddressesbylabel", "\"tabby\"")
-            + HelpExampleRpc("getaddressesbylabel", "\"tabby\"")
-                },
-            }.Check(request);
+                    {RPCResult::Type::STR, "purpose", "Purpose of address (\"send\" for sending address, \"receive\" for receiving address)"},
+                }},
+            }
+        },
+        RPCExamples{
+            HelpExampleCli("getaddressesbylabel", "\"tabby\"")
+    + HelpExampleRpc("getaddressesbylabel", "\"tabby\"")
+        },
+    }.Check(request);
 
     LOCK(pwallet->cs_wallet);
 
@@ -4040,6 +4204,10 @@ static const CRPCCommand commands[] =
     { "wallet",             "walletpassphrase",                 &walletpassphrase,              {"passphrase","timeout"} },
     { "wallet",             "walletpassphrasechange",           &walletpassphrasechange,        {"oldpassphrase","newpassphrase"} },
     { "wallet",             "walletprocesspsbt",                &walletprocesspsbt,             {"psbt","sign","sighashtype","bip32derivs"} },
+
+    // peercoin commands
+//    { "wallet",             "listminting",                      &listminting,                   {"count", "from"} },
+    { "wallet",             "reservebalance",                   &reservebalance,                {"reserve", "amount"} },
 };
 // clang-format on
 

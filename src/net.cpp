@@ -90,6 +90,9 @@ std::map<CNetAddr, LocalServiceInfo> mapLocalHost GUARDED_BY(cs_mapLocalHost);
 static bool vfLimited[NET_MAX] GUARDED_BY(cs_mapLocalHost) = {};
 std::string strSubVersion;
 
+// ppcoin: temperature to measure how many PoS headers have been sent by this client
+std::map<CNetAddr, int32_t> mapPoSTemperature;
+
 void CConnman::AddOneShot(const std::string& strDest)
 {
     LOCK(cs_vOneShots);
@@ -2713,6 +2716,7 @@ CNode::CNode(NodeId idIn, ServiceFlags nLocalServicesIn, int nMyStartingHeightIn
     hSocket = hSocketIn;
     addrName = addrNameIn == "" ? addr.ToStringIPPort() : addrNameIn;
     hashContinue = uint256();
+    lastAcceptedHeader = uint256();
     if (!block_relay_only) {
         m_tx_relay = MakeUnique<TxRelay>();
     }

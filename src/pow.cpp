@@ -5,72 +5,55 @@
 
 #include <pow.h>
 
+#include <version.h>
 #include <arith_uint256.h>
 #include <chain.h>
 #include <primitives/block.h>
 #include <uint256.h>
+#include <math.h>
+#include <bignum.h>
+#include <util/system.h>
+#include <timedata.h>
+#include <validation.h>
 
-unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
+#include <inttypes.h>
+
+double GetDifficulty(const CBlockIndex* blockindex = nullptr);
+
+// Get next required mining work
+unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const Consensus::Params& params)
 {
-    assert(pindexLast != nullptr);
-    unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
+    if (pindexLast->nHeight <= 2)
+        return UintToArith256(params.powLimit).GetCompact(); // first few blocks
 
-    // Only change once per difficulty adjustment interval
-    if ((pindexLast->nHeight+1) % params.DifficultyAdjustmentInterval() != 0)
-    {
-        if (params.fPowAllowMinDifficultyBlocks)
-        {
-            // Special difficulty rule for testnet:
-            // If the new block's timestamp is more than 2* 10 minutes
-            // then allow mining of a min-difficulty block.
-            if (pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nPowTargetSpacing*2)
-                return nProofOfWorkLimit;
-            else
-            {
-                // Return the last non-special-min-difficulty-rules-block
-                const CBlockIndex* pindex = pindexLast;
-                while (pindex->pprev && pindex->nHeight % params.DifficultyAdjustmentInterval() != 0 && pindex->nBits == nProofOfWorkLimit)
-                    pindex = pindex->pprev;
-                return pindex->nBits;
-            }
-        }
-        return pindexLast->nBits;
-    }
+    const CBlockIndex* pindexPrev = pindexLast->pprev;
+    const CBlockIndex* pindexPrevPrev = pindexPrev->pprev;
+    unsigned int nTargetSpacing = CalculateBlocktime(pindexPrev);
+    int64_t nActualSpacing = pindexPrev->GetBlockTime() - pindexPrevPrev->GetBlockTime();
+    int64_t targetTimespan;
 
-    // Go back by what we want to be 14 days worth of blocks
-    int nHeightFirst = pindexLast->nHeight - (params.DifficultyAdjustmentInterval()-1);
-    assert(nHeightFirst >= 0);
-    const CBlockIndex* pindexFirst = pindexLast->GetAncestor(nHeightFirst);
-    assert(pindexFirst);
+    // Two hour target timespan on launch needed to prevent accelerated blocktime while difficulty first equilibrates
+    if (pindexLast->nHeight+1 <= 2394)
+        targetTimespan = 2 * 60 * 60;
+    // 48 hour normal target timespan with more stable difficulty equilibrium
+    else
+        targetTimespan = params.nPowTargetTimespan;
 
-    return CalculateNextWorkRequired(pindexLast, pindexFirst->GetBlockTime(), params);
-}
+    // ppcoin: retarget with exponential moving toward target spacing (variable in Verium)
+    CBigNum bnNew;
+    bnNew.SetCompact(pindexPrev->nBits);
+    int64_t nInterval = targetTimespan / nTargetSpacing;
+    bnNew *= ((nInterval - 1) * nTargetSpacing + nActualSpacing + nActualSpacing);
+    bnNew /= ((nInterval + 1) * nTargetSpacing);
 
-unsigned int CalculateNextWorkRequired(const CBlockIndex* pindexLast, int64_t nFirstBlockTime, const Consensus::Params& params)
-{
-    if (params.fPowNoRetargeting)
-        return pindexLast->nBits;
-
-    // Limit adjustment step
-    int64_t nActualTimespan = pindexLast->GetBlockTime() - nFirstBlockTime;
-    if (nActualTimespan < params.nPowTargetTimespan/4)
-        nActualTimespan = params.nPowTargetTimespan/4;
-    if (nActualTimespan > params.nPowTargetTimespan*4)
-        nActualTimespan = params.nPowTargetTimespan*4;
-
-    // Retarget
-    const arith_uint256 bnPowLimit = UintToArith256(params.powLimit);
-    arith_uint256 bnNew;
-    bnNew.SetCompact(pindexLast->nBits);
-    bnNew *= nActualTimespan;
-    bnNew /= params.nPowTargetTimespan;
-
-    if (bnNew > bnPowLimit)
-        bnNew = bnPowLimit;
+    if (bnNew > CBigNum(params.powLimit))
+        bnNew = CBigNum(params.powLimit);
 
     return bnNew.GetCompact();
 }
 
+
+// Check whether a block hash satisfies the proof-of-work requirement specified by nBits
 bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
     bool fNegative;
@@ -88,4 +71,61 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params&
         return false;
 
     return true;
+}
+
+// Get reward amount for a solved work
+int64_t GetProofOfWorkReward(int64_t nFees,const CBlockIndex* pindex)
+{
+    int64_t nReward;
+
+    unsigned int nBlockTime = CalculateBlocktime(pindex);
+
+    int height = pindex->nHeight+1;
+    if (height == 1)
+    {
+        nReward = 564705 * COIN; // Verium purchased in presale ICO
+    }
+    else if ((pindex->nMoneySupply/COIN) > 2899999)
+    {
+        double dReward = 0.04*exp(0.0116*nBlockTime); // Reward schedule after 10x VRC supply parity
+        nReward = dReward * COIN;
+    }
+    else
+    {
+        double dReward = 0.25*exp(0.0116*nBlockTime); // Reward schedule up to 10x VRC supply parity
+        nReward = dReward * COIN;
+    }
+
+    return nReward + nFees;
+}
+
+// Get block time
+unsigned int CalculateBlocktime(const CBlockIndex* pindex)
+{
+    unsigned int nBlockTime;
+    double diff = GetDifficulty(pindex);
+    double dBlockTime = -13.03*log(diff)+180;
+    if (dBlockTime < 15)
+    {
+        nBlockTime = 15;
+    }
+    else
+    {
+        nBlockTime = dBlockTime;
+    }
+    return nBlockTime;
+}
+
+// Get the block rate for one hour
+int GetBlockRatePerHour()
+{
+    int nRate = 0;
+    CBlockIndex* pindex = ::ChainActive().Tip();
+    int64_t nTargetTime = GetAdjustedTime() - 3600;
+
+    while (pindex && pindex->pprev && pindex->nTime > nTargetTime) {
+        nRate += 1;
+        pindex = pindex->pprev;
+    }
+    return nRate;
 }

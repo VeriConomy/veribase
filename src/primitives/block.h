@@ -32,6 +32,7 @@ public:
     int32_t nFlags;
 
     static const int32_t CURRENT_VERSION=7;
+    static const int32_t NORMAL_SERIALIZE_SIZE=80;
 
     CBlockHeader()
     {
@@ -71,6 +72,7 @@ public:
     }
 
     uint256 GetHash() const;
+    uint256 GetVeriumHash() const;
     uint256 GetWorkHash() const;
 
     int64_t GetBlockTime() const

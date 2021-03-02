@@ -30,6 +30,8 @@ CAmount GetMinimumFee(const CWallet& wallet, unsigned int nTxBytes, const CCoinC
  */
 CFeeRate GetRequiredFeeRate(const CWallet& wallet);
 
+CFeeRate GetPayTxFee(const CWallet& wallet);
+
 /**
  * Estimate the minimum fee rate considering user set parameters
  * and the required fee

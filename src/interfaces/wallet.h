@@ -228,6 +228,9 @@ public:
     // Return whether the wallet is blank.
     virtual bool canGetAddresses() = 0;
 
+    // check if a certain wallet flag is set.
+    virtual bool IsWalletFlagSet(uint64_t flag) = 0;
+
     // Return whether private keys enabled.
     virtual bool privateKeysDisabled() = 0;
 
@@ -274,6 +277,10 @@ public:
     //! Register handler for keypool changed messages.
     using CanGetAddressesChangedFn = std::function<void()>;
     virtual std::unique_ptr<Handler> handleCanGetAddressesChanged(CanGetAddressesChangedFn fn) = 0;
+
+    // peercoin
+    virtual void relockWalletAfterDuration(int nDuration) = 0;
+    virtual std::shared_ptr<CWallet> getWallet() = 0;
 };
 
 //! Information about one wallet address.
@@ -294,6 +301,7 @@ struct WalletAddress
 struct WalletBalances
 {
     CAmount balance = 0;
+    CAmount stake = 0;
     CAmount unconfirmed_balance = 0;
     CAmount immature_balance = 0;
     bool have_watch_only = false;
@@ -303,7 +311,7 @@ struct WalletBalances
 
     bool balanceChanged(const WalletBalances& prev) const
     {
-        return balance != prev.balance || unconfirmed_balance != prev.unconfirmed_balance ||
+        return balance != prev.balance || stake != prev.stake || unconfirmed_balance != prev.unconfirmed_balance ||
                immature_balance != prev.immature_balance || watch_only_balance != prev.watch_only_balance ||
                unconfirmed_watch_only_balance != prev.unconfirmed_watch_only_balance ||
                immature_watch_only_balance != prev.immature_watch_only_balance;
@@ -324,6 +332,7 @@ struct WalletTx
     int64_t time;
     std::map<std::string, std::string> value_map;
     bool is_coinbase;
+    bool is_coinstake;
 };
 
 //! Updated transaction status.
@@ -338,6 +347,7 @@ struct WalletTxStatus
     bool is_trusted;
     bool is_abandoned;
     bool is_coinbase;
+    bool is_coinstake;
     bool is_in_main_chain;
 };
 

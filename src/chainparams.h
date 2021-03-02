@@ -62,6 +62,8 @@ public:
     int GetDefaultPort() const { return nDefaultPort; }
 
     const CBlock& GenesisBlock() const { return genesis; }
+    /** Make miner wait to have peers to avoid wasting work */
+    bool MiningRequiresPeers() const { return fMiningRequiresPeers; }
     /** Default value for -checkmempool and -checkblockindex argument */
     bool DefaultConsistencyChecks() const { return fDefaultConsistencyChecks; }
     /** Policy: Filter transactions that do not match well-defined patterns */
@@ -76,6 +78,8 @@ public:
     uint64_t AssumedChainStateSize() const { return m_assumed_chain_state_size; }
     /** Whether it is possible to mine blocks on demand (no retargeting) */
     bool MineBlocksOnDemand() const { return consensus.fPowNoRetargeting; }
+    /** Is Vericoin **/
+    bool IsVericoin() const { return fIsVericoin; }
     /** Return the network string */
     std::string NetworkIDString() const { return strNetworkID; }
     /** Return the list of hostnames to look up for DNS seeds */
@@ -103,6 +107,8 @@ protected:
     bool fRequireStandard;
     bool m_is_test_chain;
     bool m_is_mockable_chain;
+    bool fMiningRequiresPeers;
+    bool fIsVericoin;
     CCheckpointData checkpointData;
     ChainTxData chainTxData;
 };

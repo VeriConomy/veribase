@@ -17,9 +17,8 @@ class CBaseChainParams
 public:
     ///@{
     /** Chain name strings */
-    static const std::string MAIN;
-    static const std::string TESTNET;
-    static const std::string REGTEST;
+    static const std::string VERICOIN;
+    static const std::string VERIUM;
     ///@}
 
     const std::string& DataDir() const { return strDataDir; }

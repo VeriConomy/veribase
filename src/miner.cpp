@@ -13,34 +13,38 @@
 #include <consensus/merkle.h>
 #include <consensus/tx_verify.h>
 #include <consensus/validation.h>
+#include <crypto/scrypt.h>
+#include <net.h>
 #include <policy/feerate.h>
 #include <policy/policy.h>
 #include <pow.h>
 #include <primitives/transaction.h>
+#include <shutdown.h>
 #include <timedata.h>
 #include <util/moneystr.h>
 #include <util/system.h>
+#include <wallet/wallet.h>
+#include <util/threadnames.h>
 
 #include <algorithm>
 #include <utility>
+#include <thread>
+#include <boost/thread/thread.hpp>
+
+#include "openssl/sha.h"
 
 int64_t UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev)
 {
     int64_t nOldTime = pblock->nTime;
-    int64_t nNewTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
+    int64_t nNewTime = std::max(pblock->GetBlockTime(), GetAdjustedTime());
 
     if (nOldTime < nNewTime)
         pblock->nTime = nNewTime;
-
-    // Updating time can change work required on testnet:
-    if (consensusParams.fPowAllowMinDifficultyBlocks)
-        pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, consensusParams);
 
     return nNewTime - nOldTime;
 }
 
 BlockAssembler::Options::Options() {
-    blockMinFeeRate = CFeeRate(DEFAULT_BLOCK_MIN_TX_FEE);
     nBlockMaxWeight = DEFAULT_BLOCK_MAX_WEIGHT;
 }
 
@@ -48,7 +52,6 @@ BlockAssembler::BlockAssembler(const CTxMemPool& mempool, const CChainParams& pa
     : chainparams(params),
       m_mempool(mempool)
 {
-    blockMinFeeRate = options.blockMinFeeRate;
     // Limit weight to between 4K and MAX_BLOCK_WEIGHT-4K for sanity:
     nBlockMaxWeight = std::max<size_t>(4000, std::min<size_t>(MAX_BLOCK_WEIGHT - 4000, options.nBlockMaxWeight));
 }
@@ -59,12 +62,6 @@ static BlockAssembler::Options DefaultOptions()
     // If -blockmaxweight is not given, limit to DEFAULT_BLOCK_MAX_WEIGHT
     BlockAssembler::Options options;
     options.nBlockMaxWeight = gArgs.GetArg("-blockmaxweight", DEFAULT_BLOCK_MAX_WEIGHT);
-    CAmount n = 0;
-    if (gArgs.IsArgSet("-blockmintxfee") && ParseMoney(gArgs.GetArg("-blockmintxfee", ""), n)) {
-        options.blockMinFeeRate = CFeeRate(n);
-    } else {
-        options.blockMinFeeRate = CFeeRate(DEFAULT_BLOCK_MIN_TX_FEE);
-    }
     return options;
 }
 
@@ -111,7 +108,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     nHeight = pindexPrev->nHeight + 1;
 
     // XXX: Block Version !!!
-    pblock->nVersion = 7;
+    pblock->nVersion = 6;
     // -regtest only: allow overriding block.nVersion with
     // -blockversion=N to test forking scenarios
     if (chainparams.MineBlocksOnDemand())
@@ -150,10 +147,9 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     coinbaseTx.vin[0].prevout.SetNull();
     coinbaseTx.vout.resize(1);
     coinbaseTx.vout[0].scriptPubKey = scriptPubKeyIn;
-    coinbaseTx.vout[0].nValue = nFees + GetBlockSubsidy(nHeight, chainparams.GetConsensus());
+    coinbaseTx.vout[0].nValue = nFees + GetProofOfWorkReward(nFees, pindexPrev);
     coinbaseTx.vin[0].scriptSig = CScript() << nHeight << OP_0;
     pblock->vtx[0] = MakeTransactionRef(std::move(coinbaseTx));
-    pblocktemplate->vchCoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, chainparams.GetConsensus());
     pblocktemplate->vTxFees[0] = -nFees;
 
     LogPrintf("CreateNewBlock(): block weight: %u txs: %u fees: %ld sigops %d\n", GetBlockWeight(*pblock), nBlockTx, nFees, nBlockSigOpsCost);
@@ -161,7 +157,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     // Fill in header
     pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
     UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
-    pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus());
+    pblock->nBits          = GetNextWorkRequired(pindexPrev, chainparams.GetConsensus());
     pblock->nNonce         = 0;
     pblocktemplate->vTxSigOpsCost[0] = WITNESS_SCALE_FACTOR * GetLegacySigOpCount(*pblock->vtx[0]);
 
@@ -228,7 +224,7 @@ void BlockAssembler::AddToBlock(CTxMemPool::txiter iter)
     bool fPrintPriority = gArgs.GetBoolArg("-printpriority", DEFAULT_PRINTPRIORITY);
     if (fPrintPriority) {
         LogPrintf("fee %s txid %s\n",
-                  CFeeRate(iter->GetModifiedFee(), iter->GetTxSize()).ToString(),
+                  CFeeRate(iter->GetModifiedFee(), iter->GetTxSize(), true).ToString(),
                   iter->GetTx().GetHash().ToString());
     }
 }
@@ -356,17 +352,10 @@ void BlockAssembler::addPackageTxs(int &nPackagesSelected, int &nDescendantsUpda
         assert(!inBlock.count(iter));
 
         uint64_t packageSize = iter->GetSizeWithAncestors();
-        CAmount packageFees = iter->GetModFeesWithAncestors();
         int64_t packageSigOpsCost = iter->GetSigOpCostWithAncestors();
         if (fUsingModified) {
             packageSize = modit->nSizeWithAncestors;
-            packageFees = modit->nModFeesWithAncestors;
             packageSigOpsCost = modit->nSigOpCostWithAncestors;
-        }
-
-        if (packageFees < blockMinFeeRate.GetFee(packageSize)) {
-            // Everything else we might consider has a lower fee rate
-            return;
         }
 
         if (!TestPackage(packageSize, packageSigOpsCost)) {
@@ -442,4 +431,287 @@ void IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned
 
     pblock->vtx[0] = MakeTransactionRef(std::move(txCoinbase));
     pblock->hashMerkleRoot = BlockMerkleRoot(*pblock);
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+////////////////////////// Verium Miner /////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+double hashrate = 0.;
+bool fGenerateVerium = false;
+static int64_t timeElapsed = 30000;
+double dHashesPerMin = 0.0;
+int64_t nHPSTimerStart = 0;
+
+static const unsigned int pSHA256InitState[8] =
+{0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
+
+int static FormatHashBlocks(void* pbuffer, unsigned int len)
+{
+    unsigned char* pdata = (unsigned char*)pbuffer;
+    unsigned int blocks = 1 + ((len + 8) / 64);
+    unsigned char* pend = pdata + 64 * blocks;
+    memset(pdata + len, 0, 64 * blocks - len);
+    pdata[len] = 0x80;
+    unsigned int bits = len * 8;
+    pend[-1] = (bits >> 0) & 0xff;
+    pend[-2] = (bits >> 8) & 0xff;
+    pend[-3] = (bits >> 16) & 0xff;
+    pend[-4] = (bits >> 24) & 0xff;
+    return blocks;
+}
+
+void FormatHashBuffers(CBlock* pblock, char* pmidstate, char* pdata, char* phash1)
+{
+    //
+    // Pre-build hash buffers
+    //
+    struct
+    {
+        struct unnamed2
+        {
+            int nVersion;
+            uint256 hashPrevBlock;
+            uint256 hashMerkleRoot;
+            unsigned int nTime;
+            unsigned int nBits;
+            unsigned int nNonce;
+        }
+        block;
+        unsigned char pchPadding0[64];
+        uint256 hash1;
+        unsigned char pchPadding1[64];
+    }
+    tmp;
+    memset(&tmp, 0, sizeof(tmp));
+
+    tmp.block.nVersion       = pblock->nVersion;
+    tmp.block.hashPrevBlock  = pblock->hashPrevBlock;
+    tmp.block.hashMerkleRoot = pblock->hashMerkleRoot;
+    tmp.block.nTime          = pblock->nTime;
+    tmp.block.nBits          = pblock->nBits;
+    tmp.block.nNonce         = pblock->nNonce;
+
+    FormatHashBlocks(&tmp.block, sizeof(tmp.block));
+    FormatHashBlocks(&tmp.hash1, sizeof(tmp.hash1));
+
+    // Byte swap all the input buffer
+    for (unsigned int i = 0; i < sizeof(tmp)/4; i++)
+        ((unsigned int*)&tmp)[i] = ByteReverse(((unsigned int*)&tmp)[i]);
+
+    // Precalc the first half of the first hash, which stays constant
+    SHA256Transform(pmidstate, &tmp.block, pSHA256InitState);
+
+    memcpy(pdata, &tmp.block, 128);
+    memcpy(phash1, &tmp.hash1, 64);
+}
+
+bool CheckWork(CBlock* pblock)
+{
+    arith_uint256 hashBlock = UintToArith256(pblock->GetWorkHash());
+    arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
+    CBlockIndex* pindexPrev = ::ChainActive().Tip();
+
+    if (hashBlock > hashTarget){
+        return error("CheckWork() : proof-of-work not meeting target");
+    } else {
+        if (pblock->hashPrevBlock != pindexPrev->GetBlockHash()){
+            return error("CheckWork() : generated block is stale");
+        }
+        LogPrintf("Found block: %s", pblock->ToString());
+        LogPrintf("New proof-of-work block found with: %s coins generated.\n", FormatMoney(pblock->vtx[0]->vout[0].nValue).c_str());
+
+        // Process this block the same as if we had received it from another node
+        std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(*pblock);
+        if (!ProcessNewBlock(Params(), shared_pblock, true, nullptr))
+            return error("CheckWork() : ProcessBlock, block not accepted");
+    }
+
+    return true;
+}
+
+void SHA256Transform(void* pstate, void* pinput, const void* pinit)
+{
+    SHA256_CTX ctx;
+    unsigned char data[64];
+
+    SHA256_Init(&ctx);
+
+    for (int i = 0; i < 16; i++)
+        ((uint32_t*)data)[i] = ByteReverse(((uint32_t*)pinput)[i]);
+
+    for (int i = 0; i < 8; i++)
+        ctx.h[i] = ((uint32_t*)pinit)[i];
+
+    SHA256_Update(&ctx, data, sizeof(data));
+    for (int i = 0; i < 8; i++)
+        ((uint32_t*)pstate)[i] = ctx.h[i];
+}
+
+void Miner(CWallet *pwallet, CConnman* connman)
+{
+    LogPrintf("Miner started\n");
+    SetThreadPriority(THREAD_PRIORITY_LOWEST);
+    util::ThreadRename("verium-miner");
+
+    //Build buffer and check for memory availability
+    bool memory = true;
+    unsigned char *scratchbuf = scrypt_buffer_alloc();
+    if(!scratchbuf){memory = false;}
+
+    // Each thread has it's own nonce
+    ReserveDestination reservedest(pwallet, DEFAULT_ADDRESS_TYPE);
+
+    CTxDestination dest;
+    bool ret = reservedest.GetReservedDestination(dest, true);
+    if (!ret)
+        return;
+
+    CScript scriptChange;
+    scriptChange = GetScriptForDestination(dest);
+
+    unsigned int nExtraNonce = 0;
+    try
+    {
+        while (fGenerateVerium && memory)
+        {
+            while (::ChainstateActive().IsInitialBlockDownload() || connman->GetNodeCount(CConnman::CONNECTIONS_ALL) < 1 || ::ChainActive().Tip()->nHeight < connman->GetBestHeight()){
+                LogPrintf("Mining inactive while chain is syncing...\n");
+                UninterruptibleSleep(std::chrono::milliseconds{5000});
+            }
+
+            // Create new block
+            unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
+            CBlockIndex* pindexPrev = ::ChainActive().Tip();
+
+            std::unique_ptr<CBlockTemplate> pblocktemplate;
+            try
+            {
+                pblocktemplate = BlockAssembler(mempool, Params()).CreateNewBlock(scriptChange);
+            }
+            catch(std::runtime_error& e)
+            {
+                continue;
+            }
+
+            if (!pblocktemplate.get())
+                return;
+
+            CBlock *pblock = &pblocktemplate->block;
+            IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
+            LogPrintf("Miner thread running on block %s (%lu bytes)\n", pindexPrev->nHeight, ::GetSerializeSize(*pblock, PROTOCOL_VERSION));
+
+            // Pre-build hash buffers
+            char pmidstatebuf[32+16]; char* pmidstate = alignup<16>(pmidstatebuf);
+            char pdatabuf[128+16];    char* pdata     = alignup<16>(pdatabuf);
+            char phash1buf[64+16];    char* phash1    = alignup<16>(phash1buf);
+            FormatHashBuffers(pblock, pmidstate, pdata, phash1);
+            unsigned int& nBlockTime = *(unsigned int*)(pdata + 64 + 4);
+
+            // Search
+            int64_t nStart = GetTime();
+            uint256 hashTarget = ArithToUint256(arith_uint256().SetCompact(pblock->nBits));
+            while (fGenerateVerium)
+            {
+                unsigned int nHashesDone = 0;
+                if (fGenerateVerium)
+                {
+                    // scrypt^2
+                    int nHashes = 0;
+                    if (scrypt_N_1_1_256_multi(BEGIN(pblock->nVersion), hashTarget, &nHashes, scratchbuf))
+                    {
+                        // Found a solution
+                        SetThreadPriority(THREAD_PRIORITY_NORMAL);
+                        CheckWork(pblock);
+                        SetThreadPriority(THREAD_PRIORITY_LOWEST);
+                    }
+                    nHashesDone += nHashes;
+                    pblock->nNonce += nHashes;
+                }
+
+                // Hash meter
+                static int64_t nHashCounter;
+                {
+                    static RecursiveMutex cs;
+                    {
+                        LOCK(cs);
+                        if (nHPSTimerStart == 0)
+                        {
+                            nHPSTimerStart = GetTimeMillis();
+                            nHashCounter = 0;
+                        }
+                        else
+                            nHashCounter += nHashesDone;
+
+                        if (GetTimeMillis() - nHPSTimerStart > timeElapsed)
+                        {
+                            dHashesPerMin = 60000.0 * nHashCounter / (GetTimeMillis() - nHPSTimerStart);
+                            nHPSTimerStart = GetTimeMillis();
+                            nHashCounter = 0;
+                            updateHashrate(dHashesPerMin);
+                            LogPrintf("Total local hashrate: %6.0f hashes/min\n", hashrate);
+                        }
+                    }
+                }
+
+                // Check for stop or if block needs to be rebuilt
+                boost::this_thread::interruption_point();
+                if (!fGenerateVerium)
+                    break;
+                if (ShutdownRequested())
+                    return;
+                if ( connman->GetNodeCount(CConnman::CONNECTIONS_ALL) < 1)
+                    break;
+                if (pblock->nNonce >= 0xffff0000)
+                    break;
+                if (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 60)
+                    break;
+                if (pindexPrev != ::ChainActive().Tip())
+                    break;
+
+                // Update nTime every few seconds
+                UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
+                nBlockTime = ByteReverse(pblock->nTime);
+            }
+        }
+    }
+    catch (boost::thread_interrupted)
+    {
+        free(scratchbuf);
+        hashrate = 0;
+        LogPrintf("Miner terminated\n");
+        throw;
+    }
+}
+
+void GenerateVerium(bool fGenerate, CWallet* pwallet, int nThreads, CConnman* connman)
+{
+    fGenerateVerium = fGenerate;
+    static boost::thread_group* minerThreads = NULL;
+
+    if (nThreads < 0)
+        nThreads = std::thread::hardware_concurrency();
+
+    if (minerThreads != NULL)
+    {
+        minerThreads->interrupt_all();
+        delete minerThreads;
+        minerThreads = NULL;
+    }
+
+    if (nThreads == 0 || !fGenerate)
+        return;
+
+    minerThreads = new boost::thread_group();
+    for (int i = 0; i < nThreads; i++)
+        minerThreads->create_thread(std::bind(&Miner, pwallet, connman));
+}
+
+void updateHashrate(double nHashrate)
+{
+    hashrate = nHashrate;
+}
+
+void MintStake(boost::thread_group& threadGroup, std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* mempool)
+{
 }
