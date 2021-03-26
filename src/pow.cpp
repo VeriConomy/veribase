@@ -78,6 +78,11 @@ int64_t GetProofOfWorkReward(int64_t nFees,const CBlockIndex* pindex)
 {
     int64_t nReward;
 
+    if( IsVericoin() )
+    {
+        return (2500 * COIN) + nFees;
+    }
+
     unsigned int nBlockTime = CalculateBlocktime(pindex);
 
     int height = pindex->nHeight+1;

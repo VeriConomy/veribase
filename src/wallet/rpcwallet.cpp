@@ -323,7 +323,7 @@ static CTransactionRef SendMoney(interfaces::Chain::Lock& locked_chain, CWallet 
     if (fWalletUnlockMintOnly)
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: Wallet unlocked for block minting only, unable to create transaction.");
 
-    // Parse Peercoin address
+    // Parse ppcoin address
     CScript scriptPubKey = GetScriptForDestination(address);
 
     // Create and send the transaction
@@ -4205,7 +4205,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "walletpassphrasechange",           &walletpassphrasechange,        {"oldpassphrase","newpassphrase"} },
     { "wallet",             "walletprocesspsbt",                &walletprocesspsbt,             {"psbt","sign","sighashtype","bip32derivs"} },
 
-    // peercoin commands
+    // ppcoin commands
 //    { "wallet",             "listminting",                      &listminting,                   {"count", "from"} },
     { "wallet",             "reservebalance",                   &reservebalance,                {"reserve", "amount"} },
 };

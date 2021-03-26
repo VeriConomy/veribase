@@ -26,6 +26,8 @@ struct Params {
     /** Block height at which CSV (BIP68, BIP112 and BIP113) becomes active */
     int CSVHeight;
 
+    bool fIsVericoin;
+
     /** Vericoin Params **/
     uint256 posLimit;
     int NextTargetV2Height;

@@ -91,9 +91,9 @@ endif
 
 if BUILD_BITCOIN_CLI
 if CLIENT_IS_VERIUM
-  bin_PROGRAMS += veriumd
+  bin_PROGRAMS += verium-cli
 else
-  bin_PROGRAMS += vericoind
+  bin_PROGRAMS += vericoin-cli
 endif
 endif
 

@@ -79,7 +79,7 @@ public:
     /** Whether it is possible to mine blocks on demand (no retargeting) */
     bool MineBlocksOnDemand() const { return consensus.fPowNoRetargeting; }
     /** Is Vericoin **/
-    bool IsVericoin() const { return fIsVericoin; }
+    bool IsVericoin() const { return consensus.fIsVericoin; }
     /** Return the network string */
     std::string NetworkIDString() const { return strNetworkID; }
     /** Return the list of hostnames to look up for DNS seeds */

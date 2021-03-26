@@ -90,31 +90,28 @@ unsigned int GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfS
             bnNew = CBigNum(ArithToUint256(bnTargetLimit));
     }
 
-    LogPrintf("Block %d -- spacing: %d, interval: %d, previous nBits: %s, bnNew: %s, nbits: %s\n", pindexLast->nHeight, nActualSpacing, nInterval, pindexPrev->nBits, bnNew.GetHex(), bnNew.GetCompact());
-
-
     return bnNew.GetCompact();
 }
 
-double GetPoSKernelPS(CBlockIndex* pindexPrev, const Consensus::Params& params)
+double GetPoSKernelPS(CBlockIndex* pindexPrev)
 {
     int nPoSInterval = 72;
     double dStakeKernelsTriedAvg = 0;
     int nStakesHandled = 0, nStakesTime = 0;
 
-    CBlockIndex* pindex = pindexBestHeader;
     CBlockIndex* pindexPrevStake = NULL;
 
-    while (pindex && nStakesHandled < nPoSInterval)
-    {
 
-        if (pindexPrev->IsProofOfStake())
-        {
-            dStakeKernelsTriedAvg += GetDifficulty(pindexPrev) * 4294967296.0;;
-            nStakesTime += pindexPrevStake ? (pindexPrevStake->nTime - pindexPrev->nTime) : 0;
-            pindexPrevStake = pindexPrev;
-            nStakesHandled++;
-        }
+    while (pindexPrev && nStakesHandled < nPoSInterval)
+    {
+        // Only proof of stake in GetPoSKernelPS.
+        // No need to check
+        dStakeKernelsTriedAvg += GetDifficulty(pindexPrev) * 4294967296.0;
+
+        nStakesTime += pindexPrevStake ? (pindexPrevStake->nTime - pindexPrev->nTime) : 0;
+        //LogPrintf("Iteration - dStakeKernelsTriedAvg: %f, diff: %f, nStakesTime: %d\n", dStakeKernelsTriedAvg, GetDifficulty(pindexPrev), nStakesTime);
+        pindexPrevStake = pindexPrev;
+        nStakesHandled++;
 
         pindexPrev = pindexPrev->pprev;
     }
@@ -122,18 +119,9 @@ double GetPoSKernelPS(CBlockIndex* pindexPrev, const Consensus::Params& params)
    return nStakesTime ? dStakeKernelsTriedAvg / nStakesTime : 0;
 }
 
-double GetPoSKernelPS(CBlockIndex* pindexPrev)
-{
-    const Consensus::Params& consensusParams = Params().GetConsensus();
-
-    return GetPoSKernelPS(pindexPrev, consensusParams);
-}
-
 double GetPoSKernelPS()
 {
-    const Consensus::Params& consensusParams = Params().GetConsensus();
-
-    return GetPoSKernelPS(pindexBestHeader, consensusParams);
+    return GetPoSKernelPS(ChainActive().Tip());
 }
 
 // get current inflation rate using average stake weight ~1.5-2.5% (measure of liquidity) PoST
@@ -170,8 +158,8 @@ double GetAverageStakeWeight(CBlockIndex* pindexPrev)
     nAverageStakeWeightHeightCached = pindexPrev->nHeight;
 
 
-    CBlockIndex* currentBlockIndex = pindexPrev;
     int i;
+    CBlockIndex* currentBlockIndex = pindexPrev;
     for (i = 0; currentBlockIndex && i < 60; i++)
     {
         double tempWeight = GetPoSKernelPS(currentBlockIndex);
@@ -213,7 +201,7 @@ int64_t GetProofOfStakeReward(int64_t nCoinAge, int64_t nFees, CBlockIndex* pind
     if (pindex->nHeight+1 > params.PoSTHeight )
     {
         int64_t nInterestRate = GetCurrentInterestRate(pindex, params) * CENT;
-        nSubsidy = params.nStakeMinAge * nInterestRate * 33 / (365 * 33 + 8);
+        nSubsidy = nCoinAge * nInterestRate * 33 / (365 * 33 + 8);
     }
     else
     {
@@ -263,6 +251,7 @@ bool GetCoinAge(const CTransaction& tx, const CCoinsViewCache &view, uint64_t& n
 
         if (!view.GetCoin(prevout, coin))
             continue;  // previous transaction not in main chain
+
         if (tx.nTime < coin.nTime)
             return false;  // Transaction timestamp violation
 
@@ -315,46 +304,6 @@ bool GetCoinAge(const CTransaction& tx, const CCoinsViewCache &view, uint64_t& n
     nCoinAge = bnCoinDay.GetLow64();
     return true;
 }
-
-// ppcoin: sign block
-typedef std::vector<unsigned char> valtype;
-bool SignBlock(CBlock& block, const CWallet& keystore)
-{
-    std::vector<valtype> vSolutions;
-    const CTxOut& txout = block.IsProofOfStake()? block.vtx[1]->vout[1] : block.vtx[0]->vout[0];
-
-    if (Solver(txout.scriptPubKey, vSolutions) != TX_PUBKEY)
-        return false;
-
-    // Sign
-    const valtype& vchPubKey = vSolutions[0];
-    CKey key;
-//    if (!keystore.GetLegacyScriptPubKeyMan()->GetKey(CKeyID(Hash160(vchPubKey)), key))
-//        return false;
-//    if (key.GetPubKey() != CPubKey(vchPubKey))
-//        return false;
-    return key.Sign(block.GetHash(), block.vchBlockSig, 0);
-}
-
-// ppcoin: check block signature
-bool CheckBlockSignature(const CBlock& block)
-{
-    if (block.GetHash() == Params().GetConsensus().hashGenesisBlock)
-        return block.vchBlockSig.empty();
-
-    std::vector<valtype> vSolutions;
-    const CTxOut& txout = block.IsProofOfStake()? block.vtx[1]->vout[1] : block.vtx[0]->vout[0];
-
-    if (Solver(txout.scriptPubKey, vSolutions) != TX_PUBKEY)
-        return false;
-
-    const valtype& vchPubKey = vSolutions[0];
-    CPubKey key(vchPubKey);
-    if (block.vchBlockSig.empty())
-        return false;
-    return key.Verify(block.GetHash(), block.vchBlockSig);
-}
-
 // Check whether the coinstake timestamp meets protocol
 bool CheckCoinStakeTimestamp(int64_t nTimeBlock, int64_t nTimeTx)
 {
@@ -681,14 +630,14 @@ bool CheckProofOfStake(BlockValidationState &state, CBlockIndex* pindexPrev, con
             return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "invalid-pos-script", strprintf("%s: VerifyScript failed on coinstake %s", __func__, tx->GetHash().ToString()));
     }
 
-    if (!CheckStakeKernelHash(nBits, pindexPrev, header, postx.nTxOffset - postx.nPos, txPrev, txin.prevout, tx->nTime, hashProofOfStake, gArgs.GetBoolArg("-debug", false)))
+    if (!CheckStakeKernelHash(nBits, pindexPrev, header, postx.nTxOffset + CBlockHeader::NORMAL_SERIALIZE_SIZE, txPrev, txin.prevout, tx->nTime, hashProofOfStake, gArgs.GetBoolArg("-debug", false)))
         return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "check-kernel-failed", strprintf("CheckProofOfStake() : INFO: check kernel failed on coinstake %s, hashProof=%s", tx->GetHash().ToString(), hashProofOfStake.ToString())); // may occur during initial download or if behind on block chain sync
 
     return true;
 }
 
 
-// peercoin kernel protocol
+// ppcoin kernel protocol
 // coinstake must meet hash target according to the protocol:
 // kernel (input 0) must meet the formula
 //     hash(nStakeModifier + txPrev.block.nTime + txPrev.offset + txPrev.nTime + txPrev.vout.n + nTime) < bnTarget * nCoinDayWeight
@@ -730,7 +679,7 @@ bool CheckStakeKernelHash(unsigned int nBits, CBlockIndex* pindexPrev, const CBl
     // v0.3 protocol kernel hash weight starts from 0 at the 30-day min age
     // this change increases active coins participating the hash and helps
     // to secure the network when proof-of-stake difficulty is low
-    CBigNum bnCoinDayWeight = CBigNum(nValueIn) * GetWeight((int64_t)txPrev->nTime, (int64_t)nTimeTx, nValueIn, pindexBestHeader->pprev) / COIN / (24 * 60 * 60);
+    CBigNum bnCoinDayWeight = CBigNum(nValueIn) * GetWeight((int64_t)txPrev->nTime, (int64_t)nTimeTx, nValueIn, ChainActive().Tip()->pprev) / COIN / (24 * 60 * 60);
 
     // Calculate hash
     CDataStream ss(SER_GETHASH, 0);
@@ -799,12 +748,52 @@ bool CheckStakeModifierCheckpoints(int nHeight, unsigned int nStakeModifierCheck
     return true;
 }
 
-// peercoin: entropy bit for stake modifier if chosen by modifier
+// ppcoin: entropy bit for stake modifier if chosen by modifier
 unsigned int GetStakeEntropyBit(const CBlock& block)
 {
     unsigned int nEntropyBit = UintToArith256(block.GetHash()).GetLow64() & 1llu;// last bit of block hash
     if (gArgs.GetBoolArg("-printstakemodifier", false))
-        LogPrintf("GetStakeEntropyBit(v0.4+): nTime=%u hashBlock=%s entropybit=%d\n", block.nTime, block.GetHash().ToString(), nEntropyBit);
+        LogPrintf("GetStakeEntropyBit: nTime=%u hashBlock=%s entropybit=%d\n", block.nTime, block.GetHash().ToString(), nEntropyBit);
 
     return nEntropyBit;
+}
+
+
+// ppcoin: sign block
+typedef std::vector<unsigned char> valtype;
+bool SignBlock(CBlock& block, const CWallet& keystore)
+{
+    std::vector<valtype> vSolutions;
+    const CTxOut& txout = block.IsProofOfStake()? block.vtx[1]->vout[1] : block.vtx[0]->vout[0];
+
+    if (Solver(txout.scriptPubKey, vSolutions) != TX_PUBKEY)
+        return false;
+
+    // Sign
+    const valtype& vchPubKey = vSolutions[0];
+    CKey key;
+    if (!keystore.GetLegacyScriptPubKeyMan()->GetKey(CKeyID(Hash160(vchPubKey)), key))
+        return false;
+    if (key.GetPubKey() != CPubKey(vchPubKey))
+        return false;
+    return key.Sign(block.GetHash(), block.vchBlockSig, 0);
+}
+
+// ppcoin: check block signature
+bool CheckBlockSignature(const CBlock& block)
+{
+    if (block.GetHash() == Params().GetConsensus().hashGenesisBlock)
+        return block.vchBlockSig.empty();
+
+    std::vector<valtype> vSolutions;
+    const CTxOut& txout = block.IsProofOfStake()? block.vtx[1]->vout[1] : block.vtx[0]->vout[0];
+
+    if (Solver(txout.scriptPubKey, vSolutions) != TX_PUBKEY)
+        return false;
+
+    const valtype& vchPubKey = vSolutions[0];
+    CPubKey key(vchPubKey);
+    if (block.vchBlockSig.empty())
+        return false;
+    return key.Verify(block.GetHash(), block.vchBlockSig);
 }
