@@ -10,6 +10,7 @@
 #include <consensus/params.h>
 #include <flatfile.h>
 #include <primitives/block.h>
+#include <timedata.h>
 #include <tinyformat.h>
 #include <uint256.h>
 #include <util/moneystr.h>
@@ -20,8 +21,11 @@
  * Maximum amount of time that a block timestamp is allowed to exceed the
  * current network-adjusted time before the block will be accepted.
  */
+#if CLIENT_IS_VERIUM
 static constexpr int64_t MAX_FUTURE_BLOCK_TIME = 2 * 60 * 60;
-
+#else
+static constexpr int64_t MAX_FUTURE_BLOCK_TIME = 10 * 60;
+#endif
 /**
  * Timestamp window used as a grace period by code that compares external
  * timestamps (such as timestamps passed to RPCs, or wallet key creation times)
@@ -37,7 +41,6 @@ static constexpr int64_t TIMESTAMP_WINDOW = MAX_FUTURE_BLOCK_TIME;
  * Ref: https://github.com/bitcoin/bitcoin/pull/1026
  */
 static constexpr int64_t MAX_BLOCK_TIME_GAP = 90 * 60;
-
 class CBlockFileInfo
 {
 public:
@@ -187,13 +190,12 @@ public:
     //! (memory only) Maximum nTime in the chain up to and including this block.
     unsigned int nTimeMax{0};
 
-// peercoin
-    // peercoin: money supply related block index fields
+    // ppcoin: money supply related block index fields
     int64_t nMint{0};
     int64_t nMoneySupply{0};
 
-    // peercoin: proof-of-stake related block index fields
-    unsigned int nFlags{0};  // peercoin: block index flags
+    // ppcoin: proof-of-stake related block index fields
+    unsigned int nFlags{0};  // ppcoin: block index flags
     enum
     {
         BLOCK_PROOF_OF_STAKE = (1 << 0), // is proof-of-stake block
@@ -245,7 +247,6 @@ public:
         if (fGeneratedStakeModifier)
             nFlags |= BLOCK_STAKE_MODIFIER;
     }
-// peercoin end
 
     CBlockIndex()
     {
@@ -256,7 +257,8 @@ public:
           hashMerkleRoot{block.hashMerkleRoot},
           nTime{block.nTime},
           nBits{block.nBits},
-          nNonce{block.nNonce}
+          nNonce{block.nNonce},
+          nFlags{block.nFlags}
     {
     }
 
@@ -385,15 +387,19 @@ const CBlockIndex* LastCommonAncestor(const CBlockIndex* pa, const CBlockIndex* 
 /** Used to marshal pointers into hashes for db storage. */
 class CDiskBlockIndex : public CBlockIndex
 {
+private:
+    uint256 blockHash;
 public:
     uint256 hashPrev;
 
     CDiskBlockIndex() {
         hashPrev = uint256();
+        blockHash = uint256();
     }
 
     explicit CDiskBlockIndex(const CBlockIndex* pindex) : CBlockIndex(*pindex) {
         hashPrev = (pprev ? pprev->GetBlockHash() : uint256());
+        blockHash = *pindex->phashBlock;
     }
 
     SERIALIZE_METHODS(CDiskBlockIndex, obj)
@@ -426,10 +432,15 @@ public:
         READWRITE(obj.nTime);
         READWRITE(obj.nBits);
         READWRITE(obj.nNonce);
+        READWRITE(obj.blockHash);
     }
 
     uint256 GetBlockHash() const
     {
+        // improve speed
+        if ((nTime < GetAdjustedTime() - 24 * 60 * 60) && ! blockHash.IsNull())
+            return blockHash;
+
         CBlockHeader block;
         block.nVersion        = nVersion;
         block.hashPrevBlock   = hashPrev;

@@ -279,15 +279,14 @@ bool CBlockTreeDB::LoadBlockIndexGuts(const Consensus::Params& consensusParams, 
                 pindexNew->nMint          = diskindex.nMint;
                 pindexNew->nMoneySupply   = diskindex.nMoneySupply;
 
-                // XXX: use consensus params
-#if !CLIENT_IS_VERIUM
-                pindexNew->nFlags         = diskindex.nFlags;
-                pindexNew->nStakeModifier = diskindex.nStakeModifier;
-                pindexNew->prevoutStake   = diskindex.prevoutStake;
-                pindexNew->nStakeTime     = diskindex.nStakeTime;
-                pindexNew->hashProofOfStake = diskindex.hashProofOfStake;
+                if( consensusParams.fIsVericoin ) {
+                    pindexNew->nFlags         = diskindex.nFlags;
+                    pindexNew->nStakeModifier = diskindex.nStakeModifier;
+                    pindexNew->prevoutStake   = diskindex.prevoutStake;
+                    pindexNew->nStakeTime     = diskindex.nStakeTime;
+                    pindexNew->hashProofOfStake = diskindex.hashProofOfStake;
+                }
 
-#endif
                 pcursor->Next();
             } else {
                 return error("%s: failed to read value", __func__);

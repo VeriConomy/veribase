@@ -77,3 +77,12 @@ void BIP32Hash(const ChainCode &chainCode, unsigned int nChild, unsigned char he
     num[3] = (nChild >>  0) & 0xFF;
     CHMAC_SHA512(chainCode.begin(), chainCode.size()).Write(&header, 1).Write(data, 32).Write(num, 4).Finalize(output);
 }
+
+int32_t vericonomyRandseed;
+int univHash(const uint256 &x) {
+  int h = vericonomyRandseed >> 20;
+  const uint32_t *p = x.GetDataPtr();
+  for(int i = 0; i < 8; i++)
+    h ^=  (p[i] >> (h & 0xf)) + (vericonomyRandseed >> i);
+  return (h + (h >> 16))  & 1023; // 2^n - 1
+}

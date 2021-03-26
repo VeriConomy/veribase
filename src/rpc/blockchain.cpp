@@ -65,7 +65,13 @@ CTxMemPool& EnsureMemPool()
  */
 double GetDifficulty(const CBlockIndex* blockindex)
 {
-    CHECK_NONFATAL(blockindex);
+    if (blockindex == NULL)
+    {
+        if (ChainActive().Tip() == NULL)
+            return 1;
+        else
+            blockindex = GetLastBlockIndex(ChainActive().Tip(), false);
+    }
 
     int nShift = (blockindex->nBits >> 24) & 0xff;
     double dDiff =

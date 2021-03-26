@@ -278,7 +278,7 @@ public:
     using CanGetAddressesChangedFn = std::function<void()>;
     virtual std::unique_ptr<Handler> handleCanGetAddressesChanged(CanGetAddressesChangedFn fn) = 0;
 
-    // peercoin
+    // ppcoin
     virtual void relockWalletAfterDuration(int nDuration) = 0;
     virtual std::shared_ptr<CWallet> getWallet() = 0;
 };

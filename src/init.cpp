@@ -18,6 +18,7 @@
 #include <compat/sanity.h>
 #include <consensus/validation.h>
 #include <fs.h>
+#include <hash.h>
 #include <httprpc.h>
 #include <httpserver.h>
 #include <index/blockfilterindex.h>
@@ -557,7 +558,8 @@ void SetupServerArgs()
     gArgs.AddArg("-printcreation", "Print coin creation if debug is enabled", ArgsManager::ALLOW_BOOL, OptionsCategory::DEBUG_TEST);
 
     gArgs.AddArg("-reservebalance=<amt>", "Reserve this many coins", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
-    gArgs.AddArg("-minting", "Enable minting (default: true)", ArgsManager::ALLOW_BOOL, OptionsCategory::OPTIONS);
+    gArgs.AddArg("-staking", "Enable minting (default: true)", ArgsManager::ALLOW_BOOL, OptionsCategory::OPTIONS);
+    //gArgs.AddArg("-fastindex", "Enable fastindex. Lower security but faster to open the wallet (default: true)", ArgsManager::ALLOW_BOOL, OptionsCategory::OPTIONS);
 
     // Add the hidden options
     gArgs.AddHiddenArgs(hidden_args);
@@ -1084,6 +1086,9 @@ bool AppInitSanityChecks()
     ECC_Start();
     globalVerifyHandle.reset(new ECCVerifyHandle());
 
+    // vericonomy: init hash seed
+    vericonomyRandseed = GetRand(1 << 30);
+
     // Sanity check
     if (!InitSanityCheck())
         return InitError(strprintf(_("Initialization sanity check failed. %s is shutting down.").translated, PACKAGE_NAME));
@@ -1409,6 +1414,8 @@ bool AppInitMain(NodeContext& node)
     }
     LogPrintf("* Using %.1f MiB for chain state database\n", nCoinDBCache * (1.0 / 1024 / 1024));
     LogPrintf("* Using %.1f MiB for in-memory UTXO set (plus up to %.1f MiB of unused mempool space)\n", nCoinCacheUsage * (1.0 / 1024 / 1024), nMempoolSizeMax * (1.0 / 1024 / 1024));
+
+    //bool fUseFastIndex = gArgs.GetBoolArg("-fastindex", true);
 
     bool fLoaded = false;
     while (!fLoaded && !ShutdownRequested()) {

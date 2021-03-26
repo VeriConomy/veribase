@@ -29,7 +29,7 @@ public:
     uint32_t nNonce;
 
     // ppcoin: A copy from CBlockIndex.nFlags from other clients. We need this information because we are using headers-first syncronization.
-    int32_t nFlags;
+    uint32_t nFlags;
 
     static const int32_t CURRENT_VERSION=7;
     static const int32_t NORMAL_SERIALIZE_SIZE=80;
@@ -50,7 +50,7 @@ public:
         READWRITE(nBits);
         READWRITE(nNonce);
 
-        // peercoin: do not serialize nFlags when computing hash
+        // ppcoin: do not serialize nFlags when computing hash
         if (!(s.GetType() & SER_GETHASH) && s.GetType() & SER_POSMARKER)
             READWRITE(nFlags);
     }
@@ -88,7 +88,7 @@ public:
     // network and disk
     std::vector<CTransactionRef> vtx;
 
-    // peercoin: block signature - signed by coin base txout[0]'s owner
+    // ppcoin: block signature - signed by coin base txout[0]'s owner
     std::vector<unsigned char> vchBlockSig;
 
     // memory only
@@ -135,7 +135,7 @@ public:
         return block;
     }
 
-    // peercoin: two types of block: proof-of-work or proof-of-stake
+    // ppcoin: two types of block: proof-of-work or proof-of-stake
     bool IsProofOfStake() const
     {
         return (vtx.size() > 1 && vtx[1]->IsCoinStake());

@@ -164,7 +164,7 @@ namespace {
     };
     std::map<uint256, std::pair<NodeId, std::list<QueuedBlock>::iterator> > mapBlocksInFlight GUARDED_BY(cs_main);
 
-    /** peercoin: blocks that are waiting to be processed, the key points to previous CBlockIndex entry */
+    /** ppcoin: blocks that are waiting to be processed, the key points to previous CBlockIndex entry */
     struct WaitElement {
         std::shared_ptr<CBlock> pblock;
             int64_t time;
@@ -1737,9 +1737,8 @@ bool static ProcessHeadersMessage(CNode* pfrom, CConnman* connman, CTxMemPool& m
         }
     }
 
-    int32_t& nPoSTemperature = mapPoSTemperature[pfrom->addr];
     BlockValidationState state;
-    if (!ProcessNewBlockHeaders(headers, state, chainparams, &pindexLast, nPoSTemperature, pfrom->lastAcceptedHeader)) {
+    if (!ProcessNewBlockHeaders(headers, state, chainparams, &pindexLast)) {
         if (state.IsInvalid()) {
             MaybePunishNodeForBlock(pfrom->GetId(), state, via_compact_block, "invalid header received");
             return false;
@@ -2119,7 +2118,7 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
         return false;
     }
 
-    // peercoin: set/unset network serialization mode for new clients
+    // ppcoin: set/unset network serialization mode for new clients
     if (pfrom->nVersion <= POS_INFO_HEADERS_VERSION)
         vRecv.SetType(vRecv.GetType() & ~SER_POSMARKER);
     else
@@ -2379,7 +2378,11 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
         // Send the rest of the chain
         if (pindex)
             pindex = ::ChainActive().Next(pindex);
-        int nLimit = 500;
+
+        int nLimit = 2000;
+        if ( chainparams.IsVericoin() )
+            nLimit = 20000;
+
         LogPrint(BCLog::NET, "getblocks %d to %s limit %d from peer=%d\n", (pindex ? pindex->nHeight : -1), hashStop.IsNull() ? "end" : hashStop.ToString(), nLimit, pfrom->GetId());
         for (; pindex; pindex = ::ChainActive().Next(pindex))
         {
@@ -2695,7 +2698,7 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
         const CBlockIndex *pindex = nullptr;
         BlockValidationState state;
 
-        if (!ProcessNewBlockHeaders({cmpctblock.header}, state, chainparams, &pindex, nPoSTemperature, ::ChainActive().Tip()->GetBlockHash())) {
+        if (!ProcessNewBlockHeaders({cmpctblock.header}, state, chainparams, &pindex)) {
             if (state.IsInvalid()) {
                 MaybePunishNodeForBlock(pfrom->GetId(), state, /*via_compact_block*/ true, "invalid header via cmpctblock");
                 return true;
@@ -3017,8 +3020,6 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
             std::shared_ptr<CBlock> pblock2 = std::make_shared<CBlock>();
             vRecv >> *pblock2;
 
-            LogPrint(BCLog::NET, "received block %s peer=%d\n", pblock2->GetHash().ToString(), pfrom->GetId());
-
             int64_t nTimeNow = GetSystemTimeInSeconds();
 
             LogPrint(BCLog::NET, "received block %s peer=%d\n", pblock2->GetHash().ToString(), pfrom->GetId());
@@ -3051,7 +3052,7 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
                         return error("this block does not connect to any valid known blocks");
                     }
                 }
-                // peercoin: store in memory until we can connect it to some chain
+                // ppcoin: store in memory until we can connect it to some chain
                 WaitElement we; we.pblock = pblock2; we.time = nTimeNow;
                 mapBlocksWait[headerPrev] = we;
             }
@@ -3061,7 +3062,7 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
                 pindexLastAccepted = ::ChainActive().Tip();
             bool fContinue = true;
 
-            // peercoin: accept as many blocks as we possibly can from mapBlocksWait
+            // ppcoin: accept as many blocks as we possibly can from mapBlocksWait
             while (fContinue) {
                 fContinue = false;
                 bool fSelected = false;
@@ -3071,7 +3072,7 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
 
                 {
                 LOCK(cs_main);
-                // peercoin: try to select next block in a constant time
+                // ppcoin: try to select next block in a constant time
                 std::map<CBlockIndex*, WaitElement>::iterator it = mapBlocksWait.find(pindexLastAccepted);
                 if (it != mapBlocksWait.end() && pindexLastAccepted != nullptr) {
                     pindexPrev = it->first;
@@ -3158,13 +3159,23 @@ bool ProcessMessage(CNode* pfrom, const std::string& msg_type, CDataStream& vRec
         mapBlockSource.emplace(hash, std::make_pair(pfrom->GetId(), true));
         }
         bool fNewBlock = false;
-        ProcessNewBlock(chainparams, pblock, forceProcessing, &fNewBlock);
+        bool fPoSDuplicate = false;
+        ProcessNewBlock(chainparams, pblock, forceProcessing, &fNewBlock, nullptr, &fPoSDuplicate);
         if (fNewBlock) {
             pfrom->nLastBlockTime = GetTime();
         } else {
             LOCK(cs_main);
             mapBlockSource.erase(pblock->GetHash());
         }
+
+        // warmer it get, nearer we are from a ban
+        if (fPoSDuplicate)
+        {
+            LOCK(cs_main);
+            int32_t& nPoSTemperature = mapPoSTemperature[pfrom->addr];
+            nPoSTemperature += 100;
+        }
+
         return true;
     }
 

@@ -39,10 +39,10 @@ public:
     //! at which height this containing transaction was included in the active block chain
     uint32_t nHeight : 31;
 
-    // peercoin: whether transaction is a coinstake
+    // ppcoin: whether transaction is a coinstake
     bool fCoinStake;
 
-    // peercoin: transaction timestamp
+    // ppcoin: transaction timestamp
     unsigned int nTime;
 
     //! construct a Coin from a CTxOut and height/coinbase information.
@@ -79,7 +79,7 @@ public:
         // ppcoin flags
         unsigned int nFlag = fCoinStake? 1 : 0;
         ::Serialize(s, VARINT(nFlag));
-        // peercoin transaction timestamp
+        // ppcoin transaction timestamp
         ::Serialize(s, VARINT(nTime));
     }
 

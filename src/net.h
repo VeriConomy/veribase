@@ -866,7 +866,7 @@ public:
     std::atomic<int64_t> nMinPingUsecTime{std::numeric_limits<int64_t>::max()};
     // Whether a ping is requested.
     std::atomic<bool> fPingQueued{false};
-    // peercoin: used to detect branch switches
+    // ppcoin: used to detect branch switches
     uint256 lastAcceptedHeader;
 
     std::set<uint256> orphan_work_set;

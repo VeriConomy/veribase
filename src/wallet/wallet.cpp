@@ -4341,7 +4341,7 @@ void CWallet::ConnectScriptPubKeyManNotifiers()
     }
 }
 
-// // peercoin: create coin stake transaction
+// // ppcoin: create coin stake transaction
 // typedef std::vector<unsigned char> valtype;
 // bool CWallet::CreateCoinStake(const CWallet* pwallet, unsigned int nBits, int64_t nSearchInterval, CMutableTransaction& txNew)
 // {
