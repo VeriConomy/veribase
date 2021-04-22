@@ -148,6 +148,7 @@ BITCOIN_CORE_H = \
   core_io.h \
   core_memusage.h \
   cuckoocache.h \
+  downloader.h \
   flatfile.h \
   fs.h \
   httprpc.h \
@@ -232,6 +233,7 @@ BITCOIN_CORE_H = \
   util/bytevectorhash.h \
   util/check.h \
   util/error.h \
+  util/miniunz.h \
   util/spanparsing.h \
   util/system.h \
   util/macros.h \
@@ -289,6 +291,7 @@ libbitcoin_server_a_SOURCES = \
   blockfilter.cpp \
   chain.cpp \
   consensus/tx_verify.cpp \
+  downloader.cpp \
   flatfile.cpp \
   httprpc.cpp \
   httpserver.cpp \
@@ -325,6 +328,7 @@ libbitcoin_server_a_SOURCES = \
   txdb.cpp \
   txmempool.cpp \
   ui_interface.cpp \
+  util/miniunz.cpp \
   validation.cpp \
   validationinterface.cpp \
   $(BITCOIN_CORE_H)
@@ -588,7 +592,7 @@ veriumd_LDADD = \
   $(LIBMEMENV) \
   $(LIBSECP256K1)
 
-veriumd_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(ZMQ_LIBS)
+veriumd_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(ZMQ_LIBS) $(MINIZIP_LIBS) $(CURL_LIBS)
 
 else
 
@@ -616,7 +620,7 @@ vericoind_LDADD = \
   $(LIBMEMENV) \
   $(LIBSECP256K1)
 
-vericoind_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(ZMQ_LIBS)
+vericoind_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(ZMQ_LIBS) $(MINIZIP_LIBS) $(CURL_LIBS)
 
 endif
 #
@@ -640,7 +644,7 @@ verium_cli_LDADD = \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO)
 
-verium_cli_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS) $(EVENT_LIBS)
+verium_cli_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS) $(EVENT_LIBS) $(MINIZIP_LIBS) $(CURL_LIBS)
 
 else
 
@@ -660,7 +664,7 @@ vericoin_cli_LDADD = \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO)
 
-vericoin_cli_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS) $(EVENT_LIBS)
+vericoin_cli_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS) $(EVENT_LIBS) $(MINIZIP_LIBS) $(CURL_LIBS)
 
 endif
 #
@@ -687,7 +691,7 @@ verium_tx_LDADD = \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBSECP256K1)
 
-verium_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
+verium_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS) $(MINIZIP_LIBS) $(CURL_LIBS)
 
 else
 
@@ -711,7 +715,7 @@ vericoin_tx_LDADD = \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBSECP256K1)
 
-vericoin_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
+vericoin_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS) $(MINIZIP_LIBS) $(CURL_LIBS)
 
 endif
 #
@@ -744,7 +748,7 @@ verium_wallet_LDADD = \
   $(LIBSECP256K1) \
   $(LIBUNIVALUE)
 
-verium_wallet_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(CRYPTO_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(MINIUPNPC_LIBS) $(ZMQ_LIBS)
+verium_wallet_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(CRYPTO_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(MINIUPNPC_LIBS) $(ZMQ_LIBS) $(MINIZIP_LIBS) $(CURL_LIBS)
 
 else
 
@@ -774,7 +778,7 @@ vericoin_wallet_LDADD = \
   $(LIBSECP256K1) \
   $(LIBUNIVALUE)
 
-vericoin_wallet_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(CRYPTO_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(MINIUPNPC_LIBS) $(ZMQ_LIBS)
+vericoin_wallet_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(CRYPTO_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(MINIUPNPC_LIBS) $(ZMQ_LIBS) $(MINIZIP_LIBS) $(CURL_LIBS)
 
 endif
 #
