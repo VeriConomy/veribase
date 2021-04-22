@@ -9,6 +9,7 @@
 #include <amount.h>
 #include <consensus/params.h>
 #include <primitives/transaction.h>
+#include <wallet/wallet.h>
 
 #include <algorithm>
 #include <list>

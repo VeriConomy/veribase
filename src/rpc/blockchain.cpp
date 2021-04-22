@@ -12,6 +12,7 @@
 #include <coins.h>
 #include <consensus/validation.h>
 #include <core_io.h>
+#include <downloader.h>
 #include <hash.h>
 #include <index/blockfilterindex.h>
 #include <node/coinstats.h>
@@ -23,6 +24,7 @@
 #include <rpc/server.h>
 #include <rpc/util.h>
 #include <script/descriptor.h>
+#include <shutdown.h>
 #include <streams.h>
 #include <sync.h>
 #include <txdb.h>
@@ -99,6 +101,43 @@ static int ComputeNextBlockAndDepth(const CBlockIndex* tip, const CBlockIndex* b
     }
     next = nullptr;
     return blockindex == tip ? 1 : -1;
+}
+
+
+UniValue bootstrap(const JSONRPCRequest& request)
+{
+    RPCHelpMan{"getblockcount",
+        "\nDownload blockchain from www.vericonomy.com to speed up synchronization.\n"
+        "Daemon will exit after bootstraping is done.\n",
+        {},
+        RPCResult{
+            RPCResult::Type::OBJ, "", "",
+            {
+                {RPCResult::Type::BOOL, "success", "Define if the bootstrap was a success"},
+                {RPCResult::Type::STR, "message", "information message"},
+            }},
+        RPCExamples{
+            HelpExampleCli("bootstrap", "")
+          + HelpExampleRpc("bootstrap", "")
+        },
+    }.Check(request);
+
+    UniValue ret(UniValue::VOBJ);
+
+    try {
+        downloadBootstrap();
+    } catch (const std::exception &e) {
+        ret.pushKV("success", false);
+        ret.pushKV("message", e.what());
+        return ret;
+    }
+
+    ret.pushKV("success", true);
+    ret.pushKV("message", "Bootstrap successful; wallet has been stopped, please restart.");
+
+    StartShutdown();
+
+    return ret;
 }
 
 UniValue blockheaderToJSON(const CBlockIndex* tip, const CBlockIndex* blockindex)
@@ -2207,6 +2246,7 @@ void RegisterBlockchainRPCCommands(CRPCTable &t)
 static const CRPCCommand commands[] =
 { //  category              name                      actor (function)         argNames
   //  --------------------- ------------------------  -----------------------  ----------
+    { "blockchain",         "bootstrap",              &bootstrap,              {} },
     { "blockchain",         "getblockchaininfo",      &getblockchaininfo,      {} },
     { "blockchain",         "getchaintxstats",        &getchaintxstats,        {"nblocks", "blockhash"} },
     { "blockchain",         "getblockstats",          &getblockstats,          {"hash_or_height", "stats"} },
