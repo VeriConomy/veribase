@@ -1274,6 +1274,11 @@ CPPFLAGS="$TEMP_CPPFLAGS"
 
 fi
 
+AC_CHECK_HEADER([curl/curl.h],, AC_MSG_ERROR(curl headers missing),)
+AC_CHECK_LIB([curl],         [main],CURL_LIBS=-lcurl, AC_MSG_ERROR(libcurl missing))
+AC_CHECK_HEADER([minizip/unzip.h],, AC_MSG_ERROR(minizip headers missing),)
+AC_CHECK_LIB([minizip],         [main],MINIZIP_LIBS="-Bstatic -lminizip", AC_MSG_ERROR(libminizip missing))
+
 if test x$use_pkgconfig = xyes; then
   : dnl
   m4_ifdef(
@@ -1613,6 +1618,8 @@ AC_SUBST(MINIUPNPC_CPPFLAGS)
 AC_SUBST(MINIUPNPC_LIBS)
 AC_SUBST(CRYPTO_LIBS)
 AC_SUBST(SSL_LIBS)
+AC_SUBST(MINIZIP_LIBS)
+AC_SUBST(CURL_LIBS)
 AC_SUBST(EVENT_LIBS)
 AC_SUBST(EVENT_PTHREADS_LIBS)
 AC_SUBST(ZMQ_LIBS)

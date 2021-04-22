@@ -61,4 +61,7 @@ void SetupServerArgs();
 /** Returns licensing information (for -version) */
 std::string LicenseInfo();
 
+/** If true, bootstrap will be instaled when the wallet close **/
+extern bool fBootstrap;
+
 #endif // BITCOIN_INIT_H

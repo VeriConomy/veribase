@@ -17,6 +17,7 @@
 #include <chainparams.h>
 #include <compat/sanity.h>
 #include <consensus/validation.h>
+#include <downloader.h>
 #include <fs.h>
 #include <hash.h>
 #include <httprpc.h>
@@ -152,6 +153,7 @@ NODISCARD static bool CreatePidFile()
 // shutdown thing.
 //
 
+bool fBootstrap = false;
 bool fEnforceMinRelayTxFee = false;
 static std::unique_ptr<ECCVerifyHandle> globalVerifyHandle;
 
@@ -281,6 +283,14 @@ void Shutdown(NodeContext& node)
         g_zmq_notification_interface = nullptr;
     }
 #endif
+
+    if(fBootstrap) {
+        try {
+            applyBootstrap();
+        } catch(std::exception &e) {
+            LogPrintf("%s: Unable to change databse: %s\n",__func__,e.what());
+        }
+    }
 
     node.chain_clients.clear();
     UnregisterAllValidationInterfaces();

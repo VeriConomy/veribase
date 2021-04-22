@@ -22,7 +22,6 @@
 #include <txmempool.h> // For CTxMemPool::cs
 #include <txdb.h>
 #include <serialize.h>
-#include <wallet/wallet.h>
 
 #include <atomic>
 #include <map>
