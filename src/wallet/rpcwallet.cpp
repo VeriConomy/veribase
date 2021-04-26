@@ -2406,13 +2406,15 @@ static UniValue getwalletinfo(const JSONRPCRequest& request)
         return NullUniValue;
     }
 
-    RPCHelpMan{"getwalletinfo",
-                "Returns an object containing various wallet state info.\n",
-                {},
-                RPCResult{
-                    RPCResult::Type::OBJ, "", "",
+    if( ! Params().IsVericoin() ) {
+
+        RPCHelpMan{"getwalletinfo",
+            "Returns an object containing various wallet state info.\n",
+            {},
+            RPCResult{
+                RPCResult::Type::OBJ, "", "",
+                {
                     {
-                        {
                         {RPCResult::Type::STR, "walletname", "the wallet name"},
                         {RPCResult::Type::NUM, "walletversion", "the wallet version"},
                         {RPCResult::Type::STR_AMOUNT, "balance", "DEPRECATED. Identical to getbalances().mine.trusted"},
@@ -2429,17 +2431,62 @@ static UniValue getwalletinfo(const JSONRPCRequest& request)
                         {RPCResult::Type::BOOL, "private_keys_enabled", "false if privatekeys are disabled for this wallet (enforced watch-only wallet)"},
                         {RPCResult::Type::BOOL, "avoid_reuse", "whether this wallet tracks clean/dirty coins in terms of reuse"},
                         {RPCResult::Type::OBJ, "scanning", "current scanning details, or false if no scan is in progress",
-                        {
-                            {RPCResult::Type::NUM, "duration", "elapsed seconds since scan start"},
-                            {RPCResult::Type::NUM, "progress", "scanning progress percentage [0.0, 1.0]"},
-                        }},
-                    }},
-                },
-                RPCExamples{
-                    HelpExampleCli("getwalletinfo", "")
-            + HelpExampleRpc("getwalletinfo", "")
-                },
-    }.Check(request);
+                            {
+                                {RPCResult::Type::NUM, "duration", "elapsed seconds since scan start"},
+                                {RPCResult::Type::NUM, "progress", "scanning progress percentage [0.0, 1.0]"},
+                            }
+                        },
+                    }
+                }
+            },
+            RPCExamples{
+                HelpExampleCli("getwalletinfo", "")
+              + HelpExampleRpc("getwalletinfo", "")
+            },
+        }.Check(request);
+
+    }
+    else {
+
+        RPCHelpMan{"getwalletinfo",
+            "Returns an object containing various wallet state info.\n",
+            {},
+            RPCResult{
+                RPCResult::Type::OBJ, "", "",
+                {
+                    {
+                        {RPCResult::Type::STR, "walletname", "the wallet name"},
+                        {RPCResult::Type::NUM, "walletversion", "the wallet version"},
+                        {RPCResult::Type::STR_AMOUNT, "balance", "DEPRECATED. Identical to getbalances().mine.trusted"},
+                        {RPCResult::Type::STR_AMOUNT, "unconfirmed_balance", "DEPRECATED. Identical to getbalances().mine.untrusted_pending"},
+                        {RPCResult::Type::STR_AMOUNT, "immature_balance", "DEPRECATED. Identical to getbalances().mine.immature"},
+                        {RPCResult::Type::NUM, "txcount", "the total number of transactions in the wallet"},
+                        {RPCResult::Type::NUM_TIME, "keypoololdest", "the " + UNIX_EPOCH_TIME + " of the oldest pre-generated key in the key pool"},
+                        {RPCResult::Type::NUM, "keypoolsize", "how many new keys are pre-generated (only counts external keys)"},
+                        {RPCResult::Type::NUM, "keypoolsize_hd_internal", "how many new keys are pre-generated for internal use (used for change outputs, only appears if the wallet is using this feature, otherwise external keys are used)"},
+                        {RPCResult::Type::NUM_TIME, "unlocked_until", "the " + UNIX_EPOCH_TIME + " until which the wallet is unlocked for transfers, or 0 if the wallet is locked"},
+                        {RPCResult::Type::BOOL, "unlocked_minting_only", "true if the wallet is only unlocked for staking"},
+                        {RPCResult::Type::STR_AMOUNT, "paytxfee", "the transaction fee configuration, set in " + CURRENCY_UNIT + "/kB"},
+                        {RPCResult::Type::STR_HEX, "hdseedid", /* optional */ true, "the Hash160 of the HD seed (only present when HD is enabled)"},
+                        {RPCResult::Type::BOOL, "private_keys_enabled", "false if privatekeys are disabled for this wallet (enforced watch-only wallet)"},
+                        {RPCResult::Type::BOOL, "avoid_reuse", "whether this wallet tracks clean/dirty coins in terms of reuse"},
+                        {RPCResult::Type::OBJ, "scanning", "current scanning details, or false if no scan is in progress",
+                            {
+                                {RPCResult::Type::NUM, "duration", "elapsed seconds since scan start"},
+                                {RPCResult::Type::NUM, "progress", "scanning progress percentage [0.0, 1.0]"},
+                            }
+                        },
+                        {RPCResult::Type::STR_AMOUNT, "newmint", "New mint"},
+                        {RPCResult::Type::STR_AMOUNT, "stake", "total of coin being stake"},
+                    }
+                }
+            },
+            RPCExamples{
+                HelpExampleCli("getwalletinfo", "")
+              + HelpExampleRpc("getwalletinfo", "")
+            },
+        }.Check(request);
+    }
 
     // Make sure the results are valid at least up to the most recent block
     // the user could have gotten from another RPC command prior to now
@@ -2485,6 +2532,12 @@ static UniValue getwalletinfo(const JSONRPCRequest& request)
         obj.pushKV("scanning", scanning);
     } else {
         obj.pushKV("scanning", false);
+    }
+
+    if( Params().IsVericoin() )
+    {
+        obj.pushKV("newmint", ValueFromAmount(pwallet->GetNewMint()));
+        obj.pushKV("stake", ValueFromAmount(pwallet->GetStake()));
     }
     return obj;
 }
@@ -3461,17 +3514,133 @@ UniValue rescanblockchain(const JSONRPCRequest& request)
 //     return ret;
 // }
 
-// XXX: Use RPC HELP
-// ppcoin: reserve balance from being staked for network protection
+// make a public-private key pair
+UniValue makekeypair(const JSONRPCRequest& request)
+{
+    if( ! Params().IsVericoin() )
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Action impossible on Verium");
+
+    RPCHelpMan{"makekeypair",
+        "\nMake a public/private key pair.\n",
+        {
+            {"prefix", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "Preferred prefix for the public key"},
+        },
+        RPCResult{
+            RPCResult::Type::OBJ, "", "",
+            {
+                {RPCResult::Type::STR, "PublicKey", "Public Key"},
+                {RPCResult::Type::STR, "PrivateKey", "Private Key"},
+            }
+        },
+        RPCExamples{
+           HelpExampleCli("makekeypair", "")
+          + HelpExampleRpc("makekeypair", "")
+        },
+    }.Check(request);
+
+    std::string strPrefix = "";
+    if (request.params.size() > 0)
+        strPrefix = request.params[0].get_str();
+
+    CKey key;
+    int nCount = 0;
+    do
+    {
+        key.MakeNewKey(false);
+        nCount++;
+    } while (nCount < 10000 && strPrefix != HexStr(key.GetPubKey()).substr(0, strPrefix.size()));
+
+    if (strPrefix != HexStr(key.GetPubKey()).substr(0, strPrefix.size()))
+        return NullUniValue;
+
+    CPrivKey vchPrivKey = key.GetPrivKey();
+
+    UniValue obj(UniValue::VOBJ);
+    obj.pushKV("PrivateKey", HexStr<CPrivKey::iterator>(vchPrivKey.begin(), vchPrivKey.end()));
+    obj.pushKV("PublicKey", HexStr(key.GetPubKey()));
+
+    return obj;
+}
+
+// display key pair from hex private key
+UniValue showkeypair(const JSONRPCRequest& request)
+{
+    if( ! Params().IsVericoin() )
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Action impossible on Verium");
+
+    RPCHelpMan{"showkeypair",
+        "\nDisplay a public/private key pair with given hex private key\n",
+        {
+            {"hexprivkey", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "Private key"},
+        },
+        RPCResult{
+            RPCResult::Type::OBJ, "", "",
+            {
+                {RPCResult::Type::STR, "PublicKey", "Public Key"},
+                {RPCResult::Type::STR, "PrivateKey", "Private Key"},
+                {RPCResult::Type::STR_HEX, "PrivateKeyHex", "Private Key Hex"},
+            }
+        },
+        RPCExamples{
+           HelpExampleCli("showkeypair", "XXXXXX")
+          + HelpExampleRpc("showkeypair", "XXXXXX")
+        },
+    }.Check(request);
+
+    std::string strPrivKey = request.params[0].get_str();
+
+    CKey key = DecodeSecret(strPrivKey);
+    if (!key.IsValid()) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Private key outside allowed range");
+
+    CPubKey pubkey = key.GetPubKey();
+    assert(key.VerifyPubKey(pubkey));
+
+    // Test signing some message
+    std::string strMsg = "Test sign by showkeypair";
+    std::vector<unsigned char> vchMsg(strMsg.begin(), strMsg.end());
+    std::vector<unsigned char> vchSig;
+    if (!key.Sign(Hash(vchMsg.begin(), vchMsg.end()), vchSig))
+        throw std::runtime_error(
+            "Failed to sign using the key, bad key?\n");
+
+    CPrivKey vchPrivKey = key.GetPrivKey();
+
+    UniValue obj(UniValue::VOBJ);
+    obj.pushKV("PublicKey", HexStr(key.GetPubKey()));
+    obj.pushKV("PrivateKey", HexStr<CPrivKey::iterator>(vchPrivKey.begin(), vchPrivKey.end()));
+    obj.pushKV("PrivateKeyHex", strPrivKey);
+
+    return obj;
+}
+
+// reserve balance from being staked for network protection
 UniValue reservebalance(const JSONRPCRequest& request)
 {
-    if (request.fHelp || request.params.size() > 2)
-        throw std::runtime_error(
-            "reservebalance [<reserve> [amount]]\n"
-            "<reserve> is true or false to turn balance reserve on or off.\n"
-            "<amount> is a real and rounded to cent.\n"
-            "Set reserve amount not participating in network protection.\n"
-            "If no parameters provided current setting is printed.\n");
+    if( ! Params().IsVericoin() )
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Action impossible on Verium");
+
+    RPCHelpMan{"reservebalance",
+        "\nSet reserve amount not participating in network protection\n",
+        {
+            {"reserve", RPCArg::Type::BOOL, RPCArg::Optional::OMITTED, "Enable / Disable reserve"},
+            {"amount", RPCArg::Type::NUM, RPCArg::Optional::OMITTED, "Amount to reserve"},
+        },
+        RPCResult{
+            RPCResult::Type::OBJ, "", "",
+            {
+                {RPCResult::Type::BOOL, "reserve", "Define if reserve is enable"},
+                {RPCResult::Type::STR, "amount", "Current amount reserved and not participating in network protection"},
+            }
+        },
+        RPCExamples{
+            "\nEnable reserve balance and block 10 coin\n"
+          + HelpExampleCli("reservebalance", "true 10")
+          + HelpExampleRpc("reservebalance", "true 10")
+          + "\nShow the current reserve settings\n"
+          + HelpExampleCli("reservebalance", "")
+          + HelpExampleRpc("reservebalance", "")
+        },
+    }.Check(request);
 
     if (request.params.size() > 0)
     {
@@ -3493,14 +3662,16 @@ UniValue reservebalance(const JSONRPCRequest& request)
             gArgs.ForceSetArg("-reservebalance", "0");
         }
     }
-
-    UniValue result(UniValue::VOBJ);
     CAmount nReserveBalance = 0;
     if (gArgs.IsArgSet("-reservebalance") && !ParseMoney(gArgs.GetArg("-reservebalance", ""), nReserveBalance))
         throw std::runtime_error("invalid reserve balance amount\n");
-    result.pushKV("reserve", (nReserveBalance > 0));
-    result.pushKV("amount", ValueFromAmount(nReserveBalance));
-    return result;
+
+    UniValue obj(UniValue::VOBJ);
+
+    obj.pushKV("reserve", (nReserveBalance > 0));
+    obj.pushKV("amount", ValueFromAmount(nReserveBalance));
+
+    return obj;
 }
 
 class DescribeWalletAddressVisitor : public boost::static_visitor<UniValue>
@@ -4206,7 +4377,8 @@ static const CRPCCommand commands[] =
     { "wallet",             "walletprocesspsbt",                &walletprocesspsbt,             {"psbt","sign","sighashtype","bip32derivs"} },
 
     // ppcoin commands
-//    { "wallet",             "listminting",                      &listminting,                   {"count", "from"} },
+    { "wallet",             "makekeypair",                      &makekeypair,                   {"prefix"} },
+    { "wallet",             "showkeypair",                      &showkeypair,                   {"hexprivkey"} },
     { "wallet",             "reservebalance",                   &reservebalance,                {"reserve", "amount"} },
 };
 // clang-format on
