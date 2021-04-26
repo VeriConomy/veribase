@@ -28,6 +28,7 @@ static constexpr int NUM_GETBLOCKSTATS_PERCENTILES = 5;
  * difficulty (4295032833 hashes).
  */
 double GetDifficulty(const CBlockIndex* blockindex);
+double GetPoWKHashPM();
 
 /** Callback for when block tip changed. */
 void RPCNotifyBlockChange(bool ibd, const CBlockIndex *);
@@ -43,9 +44,6 @@ UniValue MempoolToJSON(const CTxMemPool& pool, bool verbose = false);
 
 /** Block header to JSON */
 UniValue blockheaderToJSON(const CBlockIndex* tip, const CBlockIndex* blockindex) LOCKS_EXCLUDED(cs_main);
-
-/** Used by getblockstats to get feerates at different percentiles by weight  */
-void CalculatePercentilesByWeight(CAmount result[NUM_GETBLOCKSTATS_PERCENTILES], std::vector<std::pair<CAmount, int64_t>>& scores, int64_t total_weight);
 
 //! Pointer to node state that needs to be declared as a global to be accessible
 //! RPC methods. Due to limitations of the RPC framework, there's currently no

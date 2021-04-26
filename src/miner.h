@@ -22,6 +22,8 @@ class CChainParams;
 class CScript;
 class CWallet;
 
+extern int64_t nLastCoinStakeSearchInterval;
+
 namespace Consensus { struct Params; };
 
 static const bool DEFAULT_PRINTPRIORITY = false;

@@ -9,7 +9,9 @@
 #include <chainparams.h>
 #include <consensus/consensus.h>
 #include <consensus/validation.h>
+#include <consensus/tx_verify.h>
 #include <fs.h>
+#include <index/txindex.h>
 #include <interfaces/chain.h>
 #include <interfaces/wallet.h>
 #include <key.h>
@@ -21,11 +23,16 @@
 #include <script/descriptor.h>
 #include <script/script.h>
 #include <script/signingprovider.h>
+#include <timedata.h>
 #include <txmempool.h>
 #include <util/bip32.h>
 #include <util/error.h>
 #include <util/moneystr.h>
 #include <util/translation.h>
+#include <validation.h>
+#include <bignum.h>
+#include <pos.h>
+#include <txdb.h>
 #include <wallet/coincontrol.h>
 #include <wallet/fees.h>
 
@@ -260,7 +267,7 @@ WalletCreationStatus CreateWallet(interfaces::Chain& chain, const SecureString& 
 
 const uint256 CWalletTx::ABANDON_HASH(UINT256_ONE());
 
-// ppcoin: optional setting to unlock wallet for block minting only;
+// optional setting to unlock wallet for block minting only;
 //         serves to disable the trivial sendmoney when OS account compromised
 bool fWalletUnlockMintOnly = false;
 
@@ -707,6 +714,31 @@ void CWallet::MarkDirty()
     }
 }
 
+void CWallet::WalletUpdateSpent(const CTransactionRef &tx)
+{
+    // Anytime a signature is successfully verified, it's proof the outpoint is spent.
+    // Update the wallet spent flag if it doesn't know due to wallet.dat being
+    // restored from backup or the user making copies of wallet.dat.
+    {
+        LOCK(cs_wallet);
+        for (const CTxIn& txin : tx->vin) {
+            auto mi = mapWallet.find(txin.prevout.hash);
+            if (mi != mapWallet.end())
+            {
+                CWalletTx& wtx = (*mi).second;
+                if (txin.prevout.n >= wtx.tx->vout.size())
+                    LogPrintf("WalletUpdateSpent: bad wtx %s\n", wtx.GetHash().ToString().c_str());
+                else if (IsMine(wtx.tx->vout[txin.prevout.n]))
+                {
+                    LogPrintf("WalletUpdateSpent found spent coin %sppc %s\n", FormatMoney(wtx.GetCredit(ISMINE_SPENDABLE)).c_str(), wtx.GetHash().ToString().c_str());
+                    wtx.BindWallet(this);
+                    NotifyTransactionChanged(this, txin.prevout.hash, CT_UPDATED);
+                }
+            }
+        }
+    }
+}
+
 void CWallet::SetSpentKeyState(WalletBatch& batch, const uint256& hash, unsigned int n, bool used, std::set<CTxDestination>& tx_destinations)
 {
     AssertLockHeld(cs_wallet);
@@ -829,6 +861,10 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFlushOnClose)
 
     // Break debit/credit balance caches:
     wtx.MarkDirty();
+
+    // since AddToWallet is called directly for self-originating transactions, check for consumption of own coins
+    if( Params().IsVericoin() )
+        WalletUpdateSpent(wtx.tx);
 
     // Notify UI of new or updated transaction
     NotifyTransactionChanged(this, hash, fInsertedNew ? CT_NEW : CT_UPDATED);
@@ -1797,8 +1833,13 @@ void CWallet::ReacceptWalletTransactions()
 
         int nDepth = wtx.GetDepthInMainChain();
 
-        if (!wtx.IsCoinBase() && (nDepth == 0 && !wtx.isAbandoned())) {
-            mapSorted.insert(std::make_pair(wtx.nOrderPos, &wtx));
+        if (nDepth == 0 && !wtx.isAbandoned()) {
+            if (wtx.IsCoinBase() || wtx.IsCoinStake()) {
+                LogPrintf("Abandoning wtx %s\n", wtx.GetHash().ToString());
+                AbandonTransaction(wtxid);
+                }
+            else
+                mapSorted.insert(std::make_pair(wtx.nOrderPos, &wtx));
         }
     }
 
@@ -2095,9 +2136,8 @@ CWallet::Balance CWallet::GetBalance(const int min_depth, bool avoid_reuse) cons
                 ret.m_mine_untrusted_pending += tx_credit_mine;
                 ret.m_watchonly_untrusted_pending += tx_credit_watchonly;
             }
-            if (wtx.IsCoinStake()) {
+            if (wtx.IsCoinStake())
                 ret.m_mine_stake += wtx.GetCredit(ISMINE_ALL);
-            }
             ret.m_mine_immature += wtx.GetImmatureCredit();
             ret.m_watchonly_immature += wtx.GetImmatureWatchOnlyCredit();
         }
@@ -2144,7 +2184,7 @@ void CWallet::AvailableCoins(interfaces::Chain::Lock& locked_chain, std::vector<
         }
 
         if (nSpendTime > 0 && wtx.tx->nTime > nSpendTime)
-            continue;  // ppcoin: timestamp must not exceed spend time
+            continue;  // timestamp must not exceed spend time
 
         if (wtx.IsImmatureCoinBase())
             continue;
@@ -4339,6 +4379,118 @@ void CWallet::ConnectScriptPubKeyManNotifiers()
         spk_man->NotifyWatchonlyChanged.connect(NotifyWatchonlyChanged);
         spk_man->NotifyCanGetAddressesChanged.connect(NotifyCanGetAddressesChanged);
     }
+}
+
+// Select some coins without random shuffle or best subset approximation
+bool CWallet::SelectCoinsSimple(int64_t nTargetValue, unsigned int nSpendTime, std::set<std::pair<const CWalletTx*,unsigned int>>& setCoinsRet, int64_t& nValueRet) const
+{
+    std::vector<COutput> availableCoins;
+    auto locked_chain = chain().lock();
+
+    AvailableCoins(*locked_chain, availableCoins);
+    setCoinsRet.clear();
+    nValueRet = 0;
+
+    for (const COutput& output : availableCoins)
+    {
+        const CWalletTx *pcoin = output.tx;
+        int i = output.i;
+
+        // Stop if we've chosen enough inputs
+        if (nValueRet >= nTargetValue)
+            break;
+
+        // Follow the timestamp rules
+        if (pcoin->GetTxTime() > nSpendTime)
+            continue;
+
+        int64_t n = pcoin->tx->vout[i].nValue;
+
+        std::pair<int64_t, std::pair<const CWalletTx*,unsigned int>> coin =  std::make_pair(n,std::make_pair(pcoin, i));
+
+        if (n >= nTargetValue)
+        {
+            // If input value is greater or equal to target then simply insert
+            //    it into the current subset and exit
+            setCoinsRet.insert(coin.second);
+            nValueRet += coin.first;
+            break;
+        }
+        else if (n < nTargetValue + CENT)
+        {
+            setCoinsRet.insert(coin.second);
+            nValueRet += coin.first;
+        }
+    }
+
+    return true;
+}
+
+int64_t CWallet::GetNewMint() const
+{
+    int64_t nTotal = 0;
+    LOCK(cs_wallet);
+    for (std::map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
+    {
+        const CWalletTx* pcoin = &(*it).second;
+        if (pcoin->IsCoinBase() && pcoin->GetBlocksToMaturity() > 0 && pcoin->GetDepthInMainChain() > 0)
+            nTotal += pcoin->GetCredit(ISMINE_ALL);
+    }
+    return nTotal;
+}
+
+int64_t CWallet::GetStake() const
+{
+    int64_t nTotal = 0;
+    LOCK(cs_wallet);
+    for (std::map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
+    {
+        const CWalletTx* pcoin = &(*it).second;
+        if (pcoin->IsCoinStake() && pcoin->GetBlocksToMaturity() > 0 && pcoin->GetDepthInMainChain() > 0)
+            nTotal += pcoin->GetCredit(ISMINE_ALL);
+    }
+    return nTotal;
+}
+
+bool CWallet::GetStakeWeight(uint64_t& nWeight)
+{
+    CAmount nBalance = GetBalance().m_mine_trusted;
+    CAmount nReserveBalance = 0;
+
+    if (gArgs.IsArgSet("-reservebalance") && !ParseMoney(gArgs.GetArg("-reservebalance", ""), nReserveBalance))
+        return error("CreateCoinStake : invalid reserve balance amount");
+    if (nBalance <= nReserveBalance)
+        return false;
+
+    std::vector<const CWalletTx*> vwtxPrev;
+
+    std::set<std::pair<const CWalletTx*,unsigned int> > setCoins;
+    int64_t nValueIn = 0;
+
+    if (!SelectCoinsSimple(nBalance - nReserveBalance, GetTime(), setCoins, nValueIn))
+        return false;
+
+
+    if (setCoins.empty())
+        return false;
+
+    for (const auto& pcoin : setCoins)
+    {
+        CDiskTxPos postx;
+        if (!g_txindex->FindTxPosition(pcoin.first->GetHash(), postx))
+            continue;
+
+        int64_t nTimeWeight = GetWeight((int64_t)pcoin.first->GetTxTime(), (int64_t)GetTime(), (int64_t)pcoin.first->tx->vout[pcoin.second].nValue, ChainActive().Tip()->pprev);
+        CBigNum bnCoinDayWeight = CBigNum(pcoin.first->tx->vout[pcoin.second].nValue) * nTimeWeight / COIN / (24 * 60 * 60);
+
+        // Weight is greater than zero
+        if (nTimeWeight > 0)
+        {
+            nWeight += bnCoinDayWeight.getuint64();
+        }
+    }
+
+    return true;
 }
 
 // // ppcoin: create coin stake transaction

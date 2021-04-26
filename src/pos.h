@@ -9533,6 +9533,8 @@ bool CheckStakeModifierCheckpoints(int nHeight, unsigned int nStakeModifierCheck
 // ppcoin: entropy bit for stake modifier if chosen by modifier
 unsigned int GetStakeEntropyBit(const CBlock& block);
 
+int64_t GetWeight(int64_t nIntervalBeginning, int64_t nIntervalEnd, int64_t nValueIn, CBlockIndex* pindexPrev);
+
 // ppcoin:
 bool SignBlock(CBlock& block, const CWallet& keystore);
 bool CheckBlockSignature(const CBlock& block);
