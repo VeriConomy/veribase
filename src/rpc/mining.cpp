@@ -15,6 +15,7 @@
 #include <net.h>
 #include <node/context.h>
 #include <pow.h>
+#include <pos.h>
 #include <rpc/blockchain.h>
 #include <rpc/server.h>
 #include <rpc/util.h>
@@ -30,69 +31,10 @@
 #include <validation.h>
 #include <validationinterface.h>
 #include <warnings.h>
+#include <wallet/rpcwallet.h> // Probably need to avoid that ...
 
 #include <memory>
 #include <stdint.h>
-
-/**
- * Return average network hashes per second based on the last 'lookup' blocks,
- * or from the last difficulty change if 'lookup' is nonpositive.
- * If 'height' is nonnegative, compute the estimate at the time when a given block was found.
- */
-static UniValue GetNetworkHashPS(int lookup, int height) {
-    CBlockIndex *pb = ::ChainActive().Tip();
-
-    if (height >= 0 && height < ::ChainActive().Height())
-        pb = ::ChainActive()[height];
-
-    if (pb == nullptr || !pb->nHeight)
-        return 0;
-
-    // If lookup is larger than chain, then set it to chain length.
-    if (lookup > pb->nHeight)
-        lookup = pb->nHeight;
-
-    CBlockIndex *pb0 = pb;
-    int64_t minTime = pb0->GetBlockTime();
-    int64_t maxTime = minTime;
-    for (int i = 0; i < lookup; i++) {
-        pb0 = pb0->pprev;
-        int64_t time = pb0->GetBlockTime();
-        minTime = std::min(time, minTime);
-        maxTime = std::max(time, maxTime);
-    }
-
-    // In case there's a situation where minTime == maxTime, we don't want a divide by zero exception.
-    if (minTime == maxTime)
-        return 0;
-
-    arith_uint256 workDiff = pb->nChainWork - pb0->nChainWork;
-    int64_t timeDiff = maxTime - minTime;
-
-    return workDiff.getdouble() / timeDiff;
-}
-
-static UniValue getnetworkhashps(const JSONRPCRequest& request)
-{
-            RPCHelpMan{"getnetworkhashps",
-                "\nReturns the estimated network hashes per second based on the last n blocks.\n"
-                "Pass in [blocks] to override # of blocks, -1 specifies since last difficulty change.\n"
-                "Pass in [height] to estimate the network speed at the time when a certain block was found.\n",
-                {
-                    {"nblocks", RPCArg::Type::NUM, /* default */ "120", "The number of blocks, or -1 for blocks since last difficulty change."},
-                    {"height", RPCArg::Type::NUM, /* default */ "-1", "To estimate at the time of the given height."},
-                },
-                RPCResult{
-                    RPCResult::Type::NUM, "", "Hashes per second estimated"},
-                RPCExamples{
-                    HelpExampleCli("getnetworkhashps", "")
-            + HelpExampleRpc("getnetworkhashps", "")
-                },
-            }.Check(request);
-
-    LOCK(cs_main);
-    return GetNetworkHashPS(!request.params[0].isNull() ? request.params[0].get_int() : 120, !request.params[1].isNull() ? request.params[1].get_int() : -1);
-}
 
 static UniValue generateBlocks(const CTxMemPool& mempool, const CScript& coinbase_script, int nGenerate, uint64_t nMaxTries)
 {
@@ -224,39 +166,131 @@ static UniValue generatetoaddress(const JSONRPCRequest& request)
 
 static UniValue getmininginfo(const JSONRPCRequest& request)
 {
-            RPCHelpMan{"getmininginfo",
-                "\nReturns a json object containing mining-related information.",
-                {},
-                RPCResult{
-                    RPCResult::Type::OBJ, "", "",
-                    {
-                        {RPCResult::Type::NUM, "blocks", "The current block"},
-                        {RPCResult::Type::NUM, "currentblockweight", /* optional */ true, "The block weight of the last assembled block (only present if a block was ever assembled)"},
-                        {RPCResult::Type::NUM, "currentblocktx", /* optional */ true, "The number of block transactions of the last assembled block (only present if a block was ever assembled)"},
-                        {RPCResult::Type::NUM, "difficulty", "The current difficulty"},
-                        {RPCResult::Type::NUM, "networkhashps", "The network hashes per second"},
-                        {RPCResult::Type::NUM, "pooledtx", "The size of the mempool"},
-                        {RPCResult::Type::STR, "chain", "current network name (main, test, regtest)"},
-                        {RPCResult::Type::STR, "warnings", "any network and blockchain warnings"},
-                    }},
-                RPCExamples{
-                    HelpExampleCli("getmininginfo", "")
-            + HelpExampleRpc("getmininginfo", "")
-                },
-            }.Check(request);
+    if( ! Params().IsVericoin()) {
+
+        RPCHelpMan{"getmininginfo",
+            "\nReturns a json object containing mining-related information.",
+            {},
+            RPCResult{
+                RPCResult::Type::OBJ, "", "",
+                {
+                    {RPCResult::Type::NUM, "blockreward", "The current block reward"},
+                    {RPCResult::Type::NUM, "blocks", "The current block"},
+                    {RPCResult::Type::NUM, "blocksperhour", "Number of blocks per hour"},
+                    {RPCResult::Type::NUM, "blocktime", "Current time between blocks in minute"},
+                    {RPCResult::Type::NUM, "currentblockweight", /* optional */ true, "The block weight of the last assembled block (only present if a block was ever assembled)"},
+                    {RPCResult::Type::NUM, "currentblocktx", /* optional */ true, "The number of block transactions of the last assembled block (only present if a block was ever assembled)"},
+                    {RPCResult::Type::NUM, "difficulty", "The current difficulty"},
+                    {RPCResult::Type::NUM, "estimateblockrate", "Estimated block rate of your miner in hours"},
+                    {RPCResult::Type::NUM, "hashrate", "Your miner hashrate in H/m"},
+                    {RPCResult::Type::NUM, "networkhashps", "The network hashes per second"},
+                    {RPCResult::Type::NUM, "pooledtx", "The size of the mempool"},
+                    {RPCResult::Type::STR, "chain", "current network name (verium, vericoin)"},
+                    {RPCResult::Type::STR, "warnings", "any network and blockchain warnings"},
+                }
+            },
+            RPCExamples{
+                HelpExampleCli("getmininginfo", "")
+              + HelpExampleRpc("getmininginfo", "")
+            },
+        }.Check(request);
+
+    }
+    else {
+        // for vericoin
+        RPCHelpMan{"getmininginfo",
+            "\nReturns a json object containing mining-related information.",
+            {},
+            RPCResult{
+                RPCResult::Type::OBJ, "", "",
+                {
+                    {RPCResult::Type::NUM, "blockreward", "Proof of work block reward"},
+                    {RPCResult::Type::NUM, "blocks", "The current block"},
+                    {RPCResult::Type::NUM, "blocksperhour", "Number of blocks per hour"},
+                    {RPCResult::Type::NUM, "currentblockweight", /* optional */ true, "The block weight of the last assembled block (only present if a block was ever assembled)"},
+                    {RPCResult::Type::NUM, "currentblocktx", /* optional */ true, "The number of block transactions of the last assembled block (only present if a block was ever assembled)"},
+                    {RPCResult::Type::OBJ, "difficulty", "The current difficulty", {
+                            {RPCResult::Type::NUM, "proof-of-stake", "Proof Of Stake difficulty"},
+                            {RPCResult::Type::NUM, "proof-of-work", "Proof Of Work difficulty"},
+                            {RPCResult::Type::NUM, "search-interval", "The search interval"},
+                        },
+                    },
+                    {RPCResult::Type::OBJ, "stakeweight", "Stake Weight", {
+                            {RPCResult::Type::NUM, "combined", "Combined stake weight"},
+                        },
+                    },
+                    {RPCResult::Type::NUM, "stakeinterest", "The current Staking intereset"},
+                    {RPCResult::Type::NUM, "stakeinflation", "The current staking inflation"},
+                    {RPCResult::Type::NUM, "networkhashps", "The network hashes per second"},
+                    {RPCResult::Type::NUM, "networkstakeweight", "The network average stake weight"},
+                    {RPCResult::Type::NUM, "pooledtx", "The size of the mempool"},
+                    {RPCResult::Type::STR, "chain", "current network name (verium, vericoin)"},
+                    {RPCResult::Type::STR, "warnings", "any network and blockchain warnings"},
+                }
+            },
+            RPCExamples{
+                HelpExampleCli("getmininginfo", "")
+              + HelpExampleRpc("getmininginfo", "")
+            },
+        }.Check(request);
+    }
 
     LOCK(cs_main);
     const CTxMemPool& mempool = EnsureMemPool();
+
+    double nethashrate = GetPoWKHashPM();
 
     UniValue obj(UniValue::VOBJ);
     obj.pushKV("blocks",           (int)::ChainActive().Height());
     if (BlockAssembler::m_last_block_weight) obj.pushKV("currentblockweight", *BlockAssembler::m_last_block_weight);
     if (BlockAssembler::m_last_block_num_txs) obj.pushKV("currentblocktx", *BlockAssembler::m_last_block_num_txs);
-    obj.pushKV("difficulty",       (double)GetDifficulty(::ChainActive().Tip()));
-    obj.pushKV("networkhashps",    getnetworkhashps(request));
+    obj.pushKV("networkhashps",    nethashrate/60);
     obj.pushKV("pooledtx",         (uint64_t)mempool.size());
     obj.pushKV("chain",            Params().NetworkIDString());
     obj.pushKV("warnings",         GetWarnings(false));
+
+    obj.pushKV("blockreward",       (double)GetProofOfWorkReward(0,::ChainActive().Tip()->pprev)/COIN);
+    obj.pushKV("blocksperhour",     GetBlockRatePerHour());
+
+    if( ! Params().IsVericoin())
+    {
+        double blocktime = (double)CalculateBlocktime(::ChainActive().Tip())/60;
+        double totalhashrate = hashrate;
+        double minerate;
+        if (totalhashrate == 0.0){minerate = 0.0;}
+        else{
+            minerate = 16.666667*(nethashrate*blocktime)/(totalhashrate);
+        }
+
+        obj.pushKV("blocktime",         blocktime);
+        obj.pushKV("difficulty",       (double)GetDifficulty(::ChainActive().Tip()));
+        obj.pushKV("estimateblockrate", minerate);
+        obj.pushKV("hashrate",          totalhashrate);
+    }
+    else
+    {
+        std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+        CWallet* const pwallet = wallet.get();
+
+        uint64_t nWeight = 0;
+        pwallet->GetStakeWeight(nWeight);
+        double averageStakeWeight = GetAverageStakeWeight(::ChainActive().Tip()->pprev);
+
+        UniValue difficulty(UniValue::VOBJ);
+        difficulty.pushKV("proof-of-work",        GetDifficulty(NULL));
+        difficulty.pushKV("proof-of-stake",       GetDifficulty(GetLastBlockIndex(::ChainActive().Tip(), true)));
+        difficulty.pushKV("search-interval", (int)nLastCoinStakeSearchInterval);
+
+        UniValue stakeweight(UniValue::VOBJ);
+        stakeweight.pushKV("combined", nWeight);
+
+        obj.pushKV("difficulty",     difficulty);
+        obj.pushKV("stakeweight",    stakeweight);
+        obj.pushKV("stakeinterest",  GetCurrentInterestRate(::ChainActive().Tip(), Params().GetConsensus()));
+        obj.pushKV("stakeinflation", GetCurrentInflationRate(averageStakeWeight));
+        obj.pushKV("netstakeweight", averageStakeWeight);
+    }
+
     return obj;
 }
 
@@ -335,11 +369,6 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
                                     {"support", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "client side supported feature, 'longpoll', 'coinbasetxn', 'coinbasevalue', 'proposal', 'serverlist', 'workid'"},
                                 },
                                 },
-                            {"rules", RPCArg::Type::ARR, RPCArg::Optional::NO, "A list of strings",
-                                {
-                                    {"support", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "client side supported softfork deployment"},
-                                },
-                                },
                         },
                         "\"template_request\""},
                 },
@@ -392,8 +421,8 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
                         {RPCResult::Type::NUM, "height", "The height of the next block"},
                     }},
                 RPCExamples{
-                    HelpExampleCli("getblocktemplate", "'{\"rules\": [\"segwit\"]}'")
-            + HelpExampleRpc("getblocktemplate", "{\"rules\": [\"segwit\"]}")
+                    HelpExampleCli("getblocktemplate", "'{\"capabilities\": [\"coinbasetxn\", \"coinbasevalue\", \"longpoll\", \"workid\"]}'")
+            + HelpExampleRpc("getblocktemplate", "{\"capabilities\": [\"coinbasetxn\", \"coinbasevalue\", \"longpoll\", \"workid\"]}")
                 },
             }.Check(request);
 
@@ -402,7 +431,6 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
     std::string strMode = "template";
     UniValue lpval = NullUniValue;
     std::set<std::string> setClientRules;
-    int64_t nMaxVersionPreVB = -1;
     if (!request.params[0].isNull())
     {
         const UniValue& oparam = request.params[0].get_obj();
@@ -509,11 +537,6 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
         // TODO: Maybe recheck connections/IBD and (if something wrong) send an expires-immediately template to stop miners?
     }
 
-    // GBT must be called with 'segwit' set in the rules
-    if (setClientRules.count("segwit") != 1) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "getblocktemplate must be called with the segwit rule set (call with {\"rules\": [\"segwit\"]})");
-    }
-
     // Update block
     static CBlockIndex* pindexPrev;
     static int64_t nStart;
@@ -600,14 +623,6 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
     result.pushKV("version", pblock->nVersion);
     result.pushKV("rules", aRules);
 
-    if (nMaxVersionPreVB >= 2) {
-        // If VB is supported by the client, nMaxVersionPreVB is -1, so we won't get here
-        // Because BIP 34 changed how the generation transaction is serialized, we can only use version/force back to v2 blocks
-        // This is safe to do [otherwise-]unconditionally only because we are throwing an exception above if a non-force deployment gets activated
-        // Note that this can probably also be removed entirely after the first BIP9 non-force deployment (ie, probably segwit) gets activated
-        aMutable.push_back("version/force");
-    }
-
     result.pushKV("previousblockhash", pblock->hashPrevBlock.GetHex());
     result.pushKV("transactions", transactions);
     result.pushKV("coinbaseaux", aux);
@@ -624,10 +639,6 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
     result.pushKV("curtime", pblock->GetBlockTime());
     result.pushKV("bits", strprintf("%08x", pblock->nBits));
     result.pushKV("height", (int64_t)(pindexPrev->nHeight+1));
-
-    if (!pblocktemplate->vchCoinbaseCommitment.empty()) {
-        result.pushKV("default_witness_commitment", HexStr(pblocktemplate->vchCoinbaseCommitment.begin(), pblocktemplate->vchCoinbaseCommitment.end()));
-    }
 
     return result;
 }
@@ -749,19 +760,113 @@ static UniValue submitheader(const JSONRPCRequest& request)
     throw JSONRPCError(RPC_VERIFY_ERROR, state.GetRejectReason());
 }
 
+
+UniValue minerstart(const JSONRPCRequest& request)
+{
+    if( Params().IsVericoin())
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Action impossible on Vericoin");
+
+    if(!g_rpc_node->connman)
+        throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
+
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+
+    if (!EnsureWalletIsAvailable(pwallet, request.fHelp)) {
+        return false;
+    }
+
+    RPCHelpMan{"minerstart",
+        "\nStart mining (Verium only)",
+        {
+            {"nthreads", RPCArg::Type::NUM, RPCArg::Optional::NO, "Number of thread to allocate to mining."},
+        },
+        RPCResult{
+            RPCResult::Type::OBJ, "", "",
+            {
+                {RPCResult::Type::STR, "status", "Mining status (active/stopped)"},
+                {RPCResult::Type::NUM, "nthreads", "Number of thread allocated"},
+            }
+        },
+        RPCExamples{
+            HelpExampleCli("minerstart", "")
+    + HelpExampleRpc("minerstart", "")
+        },
+    }.Check(request);
+
+    int nThreads = request.params[0].get_int();
+
+
+    LOCK(cs_main);
+
+    GenerateVerium(true, pwallet, nThreads, g_rpc_node->connman.get());
+
+    UniValue obj(UniValue::VOBJ);
+    obj.pushKV("status",   "active");
+    obj.pushKV("nthreads", nThreads);
+
+    return obj;
+}
+
+UniValue minerstop(const JSONRPCRequest& request)
+{
+    if( Params().IsVericoin())
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Action impossible on Vericoin");
+
+    if(!g_rpc_node->connman)
+        throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
+
+
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+
+    if (!EnsureWalletIsAvailable(pwallet, request.fHelp)) {
+        return false;
+    }
+
+    RPCHelpMan{"minerstop",
+        "\nStop mining (Verium only)",
+        {},
+        RPCResult{
+            RPCResult::Type::OBJ, "", "",
+            {
+                {RPCResult::Type::STR, "status", "Mining status (active/stopped)"},
+                {RPCResult::Type::NUM, "nthreads", "Number of thread allocated"},
+            }
+        },
+        RPCExamples{
+            HelpExampleCli("minerstop", "")
+    + HelpExampleRpc("minerstop", "")
+        },
+    }.Check(request);
+
+
+    LOCK(cs_main);
+
+    GenerateVerium(false, pwallet, 0, g_rpc_node->connman.get());
+
+    UniValue obj(UniValue::VOBJ);
+    obj.pushKV("status",   "stopped");
+    obj.pushKV("nthreads", 0);
+
+    return obj;
+}
+
+
 void RegisterMiningRPCCommands(CRPCTable &t)
 {
 // clang-format off
 static const CRPCCommand commands[] =
 { //  category              name                      actor (function)         argNames
   //  --------------------- ------------------------  -----------------------  ----------
-    { "mining",             "getnetworkhashps",       &getnetworkhashps,       {"nblocks","height"} },
     { "mining",             "getmininginfo",          &getmininginfo,          {} },
     { "mining",             "prioritisetransaction",  &prioritisetransaction,  {"txid","dummy","fee_delta"} },
     { "mining",             "getblocktemplate",       &getblocktemplate,       {"template_request"} },
     { "mining",             "submitblock",            &submitblock,            {"hexdata","dummy"} },
     { "mining",             "submitheader",           &submitheader,           {"hexdata"} },
 
+    { "miner",              "minerstop",              &minerstop,              {} },
+    { "miner",              "minerstart",             &minerstart,             {"nthreads"} },
 
     { "generating",         "generatetoaddress",      &generatetoaddress,      {"nblocks","address","maxtries"} },
     { "generating",         "generatetodescriptor",   &generatetodescriptor,   {"num_blocks","descriptor","maxtries"} },
