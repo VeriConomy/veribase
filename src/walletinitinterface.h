@@ -17,6 +17,9 @@ public:
     virtual bool ParameterInteraction() const = 0;
     /** Add wallets that should be opened to list of chain clients. */
     virtual void Construct(NodeContext& node) const = 0;
+    /** Launch process linked to the wallet */
+    virtual void StartProcess(NodeContext& node) const = 0;
+
 
     virtual ~WalletInitInterface() {}
 };

@@ -66,15 +66,13 @@ static inline uint64_t InsecureRandBits(int bits) { return g_insecure_rand_ctx.r
 static inline uint64_t InsecureRandRange(uint64_t range) { return g_insecure_rand_ctx.randrange(range); }
 static inline bool InsecureRandBool() { return g_insecure_rand_ctx.randbool(); }
 
-static constexpr CAmount CENT{1000000};
-
 /** Basic testing setup.
  * This just configures logging, data dir and chain parameters.
  */
 struct BasicTestingSetup {
     ECCVerifyHandle globalVerifyHandle;
 
-    explicit BasicTestingSetup(const std::string& chainName = CBaseChainParams::MAIN);
+    explicit BasicTestingSetup(const std::string& chainName = CBaseChainParams::VERIUM);
     ~BasicTestingSetup();
 private:
     const fs::path m_path_root;
@@ -87,14 +85,14 @@ struct TestingSetup : public BasicTestingSetup {
     NodeContext m_node;
     boost::thread_group threadGroup;
 
-    explicit TestingSetup(const std::string& chainName = CBaseChainParams::MAIN);
+    explicit TestingSetup(const std::string& chainName = CBaseChainParams::VERIUM);
     ~TestingSetup();
 };
 
 /** Identical to TestingSetup, but chain set to regtest */
 struct RegTestingSetup : public TestingSetup {
     RegTestingSetup()
-        : TestingSetup{CBaseChainParams::REGTEST} {}
+        : TestingSetup{CBaseChainParams::VERIUM} {}
 };
 
 class CBlock;

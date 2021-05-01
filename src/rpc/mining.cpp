@@ -563,10 +563,9 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
     }
     CHECK_NONFATAL(pindexPrev);
     CBlock* pblock = &pblocktemplate->block; // pointer for convenience
-    const Consensus::Params& consensusParams = Params().GetConsensus();
 
     // Update nTime
-    UpdateTime(pblock, consensusParams, pindexPrev);
+    UpdateTime(pblock);
     pblock->nNonce = 0;
 
     UniValue aCaps(UniValue::VARR); aCaps.push_back("proposal");
@@ -620,7 +619,7 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
     UniValue aRules(UniValue::VARR);
     aRules.push_back("csv");
     aRules.push_back("!segwit");
-    result.pushKV("version", pblock->nVersion);
+    result.pushKV("version", pblock->nVersion); // XXX: We Could do a little hack to keep veriumMiner working
     result.pushKV("rules", aRules);
 
     result.pushKV("previousblockhash", pblock->hashPrevBlock.GetHex());
@@ -760,22 +759,8 @@ static UniValue submitheader(const JSONRPCRequest& request)
     throw JSONRPCError(RPC_VERIFY_ERROR, state.GetRejectReason());
 }
 
-
 UniValue minerstart(const JSONRPCRequest& request)
 {
-    if( Params().IsVericoin())
-        throw JSONRPCError(RPC_INVALID_REQUEST, "Action impossible on Vericoin");
-
-    if(!g_rpc_node->connman)
-        throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
-
-    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
-    CWallet* const pwallet = wallet.get();
-
-    if (!EnsureWalletIsAvailable(pwallet, request.fHelp)) {
-        return false;
-    }
-
     RPCHelpMan{"minerstart",
         "\nStart mining (Verium only)",
         {
@@ -794,12 +779,23 @@ UniValue minerstart(const JSONRPCRequest& request)
         },
     }.Check(request);
 
-    int nThreads = request.params[0].get_int();
+    if( Params().IsVericoin())
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Action impossible on Vericoin");
 
+    if(!g_rpc_node->connman)
+        throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
+
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+
+    if (!EnsureWalletIsAvailable(wallet.get(), request.fHelp)) {
+        return false;
+    }
+
+    int nThreads = request.params[0].get_int();
 
     LOCK(cs_main);
 
-    GenerateVerium(true, pwallet, nThreads, g_rpc_node->connman.get());
+    GenerateVerium(true, wallet, nThreads, g_rpc_node->connman.get(), g_rpc_node->mempool);
 
     UniValue obj(UniValue::VOBJ);
     obj.pushKV("status",   "active");
@@ -810,20 +806,6 @@ UniValue minerstart(const JSONRPCRequest& request)
 
 UniValue minerstop(const JSONRPCRequest& request)
 {
-    if( Params().IsVericoin())
-        throw JSONRPCError(RPC_INVALID_REQUEST, "Action impossible on Vericoin");
-
-    if(!g_rpc_node->connman)
-        throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
-
-
-    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
-    CWallet* const pwallet = wallet.get();
-
-    if (!EnsureWalletIsAvailable(pwallet, request.fHelp)) {
-        return false;
-    }
-
     RPCHelpMan{"minerstop",
         "\nStop mining (Verium only)",
         {},
@@ -840,10 +822,22 @@ UniValue minerstop(const JSONRPCRequest& request)
         },
     }.Check(request);
 
+    if( Params().IsVericoin())
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Action impossible on Vericoin");
+
+    if(!g_rpc_node->connman)
+        throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
+
+
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+
+    if (!EnsureWalletIsAvailable(wallet.get(), request.fHelp)) {
+        return false;
+    }
 
     LOCK(cs_main);
 
-    GenerateVerium(false, pwallet, 0, g_rpc_node->connman.get());
+    GenerateVerium(false, wallet, 0, g_rpc_node->connman.get(), g_rpc_node->mempool);
 
     UniValue obj(UniValue::VOBJ);
     obj.pushKV("status",   "stopped");
@@ -852,6 +846,85 @@ UniValue minerstop(const JSONRPCRequest& request)
     return obj;
 }
 
+
+UniValue stakingstart(const JSONRPCRequest& request)
+{
+    RPCHelpMan{"stakingstart",
+        "\nStart staking (Vericoin only)",
+        {},
+        RPCResult{
+            RPCResult::Type::OBJ, "", "",
+            {
+                {RPCResult::Type::STR, "status", "Mining status (active/stopped)"},
+            }
+        },
+        RPCExamples{
+            HelpExampleCli("stakingstart", "")
+    + HelpExampleRpc("stakingstart", "")
+        },
+    }.Check(request);
+
+    if( ! Params().IsVericoin())
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Action impossible on Verium");
+
+    if(!g_rpc_node->connman)
+        throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
+
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+
+    if (!EnsureWalletIsAvailable(wallet.get(), request.fHelp)) {
+        return false;
+    }
+
+    LOCK(cs_main);
+
+    GenerateVericoin(true, wallet, g_rpc_node->connman.get(), g_rpc_node->mempool);
+
+    UniValue obj(UniValue::VOBJ);
+    obj.pushKV("status",   "active");
+
+    return obj;
+}
+
+UniValue stakingstop(const JSONRPCRequest& request)
+{
+    RPCHelpMan{"stakingstop",
+        "\nStop staking (Vericoin only)",
+        {},
+        RPCResult{
+            RPCResult::Type::OBJ, "", "",
+            {
+                {RPCResult::Type::STR, "status", "Mining status (active/stopped)"},
+            }
+        },
+        RPCExamples{
+            HelpExampleCli("stakingstop", "")
+    + HelpExampleRpc("stakingstop", "")
+        },
+    }.Check(request);
+
+    if( ! Params().IsVericoin())
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Action impossible on Verium");
+
+    if(!g_rpc_node->connman)
+        throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
+
+
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+
+    if (!EnsureWalletIsAvailable(wallet.get(), request.fHelp)) {
+        return false;
+    }
+
+    LOCK(cs_main);
+
+    GenerateVericoin(false, wallet,  g_rpc_node->connman.get(), g_rpc_node->mempool);
+
+    UniValue obj(UniValue::VOBJ);
+    obj.pushKV("status",   "stopped");
+
+    return obj;
+}
 
 void RegisterMiningRPCCommands(CRPCTable &t)
 {
@@ -867,6 +940,9 @@ static const CRPCCommand commands[] =
 
     { "miner",              "minerstop",              &minerstop,              {} },
     { "miner",              "minerstart",             &minerstart,             {"nthreads"} },
+
+    { "staking",            "stakingstop",            &stakingstop,              {} },
+    { "staking",            "stakingstart",           &stakingstart,             {} },
 
     { "generating",         "generatetoaddress",      &generatetoaddress,      {"nblocks","address","maxtries"} },
     { "generating",         "generatetodescriptor",   &generatetodescriptor,   {"num_blocks","descriptor","maxtries"} },

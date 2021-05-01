@@ -461,8 +461,10 @@ int GuiMain(int argc, char* argv[])
     // as it is used to locate QSettings
     QApplication::setOrganizationName(QAPP_ORG_NAME);
     QApplication::setOrganizationDomain(QAPP_ORG_DOMAIN);
-    QApplication::setApplicationName(QAPP_APP_NAME_DEFAULT);
-
+    if( Params().IsVericoin() )
+        QApplication::setApplicationName(QAPP_APP_NAME_VERICOIN);
+    else
+        QApplication::setApplicationName(QAPP_APP_NAME_VERIUM);
     /// 4. Initialization of translations, so that intro dialog is in user's language
     // Now that QSettings are accessible, initialize translations
     QTranslator qtTranslatorBase, qtTranslator, translatorBase, translator;

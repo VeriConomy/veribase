@@ -219,6 +219,10 @@ void Shutdown(NodeContext& node)
 
     StopTorControl();
 
+    // Stopping verium
+    GenerateVerium(false, nullptr, 0, node.connman.get(), node.mempool);
+    GenerateVericoin(false, nullptr, node.connman.get(), node.mempool);
+
     // After everything has been shut down, but before things get flushed, stop the
     // CScheduler/checkqueue threadGroup
     if (node.scheduler) node.scheduler->stop();
@@ -1430,7 +1434,7 @@ bool AppInitMain(NodeContext& node)
         std::string strLoadError;
 
         uiInterface.InitMessage(_("Loading block index...").translated);
-
+        LogPrintf("Loading block index...\n");
         do {
             const int64_t load_block_index_start_time = GetTimeMillis();
             bool is_coinsview_empty;
@@ -1525,6 +1529,7 @@ bool AppInitMain(NodeContext& node)
                 // It both disconnects blocks based on ::ChainActive(), and drops block data in
                 // BlockIndex() based on lack of available witness data.
                 uiInterface.InitMessage(_("Rewinding blocks...").translated);
+                LogPrintf("Rewinding blocks...\n");
                 if (!RewindBlockIndex(chainparams)) {
                     strLoadError = _("Unable to rewind the database to a pre-fork state. You will need to redownload the blockchain").translated;
                     break;
@@ -1535,6 +1540,7 @@ bool AppInitMain(NodeContext& node)
                 LOCK(cs_main);
                 if (!is_coinsview_empty) {
                     uiInterface.InitMessage(_("Verifying blocks...").translated);
+                    LogPrintf("Verifying blocks...\n");
 
                     CBlockIndex* tip = ::ChainActive().Tip();
                     RPCNotifyBlockChange(true, tip);
@@ -1743,9 +1749,7 @@ bool AppInitMain(NodeContext& node)
         banman->DumpBanlist();
     }, DUMP_BANS_INTERVAL);
 
-// // XXX: Probably need to be moved to wallet
-//     if (GetWallets()[0] && gArgs.GetBoolArg("-stakegen", true))
-//         MintStake(threadGroup, GetWallets()[0], node.connman.get(), node.mempool);
+    g_wallet_init_interface.StartProcess(node);
 
     return true;
 }
