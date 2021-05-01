@@ -1194,6 +1194,8 @@ public:
 
     bool GetStakeWeight(uint64_t& nWeight);
 
+    bool CreateCoinStake(const CWallet* pwallet, unsigned int nBits, int64_t nSearchInterval, int64_t nFees, CMutableTransaction& txNew);
+
     /** Get last block processed height */
     int GetLastBlockHeight() const EXCLUSIVE_LOCKS_REQUIRED(cs_wallet)
     {

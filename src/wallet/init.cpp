@@ -4,10 +4,12 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <init.h>
+#include <chainparams.h>
 #include <interfaces/chain.h>
 #include <net.h>
 #include <node/context.h>
 #include <outputtype.h>
+#include <miner.h>
 #include <ui_interface.h>
 #include <util/moneystr.h>
 #include <util/system.h>
@@ -30,6 +32,9 @@ public:
 
     //! Add wallets that should be opened to list of chain clients.
     void Construct(NodeContext& node) const override;
+
+    //! Launch process linked to the wallet
+    void StartProcess(NodeContext& node) const override;
 };
 
 const WalletInitInterface& g_wallet_init_interface = WalletInit();
@@ -68,6 +73,8 @@ void WalletInit::AddWalletOptions() const
     gArgs.AddArg("-flushwallet", strprintf("Run a thread to flush wallet periodically (default: %u)", DEFAULT_FLUSHWALLET), ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::WALLET_DEBUG_TEST);
     gArgs.AddArg("-privdb", strprintf("Sets the DB_PRIVATE flag in the wallet db environment (default: %u)", DEFAULT_WALLET_PRIVDB), ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::WALLET_DEBUG_TEST);
     gArgs.AddArg("-walletrejectlongchains", strprintf("Wallet will not create transactions that violate mempool chain limits (default: %u)", DEFAULT_WALLET_REJECT_LONG_CHAINS), ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::WALLET_DEBUG_TEST);
+    gArgs.AddArg("-staking=<boolean>", "Enable/Disable staking - Vericoin only (default: 1)", ArgsManager::ALLOW_ANY, OptionsCategory::WALLET);
+    gArgs.AddArg("-mining=<n>", "Start mining with n being the number of threads - Verium only (default: 0)", ArgsManager::ALLOW_ANY, OptionsCategory::WALLET);
 }
 
 bool WalletInit::ParameterInteraction() const
@@ -139,4 +146,40 @@ void WalletInit::Construct(NodeContext& node) const
     }
     gArgs.SoftSetArg("-wallet", "");
     node.chain_clients.emplace_back(interfaces::MakeWalletClient(*node.chain, gArgs.GetArgs("-wallet")));
+}
+
+void WalletInit::StartProcess(NodeContext& node) const
+{
+    if (gArgs.GetBoolArg("-disablewallet", DEFAULT_DISABLE_WALLET)) {
+        LogPrintf("Wallet disabled!\n");
+        return;
+    }
+
+    if(Params().IsVericoin()) {
+        if (!gArgs.GetBoolArg("-staking", true))
+            LogPrintf("Staking disabled\n");
+        else {
+            if ( GetWallets().size() == 0 ) {
+                LogPrintf("No wallet. Staking disabled\n");
+            }
+            else {
+                GenerateVericoin(true, GetWallets()[0], node.connman.get(), node.mempool);
+            }
+        }
+    }
+
+    if( ! Params().IsVericoin()) {
+        if (gArgs.IsArgSet("-mining"))
+        {
+            if ( GetWallets().size() == 0 ) {
+                LogPrintf("No wallet. Staking disabled\n");
+            }
+            else
+            {
+                int nThread = 0;
+                nThread = gArgs.GetArg("-mining", 0);
+                GenerateVerium(true, GetWallets()[0], nThread, node.connman.get(), node.mempool);
+            }
+        }
+    }
 }
