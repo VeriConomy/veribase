@@ -17,8 +17,8 @@ static const struct {
     const int iconColorHueShift;
     const int iconColorSaturationReduction;
 } network_styles[] = {
-    {"vericoin", QAPP_APP_NAME_DEFAULT, 0, 0},
-    {"verium", QAPP_APP_NAME_TESTNET, 70, 30}
+    {"vericoin", QAPP_APP_NAME_VERICOIN, 0, 0},
+    {"verium", QAPP_APP_NAME_VERIUM, 70, 30}
 };
 static const unsigned network_styles_count = sizeof(network_styles)/sizeof(*network_styles);
 

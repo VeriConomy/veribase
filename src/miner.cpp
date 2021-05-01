@@ -17,6 +17,7 @@
 #include <net.h>
 #include <policy/feerate.h>
 #include <policy/policy.h>
+#include <pos.h>
 #include <pow.h>
 #include <primitives/transaction.h>
 #include <shutdown.h>
@@ -34,7 +35,7 @@
 #include "openssl/sha.h"
 
 int64_t nLastCoinStakeSearchInterval = 0;
-int64_t UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev)
+int64_t UpdateTime(CBlockHeader* pblock)
 {
     int64_t nOldTime = pblock->nTime;
     int64_t nNewTime = std::max(pblock->GetBlockTime(), GetAdjustedTime());
@@ -86,7 +87,8 @@ void BlockAssembler::resetBlock()
 Optional<int64_t> BlockAssembler::m_last_block_num_txs{nullopt};
 Optional<int64_t> BlockAssembler::m_last_block_weight{nullopt};
 
-std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& scriptPubKeyIn)
+
+std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& scriptPubKeyIn, bool fPos, CWallet* pwallet, bool* pfPoSCancel)
 {
     int64_t nTimeStart = GetTimeMicros();
 
@@ -98,17 +100,58 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
         return nullptr;
     pblock = &pblocktemplate->block; // pointer for convenience
 
-    // Add dummy coinbase tx as first transaction
-    pblock->vtx.emplace_back();
-    pblocktemplate->vTxFees.push_back(-1); // updated at end
-    pblocktemplate->vTxSigOpsCost.push_back(-1); // updated at end
-
     LOCK2(cs_main, m_mempool.cs);
     CBlockIndex* pindexPrev = ::ChainActive().Tip();
     assert(pindexPrev != nullptr);
     nHeight = pindexPrev->nHeight + 1;
 
-    pblock->nVersion = 7;
+    // Create coinbase transaction.
+    CMutableTransaction coinbaseTx;
+    coinbaseTx.vin.resize(1);
+    coinbaseTx.vin[0].prevout.SetNull();
+    coinbaseTx.vout.resize(1);
+    coinbaseTx.vout[0].scriptPubKey = scriptPubKeyIn;
+
+    // Add dummy coinbase tx as first transaction
+    pblock->vtx.emplace_back();
+    pblocktemplate->vTxFees.push_back(-1); // updated at end
+    pblocktemplate->vTxSigOpsCost.push_back(-1); // updated at end
+
+    // nBits
+    if (fPos)
+        pblock->nBits = GetNextTargetRequired(pindexPrev, true, chainparams.GetConsensus());
+    else
+        pblock->nBits = GetNextWorkRequired(pindexPrev, chainparams.GetConsensus());
+
+    // if coinstake available add coinstake tx
+    static int64_t nLastCoinStakeSearchTime = GetAdjustedTime();  // only initialized at startup
+
+    if (pwallet && fPos)  // attemp to find a coinstake
+    {
+        *pfPoSCancel = true;
+        CMutableTransaction txCoinStake;
+        int64_t nSearchTime = txCoinStake.nTime; // search to current time
+        if (nSearchTime > nLastCoinStakeSearchTime)
+        {
+            if (pwallet->CreateCoinStake(pwallet, pblock->nBits, nSearchTime-nLastCoinStakeSearchTime, nFees, txCoinStake))
+            {
+                if (txCoinStake.nTime >= std::max(pindexPrev->GetMedianTimePast()+1, pindexPrev->GetBlockTime() - MAX_FUTURE_BLOCK_TIME))
+                {   // make sure coinstake would meet timestamp protocol
+                    // as it would be the same as the block timestamp
+                    coinbaseTx.vout[0].SetEmpty();
+                    coinbaseTx.nTime = txCoinStake.nTime;
+                    pblock->vtx.push_back(MakeTransactionRef(CTransaction(txCoinStake)));
+                    *pfPoSCancel = false;
+                }
+            }
+            nLastCoinStakeSearchInterval = nSearchTime - nLastCoinStakeSearchTime;
+            nLastCoinStakeSearchTime = nSearchTime;
+        }
+        if (*pfPoSCancel)
+            return nullptr; // there is no point to continue if we failed to create coinstake
+        pblock->nFlags = CBlockIndex::BLOCK_PROOF_OF_STAKE;
+    }
+
     // -regtest only: allow overriding block.nVersion with
     // -blockversion=N to test forking scenarios
     if (chainparams.MineBlocksOnDemand())
@@ -141,28 +184,30 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     m_last_block_num_txs = nBlockTx;
     m_last_block_weight = nBlockWeight;
 
-    // Create coinbase transaction.
-    CMutableTransaction coinbaseTx;
-    coinbaseTx.vin.resize(1);
-    coinbaseTx.vin[0].prevout.SetNull();
-    coinbaseTx.vout.resize(1);
-    coinbaseTx.vout[0].scriptPubKey = scriptPubKeyIn;
-    coinbaseTx.vout[0].nValue = nFees + GetProofOfWorkReward(nFees, pindexPrev);
     coinbaseTx.vin[0].scriptSig = CScript() << nHeight << OP_0;
     pblock->vtx[0] = MakeTransactionRef(std::move(coinbaseTx));
     pblocktemplate->vTxFees[0] = -nFees;
+
+    if( ! fPos )
+        coinbaseTx.vout[0].nValue = nFees + GetProofOfWorkReward(nFees, pindexPrev);
 
     LogPrintf("CreateNewBlock(): block weight: %u txs: %u fees: %ld sigops %d\n", GetBlockWeight(*pblock), nBlockTx, nFees, nBlockSigOpsCost);
 
     // Fill in header
     pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
-    UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
-    pblock->nBits          = GetNextWorkRequired(pindexPrev, chainparams.GetConsensus());
+    if (fPos)
+        pblock->nTime      = pblock->vtx[1]->nTime; //same as coinstake timestamp
+    pblock->nTime          = std::max(pindexPrev->GetMedianTimePast()+1, pblock->GetMaxTransactionTime());
+    pblock->nTime          = std::max(pblock->GetBlockTime(), pindexPrev->GetBlockTime() - MAX_FUTURE_BLOCK_TIME);
+
+    if (! fPos )
+        UpdateTime(pblock);
+
     pblock->nNonce         = 0;
     pblocktemplate->vTxSigOpsCost[0] = WITNESS_SCALE_FACTOR * GetLegacySigOpCount(*pblock->vtx[0]);
 
     BlockValidationState state;
-    if (!TestBlockValidity(state, chainparams, *pblock, pindexPrev, false, false)) {
+    if (pwallet && !TestBlockValidity(state, chainparams, *pblock, pindexPrev, false, false)) {
         throw std::runtime_error(strprintf("%s: TestBlockValidity failed: %s", __func__, state.ToString()));
     }
     int64_t nTime2 = GetTimeMicros();
@@ -435,16 +480,36 @@ void IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned
 
 
 //////////////////////////////////////////////////////////////////////////////
-////////////////////////// Verium Miner /////////////////////////////////////
+////////////////////// Verium/Vericoin Miner ////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 double hashrate = 0.;
 bool fGenerateVerium = false;
+bool fGenerateVericoin = false;
 static int64_t timeElapsed = 30000;
 double dHashesPerMin = 0.0;
 int64_t nHPSTimerStart = 0;
 
 static const unsigned int pSHA256InitState[8] =
 {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
+
+
+void SHA256Transform(void* pstate, void* pinput, const void* pinit)
+{
+    SHA256_CTX ctx;
+    unsigned char data[64];
+
+    SHA256_Init(&ctx);
+
+    for (int i = 0; i < 16; i++)
+        ((uint32_t*)data)[i] = ByteReverse(((uint32_t*)pinput)[i]);
+
+    for (int i = 0; i < 8; i++)
+        ctx.h[i] = ((uint32_t*)pinit)[i];
+
+    SHA256_Update(&ctx, data, sizeof(data));
+    for (int i = 0; i < 8; i++)
+        ((uint32_t*)pstate)[i] = ctx.h[i];
+}
 
 int static FormatHashBlocks(void* pbuffer, unsigned int len)
 {
@@ -530,25 +595,12 @@ bool CheckWork(CBlock* pblock)
     return true;
 }
 
-void SHA256Transform(void* pstate, void* pinput, const void* pinit)
+void updateHashrate(double nHashrate)
 {
-    SHA256_CTX ctx;
-    unsigned char data[64];
-
-    SHA256_Init(&ctx);
-
-    for (int i = 0; i < 16; i++)
-        ((uint32_t*)data)[i] = ByteReverse(((uint32_t*)pinput)[i]);
-
-    for (int i = 0; i < 8; i++)
-        ctx.h[i] = ((uint32_t*)pinit)[i];
-
-    SHA256_Update(&ctx, data, sizeof(data));
-    for (int i = 0; i < 8; i++)
-        ((uint32_t*)pstate)[i] = ctx.h[i];
+    hashrate = nHashrate;
 }
 
-void Miner(CWallet *pwallet, CConnman* connman)
+void Miner(std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* mempool)
 {
     LogPrintf("Miner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
@@ -560,12 +612,15 @@ void Miner(CWallet *pwallet, CConnman* connman)
     if(!scratchbuf){memory = false;}
 
     // Each thread has it's own nonce
-    ReserveDestination reservedest(pwallet, DEFAULT_ADDRESS_TYPE);
+    OutputType output_type = pwallet->m_default_change_type != OutputType::CHANGE_AUTO ? pwallet->m_default_change_type : pwallet->m_default_address_type;
+    ReserveDestination reservedest(pwallet.get(), output_type);
 
     CTxDestination dest;
     bool ret = reservedest.GetReservedDestination(dest, true);
-    if (!ret)
+    if (!ret){
+        fGenerateVerium = false;
         return;
+    }
 
     CScript scriptChange;
     scriptChange = GetScriptForDestination(dest);
@@ -575,19 +630,22 @@ void Miner(CWallet *pwallet, CConnman* connman)
     {
         while (fGenerateVerium && memory)
         {
-            while (::ChainstateActive().IsInitialBlockDownload() || connman->GetNodeCount(CConnman::CONNECTIONS_ALL) < 1 || ::ChainActive().Tip()->nHeight < connman->GetBestHeight()){
+            while (::ChainstateActive().IsInitialBlockDownload() || connman->GetNodeCount(CConnman::CONNECTIONS_ALL) < 1 || ::ChainActive().Tip()->nHeight < connman->GetBestHeight()-10){
                 LogPrintf("Mining inactive while chain is syncing...\n");
                 UninterruptibleSleep(std::chrono::milliseconds{5000});
+
+                if (!fGenerateVerium)
+                    return;
             }
 
             // Create new block
-            unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
+            unsigned int nTransactionsUpdatedLast = mempool->GetTransactionsUpdated();
             CBlockIndex* pindexPrev = ::ChainActive().Tip();
 
             std::unique_ptr<CBlockTemplate> pblocktemplate;
             try
             {
-                pblocktemplate = BlockAssembler(mempool, Params()).CreateNewBlock(scriptChange);
+                pblocktemplate = BlockAssembler(*mempool, Params()).CreateNewBlock(scriptChange, false, pwallet.get());
             }
             catch(std::runtime_error& e)
             {
@@ -595,7 +653,10 @@ void Miner(CWallet *pwallet, CConnman* connman)
             }
 
             if (!pblocktemplate.get())
+            {
+                fGenerateVerium = false;
                 return;
+            }
 
             CBlock *pblock = &pblocktemplate->block;
             IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
@@ -664,30 +725,40 @@ void Miner(CWallet *pwallet, CConnman* connman)
                     break;
                 if (pblock->nNonce >= 0xffff0000)
                     break;
-                if (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 60)
+                if (mempool->GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 60)
                     break;
                 if (pindexPrev != ::ChainActive().Tip())
                     break;
 
                 // Update nTime every few seconds
-                UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
+                UpdateTime(pblock);
                 nBlockTime = ByteReverse(pblock->nTime);
             }
         }
+        fGenerateVerium = false;
     }
     catch (boost::thread_interrupted)
     {
         free(scratchbuf);
         hashrate = 0;
         LogPrintf("Miner terminated\n");
+        fGenerateVerium = false;
         throw;
     }
 }
 
-void GenerateVerium(bool fGenerate, CWallet* pwallet, int nThreads, CConnman* connman)
+bool IsMining()
+{
+    return fGenerateVerium;
+}
+
+void GenerateVerium(bool fGenerate, std::shared_ptr<CWallet> pwallet, int nThreads, CConnman* connman, CTxMemPool* mempool)
 {
     fGenerateVerium = fGenerate;
     static boost::thread_group* minerThreads = NULL;
+
+    if (nThreads == 0 )
+        fGenerateVerium = false;
 
     if (nThreads < 0)
         nThreads = std::thread::hardware_concurrency();
@@ -704,14 +775,150 @@ void GenerateVerium(bool fGenerate, CWallet* pwallet, int nThreads, CConnman* co
 
     minerThreads = new boost::thread_group();
     for (int i = 0; i < nThreads; i++)
-        minerThreads->create_thread(std::bind(&Miner, pwallet, connman));
+        minerThreads->create_thread(std::bind(&Miner, pwallet, connman, mempool));
 }
 
-void updateHashrate(double nHashrate)
+static bool ProcessBlockFound(const CBlock* pblock, const CChainParams& chainparams)
 {
-    hashrate = nHashrate;
+    LogPrintf("%s\n", pblock->ToString());
+    LogPrintf("generated %s\n", FormatMoney(pblock->vtx[0]->vout[0].nValue));
+
+    // Found a solution
+    {
+        LOCK(cs_main);
+        if (pblock->hashPrevBlock != ::ChainActive().Tip()->GetBlockHash())
+            return error("generated block is stale");
+    }
+
+    // Process this block the same as if we had received it from another node
+    std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(*pblock);
+    if (!ProcessNewBlock(Params(), shared_pblock, true, NULL))
+        return error("ProcessNewBlock, block not accepted");
+
+    return true;
 }
 
-void MintStake(boost::thread_group& threadGroup, std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* mempool)
+void Staker(std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* mempool)
 {
+    SetThreadPriority(THREAD_PRIORITY_LOWEST);
+    util::ThreadRename("vericoin-staking");
+
+    // Each thread has it's own nonce
+    OutputType output_type = pwallet->m_default_change_type != OutputType::CHANGE_AUTO ? pwallet->m_default_change_type : pwallet->m_default_address_type;
+    ReserveDestination reservedest(pwallet.get(), output_type);
+
+    CTxDestination dest;
+    bool ret = reservedest.GetReservedDestination(dest, true);
+    if (!ret)
+    {
+        fGenerateVericoin = false;
+        return;
+    }
+
+    unsigned int nExtraNonce = 0;
+    try
+    {
+        while (fGenerateVericoin)
+        {
+            while (::ChainstateActive().IsInitialBlockDownload() || connman->GetNodeCount(CConnman::CONNECTIONS_ALL) < 5 || ::ChainActive().Tip()->nHeight < connman->GetBestHeight()-10)
+            {
+                LogPrintf("Staking inactive while chain is syncing / not enough node...\n");
+                UninterruptibleSleep(std::chrono::milliseconds{5000});
+                if (!fGenerateVericoin)
+                    return;
+            }
+            while (pwallet->IsLocked()) {
+                LogPrintf("Staking inactive because wallet is lock...\n");
+                UninterruptibleSleep(std::chrono::milliseconds{5000});
+                if (!fGenerateVericoin)
+                    return;
+            }
+
+            CBlockIndex* pindexPrev = ::ChainActive().Tip();
+            bool fPoSCancel = false;
+            CScript scriptPubKey = GetScriptForDestination(dest);
+            std::unique_ptr<CBlockTemplate> pblocktemplate;
+
+            {
+                LOCK2(cs_main, pwallet->cs_wallet);
+
+                pblocktemplate = BlockAssembler(*mempool, Params()).CreateNewBlock(scriptPubKey, true, pwallet.get(), &fPoSCancel);
+            }
+
+            if (!pblocktemplate.get())
+            {
+                if (fPoSCancel == true)
+                {
+                    UninterruptibleSleep(std::chrono::milliseconds{25000});
+                    continue;
+                }
+
+                LogPrintf("Staking: Keypool ran out, please call keypoolrefill before restarting the staking thread\n");
+                fGenerateVericoin = false;
+		        return;
+            }
+
+            CBlock *pblock = &pblocktemplate->block;
+            IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
+
+            // ppcoin: if proof-of-stake block found then process block
+            if (pblock->IsProofOfStake())
+            {
+                {
+                    LOCK2(cs_main, pwallet->cs_wallet);
+                    if (!SignBlock(*pblock, *pwallet))
+                    {
+                        LogPrintf("Staking(): failed to sign PoS block\n");
+                        continue;
+                    }
+                }
+                LogPrintf("Staking : proof-of-stake block found %s\n", pblock->GetHash().ToString());
+
+                ProcessBlockFound(pblock, Params());
+                reservedest.KeepDestination();
+
+                // Rest for ~3 minutes after successful block to preserve close quick
+                UninterruptibleSleep(std::chrono::seconds(60 + GetRand(4)));
+            }
+
+            UninterruptibleSleep(std::chrono::milliseconds{25000});
+        }
+        fGenerateVericoin = false;
+    }
+    catch (boost::thread_interrupted)
+    {
+        LogPrintf("Staking terminated\n");
+        fGenerateVericoin = false;
+        return;
+    }
+    catch (const std::runtime_error &e)
+    {
+        LogPrintf("Staking runtime error: %s\n", e.what());
+        fGenerateVericoin = false;
+        return;
+    }
+}
+
+bool IsStaking()
+{
+    return fGenerateVericoin;
+}
+
+void GenerateVericoin(bool fGenerate, std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* mempool)
+{
+    fGenerateVericoin = fGenerate;
+    static boost::thread_group* stakerThreads = NULL;
+
+    if (stakerThreads != NULL)
+    {
+        stakerThreads->interrupt_all();
+        delete stakerThreads;
+        stakerThreads = NULL;
+    }
+
+    if (!fGenerate)
+        return;
+
+    stakerThreads = new boost::thread_group();
+    stakerThreads->create_thread(std::bind(&Staker, pwallet, connman, mempool));
 }

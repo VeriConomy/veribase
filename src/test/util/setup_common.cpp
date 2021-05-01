@@ -169,12 +169,12 @@ TestChain100Setup::TestChain100Setup()
     // TODO: fix the code to support SegWit blocks.
     gArgs.ForceSetArg("-segwitheight", "432");
     // Need to recreate chainparams
-    SelectParams(CBaseChainParams::REGTEST);
+    SelectParams(CBaseChainParams::VERIUM);
 
     // Generate a 100-block chain:
     coinbaseKey.MakeNewKey(true);
     CScript scriptPubKey = CScript() <<  ToByteVector(coinbaseKey.GetPubKey()) << OP_CHECKSIG;
-    for (int i = 0; i < COINBASE_MATURITY; i++)
+    for (int i = 0; i < Params().GetConsensus().nMaturity; i++)
     {
         std::vector<CMutableTransaction> noTxns;
         CBlock b = CreateAndProcessBlock(noTxns, scriptPubKey);

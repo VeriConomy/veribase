@@ -204,7 +204,7 @@ static const unsigned int NODE_NETWORK_LIMITED_MIN_BLOCKS = 288;
 static const signed int DEFAULT_CHECKBLOCKS = 6;
 static const unsigned int DEFAULT_CHECKLEVEL = 3;
 #else
-static const signed int DEFAULT_CHECKBLOCKS = 500;
+static const signed int DEFAULT_CHECKBLOCKS = 10;
 static const unsigned int DEFAULT_CHECKLEVEL = 1;
 #endif
 

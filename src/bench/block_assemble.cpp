@@ -41,7 +41,7 @@ static void AssembleBlock(benchmark::State& state)
 
         for (const auto& txr : txs) {
             TxValidationState state;
-            bool ret{::AcceptToMemoryPool(::mempool, state, txr, nullptr /* plTxnReplaced */, false /* bypass_limits */, /* nAbsurdFee */ 0)};
+            bool ret{::AcceptToMemoryPool(::mempool, state, txr, false /* bypass_limits */, /* nAbsurdFee */ 0)};
             assert(ret);
         }
     }

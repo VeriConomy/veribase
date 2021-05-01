@@ -113,7 +113,7 @@ void EnsureWalletIsUnlocked(const CWallet* pwallet)
     if (pwallet->IsLocked()) {
         throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Error: Please enter the wallet passphrase with walletpassphrase first.");
     }
-    if (fWalletUnlockMintOnly)
+    if (fWalletUnlockMintOnly && Params().IsVericoin())
         throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Error: Wallet unlocked for block minting only.");
 }
 
@@ -320,7 +320,7 @@ static CTransactionRef SendMoney(interfaces::Chain::Lock& locked_chain, CWallet 
     if (nValue > curBalance)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Insufficient funds");
 
-    if (fWalletUnlockMintOnly)
+    if (fWalletUnlockMintOnly && Params().IsVericoin())
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: Wallet unlocked for block minting only, unable to create transaction.");
 
     // Parse ppcoin address
@@ -3425,103 +3425,9 @@ UniValue rescanblockchain(const JSONRPCRequest& request)
     return response;
 }
 
-// XXX: Use RPC Help
-// UniValue listminting(const JSONRPCRequest& request)
-// {
-//     std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
-//     const CWallet* const pwallet = wallet.get();
-
-//     if (!EnsureWalletIsAvailable(pwallet, request.fHelp)) {
-//         return NullUniValue;
-//     }
-
-//     if(request.fHelp || request.params.size() > 2)
-//         throw std::runtime_error(
-//                 "listminting [count=-1] [from=0]\n"
-//                 "Return all mintable outputs and provide details for each of them.");
-
-//     int64_t count = -1;
-//     if(request.params.size() > 0)
-//         count = request.params[0].get_int();
-
-// //    int64_t from = 0;
-// //    if(request.params.size() > 1)
-// //        from = request.params[1].get_int();
-
-//     UniValue ret(UniValue::VARR);
-// //    LOCK(pwallet->cs_wallet);
-//     const CBlockIndex *p = GetLastBlockIndex(::ChainActive().Tip(), true);
-//     double difficulty = p->GetBlockDifficulty();
-//     int64_t nStakeMinAge = Params().GetConsensus().nStakeMinAge;
-//     const CWallet::TxItems & txOrdered = pwallet->wtxOrdered;
-
-//     std::unique_ptr<interfaces::Wallet> iwallet = interfaces::MakeWallet(wallet);
-//     const auto& vwtx = iwallet->getWalletTxs();
-//     for(const auto& wtx : vwtx) {
-//         std::vector<KernelRecord> txList = KernelRecord::decomposeOutput(*iwallet, wtx);
-// /*
-//     for (CWallet::TxItems::const_iterator it = txOrdered.begin(); it != txOrdered.end(); ++it)
-//     {
-//         std::vector<KernelRecord> txList = KernelRecord::decomposeOutput(pwallet, MakeWalletTx(pwallet, *it->second));
-// */
-//         int64_t minAge = nStakeMinAge / 60 / 60 / 24;
-//         for (auto& kr : txList) {
-//             if(!kr.spent) {
-
-//                 if(count > 0 && (int32_t)ret.size() >= count) {
-//                     break;
-//                 }
-
-//                 std::string strTime = boost::lexical_cast<std::string>(kr.nTime);
-//                 std::string strAmount = boost::lexical_cast<std::string>(kr.nValue);
-//                 std::string strAge = boost::lexical_cast<std::string>(kr.getAge());
-//                 std::string strCoinAge = boost::lexical_cast<std::string>(kr.getCoinAge());
-
-// //                JSONRPCRequest request2;
-// //                request2.params = UniValue(UniValue::VARR);
-// //                request2.params.push_back(kr.address);
-// //                std::string account = AccountFromValue(getaccount(request2));
-
-//                 std::string status = "immature";
-//                 int searchInterval = 0;
-//                 int attemps = 0;
-//                 if(kr.getAge() >=  minAge)
-//                 {
-//                     status = "mature";
-//                     searchInterval = (int)nLastCoinStakeSearchInterval;
-//                     attemps = GetAdjustedTime() - kr.nTime - nStakeMinAge;
-//                 }
-
-//                 UniValue obj(UniValue::VOBJ);
-// //                obj.push_back(Pair("account",                   account));
-//                 obj.pushKV("address",                   kr.address);
-//                 obj.pushKV("input-txid",                kr.hash.ToString());
-//                 obj.pushKV("time",                      strTime);
-//                 obj.pushKV("amount",                    strAmount);
-//                 obj.pushKV("status",                    status);
-//                 obj.pushKV("age-in-day",                strAge);
-//                 obj.pushKV("coin-day-weight",           strCoinAge);
-//                 obj.pushKV("proof-of-stake-difficulty", difficulty);
-//                 obj.pushKV("minting-probability-10min", kr.getProbToMintWithinNMinutes(difficulty, 10));
-//                 obj.pushKV("minting-probability-24h",   kr.getProbToMintWithinNMinutes(difficulty, 60*24));
-//                 obj.pushKV("minting-probability-30d",   kr.getProbToMintWithinNMinutes(difficulty, 60*24*30));
-//                 obj.pushKV("minting-probability-90d",   kr.getProbToMintWithinNMinutes(difficulty, 60*24*90));
-//                 obj.pushKV("search-interval-in-sec",    searchInterval);
-//                 obj.pushKV("attempts",                  attemps);
-//                 ret.push_back(obj);
-//             }
-//         }
-//     }
-
-//     return ret;
-// }
-
 // make a public-private key pair
 UniValue makekeypair(const JSONRPCRequest& request)
 {
-    if( ! Params().IsVericoin() )
-        throw JSONRPCError(RPC_INVALID_REQUEST, "Action impossible on Verium");
-
     RPCHelpMan{"makekeypair",
         "\nMake a public/private key pair.\n",
         {
@@ -3539,6 +3445,10 @@ UniValue makekeypair(const JSONRPCRequest& request)
           + HelpExampleRpc("makekeypair", "")
         },
     }.Check(request);
+
+    if( ! Params().IsVericoin() )
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Action impossible on Verium");
+
 
     std::string strPrefix = "";
     if (request.params.size() > 0)
@@ -3567,9 +3477,6 @@ UniValue makekeypair(const JSONRPCRequest& request)
 // display key pair from hex private key
 UniValue showkeypair(const JSONRPCRequest& request)
 {
-    if( ! Params().IsVericoin() )
-        throw JSONRPCError(RPC_INVALID_REQUEST, "Action impossible on Verium");
-
     RPCHelpMan{"showkeypair",
         "\nDisplay a public/private key pair with given hex private key\n",
         {
@@ -3588,6 +3495,9 @@ UniValue showkeypair(const JSONRPCRequest& request)
           + HelpExampleRpc("showkeypair", "XXXXXX")
         },
     }.Check(request);
+
+    if( ! Params().IsVericoin() )
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Action impossible on Verium");
 
     std::string strPrivKey = request.params[0].get_str();
 
@@ -3618,9 +3528,6 @@ UniValue showkeypair(const JSONRPCRequest& request)
 // reserve balance from being staked for network protection
 UniValue reservebalance(const JSONRPCRequest& request)
 {
-    if( ! Params().IsVericoin() )
-        throw JSONRPCError(RPC_INVALID_REQUEST, "Action impossible on Verium");
-
     RPCHelpMan{"reservebalance",
         "\nSet reserve amount not participating in network protection\n",
         {
@@ -3643,6 +3550,9 @@ UniValue reservebalance(const JSONRPCRequest& request)
           + HelpExampleRpc("reservebalance", "")
         },
     }.Check(request);
+
+    if( ! Params().IsVericoin() )
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Action impossible on Verium");
 
     if (request.params.size() > 0)
     {
@@ -4374,7 +4284,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "unloadwallet",                     &unloadwallet,                  {"wallet_name"} },
     { "wallet",             "walletcreatefundedpsbt",           &walletcreatefundedpsbt,        {"inputs","outputs","locktime","options","bip32derivs"} },
     { "wallet",             "walletlock",                       &walletlock,                    {} },
-    { "wallet",             "walletpassphrase",                 &walletpassphrase,              {"passphrase","timeout"} },
+    { "wallet",             "walletpassphrase",                 &walletpassphrase,              {"passphrase","timeout","mintonly"} },
     { "wallet",             "walletpassphrasechange",           &walletpassphrasechange,        {"oldpassphrase","newpassphrase"} },
     { "wallet",             "walletprocesspsbt",                &walletprocesspsbt,             {"psbt","sign","sighashtype","bip32derivs"} },
 

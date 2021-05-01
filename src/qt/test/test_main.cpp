@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
     //
     // All tests must use their own testing setup (if needed).
     {
-        BasicTestingSetup dummy{CBaseChainParams::REGTEST};
+        BasicTestingSetup dummy{CBaseChainParams::VERIUM};
     }
 
     std::unique_ptr<interfaces::Node> node = interfaces::MakeNode();
