@@ -145,16 +145,35 @@ dist/
 .vscode/*
 
 
-src/vericoin
-src/vericoind
-src/vericoin-cli
-src/vericoin-tx
-src/vericoin-wallet
-vericoin-qt
 
 src/verium
 src/veriumd
 src/verium-cli
 src/verium-tx
 src/verium-wallet
-verium-qt
+src/test/test_verium
+src/qt/test/test_verium-qt
+src/qt/verium-qt.config
+src/qt/verium-qt.creator
+src/qt/verium-qt.creator.user
+src/qt/verium-qt.files
+src/qt/verium-qt.includes
+verium-qt_test
+src/qt/verium-qt
+src/bench/bench_verium
+
+src/vericoin
+src/vericoind
+src/vericoin-cli
+src/vericoin-tx
+src/vericoin-wallet
+src/test/test_vericoin
+src/qt/test/test_vericoin-qt
+src/qt/vericoin-qt.config
+src/qt/vericoin-qt.creator
+src/qt/vericoin-qt.creator.user
+src/qt/vericoin-qt.files
+src/qt/vericoin-qt.includes
+vericoin-qt_test
+src/qt/vericoin-qt
+src/bench/bench_vericoin
