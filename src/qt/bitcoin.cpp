@@ -461,7 +461,7 @@ int GuiMain(int argc, char* argv[])
     // as it is used to locate QSettings
     QApplication::setOrganizationName(QAPP_ORG_NAME);
     QApplication::setOrganizationDomain(QAPP_ORG_DOMAIN);
-    if( Params().IsVericoin() )
+    if( IsVericoin() )
         QApplication::setApplicationName(QAPP_APP_NAME_VERICOIN);
     else
         QApplication::setApplicationName(QAPP_APP_NAME_VERIUM);
