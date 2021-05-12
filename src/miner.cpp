@@ -820,15 +820,22 @@ void Staker(std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* mem
     {
         while (fGenerateVericoin)
         {
-            while (::ChainstateActive().IsInitialBlockDownload() || connman->GetNodeCount(CConnman::CONNECTIONS_ALL) < 5 || ::ChainActive().Tip()->nHeight < connman->GetBestHeight()-10)
+            while (::ChainstateActive().IsInitialBlockDownload() || ::ChainActive().Tip()->nHeight < connman->GetBestHeight()-10)
             {
                 LogPrintf("Staking inactive while chain is syncing / not enough node...\n");
                 UninterruptibleSleep(std::chrono::milliseconds{5000});
                 if (!fGenerateVericoin)
                     return;
             }
+            while (connman->GetNodeCount(CConnman::CONNECTIONS_ALL) < 5)
+            {
+                LogPrintf("Staking inactive, not enough node...\n");
+                UninterruptibleSleep(std::chrono::milliseconds{5000});
+                if (!fGenerateVericoin)
+                    return;
+            }
             while (pwallet->IsLocked()) {
-                LogPrintf("Staking inactive because wallet is lock...\n");
+                LogPrintf("Staking inactive because wallet is locked...\n");
                 UninterruptibleSleep(std::chrono::milliseconds{5000});
                 if (!fGenerateVericoin)
                     return;

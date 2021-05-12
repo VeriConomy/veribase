@@ -82,12 +82,12 @@ OptionsDialog::OptionsDialog(QWidget *parent, bool enableWallet) :
     /* Display elements init */
     QDir translations(":translations");
 
-    ui->bitcoinAtStartup->setToolTip(ui->bitcoinAtStartup->toolTip().arg(PACKAGE_NAME));
-    ui->bitcoinAtStartup->setText(ui->bitcoinAtStartup->text().arg(PACKAGE_NAME));
+    ui->bitcoinAtStartup->setToolTip(ui->bitcoinAtStartup->toolTip().arg(GUIUtil::GetCoinName()));
+    ui->bitcoinAtStartup->setText(ui->bitcoinAtStartup->text().arg(GUIUtil::GetCoinName()));
 
-    ui->openBitcoinConfButton->setToolTip(ui->openBitcoinConfButton->toolTip().arg(PACKAGE_NAME));
+    ui->openBitcoinConfButton->setToolTip(ui->openBitcoinConfButton->toolTip().arg(GUIUtil::GetCoinName()));
 
-    ui->lang->setToolTip(ui->lang->toolTip().arg(PACKAGE_NAME));
+    ui->lang->setToolTip(ui->lang->toolTip().arg(GUIUtil::GetCoinName()));
     ui->lang->addItem(QString("(") + tr("default") + QString(")"), QVariant(""));
     for (const QString &langStr : translations.entryList())
     {

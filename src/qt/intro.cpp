@@ -20,6 +20,7 @@
 #include <QFileDialog>
 #include <QSettings>
 #include <QMessageBox>
+#include <QTextStream>
 
 #include <cmath>
 
@@ -116,16 +117,27 @@ Intro::Intro(QWidget *parent, int64_t blockchain_size_gb, int64_t chain_state_si
     m_chain_state_size_gb(chain_state_size_gb)
 {
     ui->setupUi(this);
-    ui->welcomeLabel->setText(ui->welcomeLabel->text().arg(PACKAGE_NAME));
-    ui->storageLabel->setText(ui->storageLabel->text().arg(PACKAGE_NAME));
+    setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
+    ui->welcomeLabel->setText(ui->welcomeLabel->text().arg(GUIUtil::GetCoinName()));
+    ui->storageLabel->setText(ui->storageLabel->text().arg(GUIUtil::GetCoinName()));
 
     ui->lblExplanation1->setText(ui->lblExplanation1->text()
-        .arg(PACKAGE_NAME)
+        .arg(GUIUtil::GetCoinName())
         .arg(m_blockchain_size_gb)
         .arg(2009)
-        .arg(tr("Bitcoin"))
+        .arg(tr("%1").arg(GUIUtil::GetCoinName()))
     );
-    ui->lblExplanation2->setText(ui->lblExplanation2->text().arg(PACKAGE_NAME));
+    ui->lblExplanation2->setText(ui->lblExplanation2->text().arg(GUIUtil::GetCoinName()));
+
+    // XXX: FOR DEVELOPMENT
+    // QString strPath(QCoreApplication::applicationDirPath() + "/res/style.qss");
+    // QFile f(strPath);
+
+    QFile f(":/style");
+    f.open(QFile::ReadOnly | QFile::Text);
+    QTextStream ts(&f);
+    setStyleSheet(ts.readAll());
+    f.close();
 
     startThread();
 }
@@ -184,7 +196,12 @@ bool Intro::showIfNeeded(interfaces::Node& node, bool& did_show_intro)
         /* If current default data directory does not exist, let the user choose one */
         Intro intro(0, node.getAssumedBlockchainSize(), node.getAssumedChainStateSize());
         intro.setDataDirectory(dataDir);
-        intro.setWindowIcon(QIcon(":icons/bitcoin"));
+
+        if( GUIUtil::IsVericoin() )
+            intro.setWindowIcon(QIcon(":icons/vericoin"));
+        else
+            intro.setWindowIcon(QIcon(":icons/verium"));
+
         did_show_intro = true;
 
         while(true)
@@ -202,7 +219,7 @@ bool Intro::showIfNeeded(interfaces::Node& node, bool& did_show_intro)
                 }
                 break;
             } catch (const fs::filesystem_error&) {
-                QMessageBox::critical(nullptr, PACKAGE_NAME,
+                QMessageBox::critical(nullptr, GUIUtil::GetCoinName(),
                     tr("Error: Specified data directory \"%1\" cannot be created.").arg(dataDir));
                 /* fall through, back to choosing screen */
             }

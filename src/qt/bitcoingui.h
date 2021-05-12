@@ -18,6 +18,7 @@
 #include <QMap>
 #include <QPoint>
 #include <QSystemTrayIcon>
+#include <QToolButton>
 
 #ifdef Q_OS_MAC
 #include <qt/macos_appnap.h>
@@ -32,11 +33,13 @@ class OptionsModel;
 class PlatformStyle;
 class RPCConsole;
 class SendCoinsRecipient;
+class MoveWindowControl;
 class UnitDisplayStatusBarControl;
 class WalletController;
 class WalletFrame;
 class WalletModel;
 class HelpMessageDialog;
+class LoginOverlay;
 class ModalOverlay;
 
 namespace interfaces {
@@ -87,6 +90,8 @@ public:
     void addWallet(WalletModel* walletModel);
     void removeWallet(WalletModel* walletModel);
     void removeAllWallets();
+    bool loggedIn = false;
+
 #endif // ENABLE_WALLET
     bool enableWallet = false;
 
@@ -100,7 +105,6 @@ public:
 
 protected:
     void changeEvent(QEvent *e);
-    void closeEvent(QCloseEvent *event);
     void showEvent(QShowEvent *event);
     void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);
@@ -128,7 +132,9 @@ private:
     QToolBar* appToolBar = nullptr;
     QAction* overviewAction = nullptr;
     QAction* historyAction = nullptr;
+    QAction* communityAction = nullptr;
     QAction* quitAction = nullptr;
+    QAction* closeAppAction = nullptr;
     QAction* sendCoinsAction = nullptr;
     QAction* sendCoinsMenuAction = nullptr;
     QAction* usedSendingAddressesAction = nullptr;
@@ -147,14 +153,14 @@ private:
     QAction* openRPCConsoleAction = nullptr;
     QAction* openAction = nullptr;
     QAction* showHelpMessageAction = nullptr;
+    QAction* bootstrapAction = nullptr;
+    QAction* updateAction = nullptr;
     QAction* m_create_wallet_action{nullptr};
     QAction* m_open_wallet_action{nullptr};
     QMenu* m_open_wallet_menu{nullptr};
     QAction* m_close_wallet_action{nullptr};
-    QAction* m_wallet_selector_label_action = nullptr;
     QAction* m_wallet_selector_action = nullptr;
 
-    QLabel *m_wallet_selector_label = nullptr;
     QComboBox* m_wallet_selector = nullptr;
 
     QSystemTrayIcon* trayIcon = nullptr;
@@ -162,6 +168,7 @@ private:
     Notificator* notificator = nullptr;
     RPCConsole* rpcConsole = nullptr;
     HelpMessageDialog* helpMessageDialog = nullptr;
+    LoginOverlay* loginOverlay = nullptr;
     ModalOverlay* modalOverlay = nullptr;
 
 #ifdef Q_OS_MAC
@@ -235,7 +242,7 @@ private:
        @param[in] status            current encryption status
        @see WalletModel::EncryptionStatus
     */
-    void setEncryptionStatus(int status);
+    void setEncryptionStatus(int status, bool unlockStakingOnly);
 
     /** Set the hd-enabled status as shown in the UI.
      @param[in] hdEnabled         current hd enabled status
@@ -265,19 +272,27 @@ public Q_SLOTS:
     void gotoReceiveCoinsPage();
     /** Switch to send coins page */
     void gotoSendCoinsPage(QString addr = "");
+    /** Switch to community page */
+    void gotoCommunityPage();
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");
     /** Show Sign/Verify Message dialog and switch to verify message tab */
     void gotoVerifyMessageTab(QString addr = "");
 
+    void walletLogin();
+
     /** Show open dialog */
     void openClicked();
 #endif // ENABLE_WALLET
     /** Show configuration dialog */
     void optionsClicked();
+    /** Quit or minimize app */
+    void closeOrMinimizeEvent();
     /** Show about dialog */
     void aboutClicked();
+    // XXX: FOR DEVELOPMENT
+    // void refreshStyle();
     /** Show debug window */
     void showDebugWindow();
     /** Show debug window and set focus to the console */
@@ -291,6 +306,12 @@ public Q_SLOTS:
     /** Handle macOS Dock icon clicked */
     void macosDockIconActivated();
 #endif
+
+    /** Bootstrap the chain */
+    void bootstrapClicked();
+
+     /** Check for update */
+    void updateClicked();
 
     /** Show window if hidden, unminimize when minimized, rise when obscured or show if hidden and fToggleHidden is true */
     void showNormalIfMinimized() { showNormalIfMinimized(false); }
@@ -308,6 +329,23 @@ public Q_SLOTS:
     void setTrayIconVisible(bool);
 
     void showModalOverlay();
+};
+
+class MoveWindowControl : public QToolButton
+{
+    Q_OBJECT
+
+public:
+    explicit MoveWindowControl(QWidget *parent = nullptr);
+
+protected:
+    /** So that it responds to left-button clicks */
+    void mousePressEvent(QMouseEvent *event);
+    void mouseMoveEvent(QMouseEvent *event);
+
+private:
+    QPointF initPosition;
+
 };
 
 class UnitDisplayStatusBarControl : public QLabel

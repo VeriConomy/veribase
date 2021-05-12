@@ -7,6 +7,7 @@
 
 #include <interfaces/wallet.h>
 
+#include <QTimer>
 #include <QWidget>
 #include <memory>
 
@@ -20,6 +21,10 @@ namespace Ui {
     class OverviewPage;
 }
 
+namespace interfaces {
+class Node;
+}
+
 QT_BEGIN_NAMESPACE
 class QModelIndex;
 QT_END_NAMESPACE
@@ -30,21 +35,30 @@ class OverviewPage : public QWidget
     Q_OBJECT
 
 public:
-    explicit OverviewPage(const PlatformStyle *platformStyle, QWidget *parent = nullptr);
+    explicit OverviewPage(interfaces::Node& node, const PlatformStyle *platformStyle, QWidget *parent = nullptr);
     ~OverviewPage();
 
     void setClientModel(ClientModel *clientModel);
     void setWalletModel(WalletModel *walletModel);
     void showOutOfSyncWarning(bool fShow);
 
+protected:
+    bool eventFilter(QObject *object, QEvent *event);
+    void updateStats();
+
 public Q_SLOTS:
     void setBalance(const interfaces::WalletBalances& balances);
+    void setVericoinInfo();
+    void setVeriumInfo();
 
 Q_SIGNALS:
     void transactionClicked(const QModelIndex &index);
+    void receiveClicked();
+    void sendClicked();
     void outOfSyncWarningClicked();
 
 private:
+    interfaces::Node& m_node;
     Ui::OverviewPage *ui;
     ClientModel *clientModel;
     WalletModel *walletModel;
@@ -52,6 +66,7 @@ private:
 
     TxViewDelegate *txdelegate;
     std::unique_ptr<TransactionFilterProxy> filter;
+    QTimer *updateStatsTimer;
 
 private Q_SLOTS:
     void updateDisplayUnit();
@@ -59,6 +74,7 @@ private Q_SLOTS:
     void updateAlerts(const QString &warnings);
     void updateWatchOnlyLabels(bool showWatchOnly);
     void handleOutOfSyncWarningClicks();
+    void on_mineButton_clicked();
 };
 
 #endif // BITCOIN_QT_OVERVIEWPAGE_H

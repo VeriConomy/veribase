@@ -12,6 +12,7 @@
 #include <interfaces/chain.h>
 #include <interfaces/handler.h>
 #include <interfaces/wallet.h>
+#include <miner.h>
 #include <net.h>
 #include <net_processing.h>
 #include <netaddress.h>
@@ -19,6 +20,8 @@
 #include <node/context.h>
 #include <policy/feerate.h>
 #include <policy/settings.h>
+#include <pos.h>
+#include <pow.h>
 #include <primitives/block.h>
 #include <rpc/server.h>
 #include <shutdown.h>
@@ -309,6 +312,53 @@ public:
                     /* verification progress is unused when a header was received */ 0);
             }));
     }
+
+    double getCurrentInterestRate() override
+    {
+        LOCK(::cs_main);
+        return GetCurrentInterestRate(::ChainActive().Tip(), Params().GetConsensus());
+    }
+
+    double getCurrentInflationRate() override
+    {
+        LOCK(::cs_main);
+        return GetCurrentInflationRate(GetAverageStakeWeight(::ChainActive().Tip()->pprev));
+    }
+
+    double getNetworkStakeWeight() override
+    {
+        LOCK(::cs_main);
+        return GetPoSKernelPS();
+    }
+
+    double getBlockReward() override
+    {
+        LOCK(::cs_main);
+        return GetProofOfWorkReward(0,::ChainActive().Tip()->pprev);
+    }
+
+    bool isStaking() override
+    {
+        return IsStaking();
+    }
+
+    bool isMining() override
+    {
+        return IsMining();
+    }
+
+    void manageStaking(std::string walletName, bool state) override
+    {
+        std::shared_ptr<CWallet> pwallet = GetWallet(walletName);
+        GenerateVericoin(state, pwallet, m_context.connman.get(), m_context.mempool);
+    }
+
+    void manageMining(std::string walletName, bool state, int procs) override
+    {
+        std::shared_ptr<CWallet> pwallet = GetWallet(walletName);
+        GenerateVerium(state, pwallet, procs, m_context.connman.get(), m_context.mempool);
+    }
+
     NodeContext* context() override { return &m_context; }
     NodeContext m_context;
 };

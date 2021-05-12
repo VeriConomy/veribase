@@ -113,7 +113,7 @@ void EnsureWalletIsUnlocked(const CWallet* pwallet)
     if (pwallet->IsLocked()) {
         throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Error: Please enter the wallet passphrase with walletpassphrase first.");
     }
-    if (fWalletUnlockMintOnly && Params().IsVericoin())
+    if (fWalletUnlockStakingOnly && Params().IsVericoin())
         throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Error: Wallet unlocked for block minting only.");
 }
 
@@ -325,7 +325,7 @@ static CTransactionRef SendMoney(interfaces::Chain::Lock& locked_chain, CWallet 
     if (nValue > curBalance)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Insufficient funds");
 
-    if (fWalletUnlockMintOnly && Params().IsVericoin())
+    if (fWalletUnlockStakingOnly && Params().IsVericoin())
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: Wallet unlocked for block minting only, unable to create transaction.");
 
     // Parse ppcoin address
@@ -1953,9 +1953,9 @@ static UniValue walletpassphrase(const JSONRPCRequest& request)
 
     // ppcoin: if user OS account compromised prevent trivial sendmoney commands
     if (request.params.size() > 2)
-        fWalletUnlockMintOnly = request.params[2].get_bool();
+        fWalletUnlockStakingOnly = request.params[2].get_bool();
     else
-        fWalletUnlockMintOnly = false;
+        fWalletUnlockStakingOnly = false;
 
     return NullUniValue;
 }
@@ -2528,7 +2528,7 @@ static UniValue getwalletinfo(const JSONRPCRequest& request)
     }
     if (pwallet->IsCrypted()) {
         obj.pushKV("unlocked_until", pwallet->nRelockTime);
-        obj.pushKV("unlocked_minting_only", fWalletUnlockMintOnly);
+        obj.pushKV("unlocked_minting_only", fWalletUnlockStakingOnly);
     }
     obj.pushKV("private_keys_enabled", !pwallet->IsWalletFlagSet(WALLET_FLAG_DISABLE_PRIVATE_KEYS));
     obj.pushKV("avoid_reuse", pwallet->IsWalletFlagSet(WALLET_FLAG_AVOID_REUSE));

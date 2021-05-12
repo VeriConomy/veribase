@@ -28,7 +28,7 @@ NetworkStyle::NetworkStyle(const QString &_appName, const int iconColorHueShift,
     titleAddText(qApp->translate("SplashScreen", _titleAddText))
 {
     // load pixmap
-    QPixmap pixmap(":/icons/bitcoin");
+    QPixmap pixmap(":/icons/" + _appName.toLower());
 
     if(iconColorHueShift != 0 && iconColorSaturationReduction != 0)
     {
@@ -78,10 +78,8 @@ NetworkStyle::NetworkStyle(const QString &_appName, const int iconColorHueShift,
 
 const NetworkStyle* NetworkStyle::instantiate(const std::string& networkId)
 {
-    std::string titleAddText = " - Vericoin";
-    if (networkId == CBaseChainParams::VERIUM)
-        titleAddText = " - Verium";
-    else if (networkId != CBaseChainParams::VERICOIN)
+    std::string titleAddText = "";
+    if (networkId != CBaseChainParams::VERICOIN && networkId != CBaseChainParams::VERIUM)
         titleAddText = strprintf("[%s]", networkId);
 
     for (unsigned x=0; x<network_styles_count; ++x)

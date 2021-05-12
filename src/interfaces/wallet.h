@@ -190,6 +190,15 @@ public:
     //! Get balance.
     virtual CAmount getBalance() = 0;
 
+    //! Get stake.
+    virtual CAmount getStake() = 0;
+
+    //! Get time to stake.
+    virtual uint64_t getTimeToStake() = 0;
+
+    //! Get isUnlockStakingOnly status
+    virtual bool isUnlockStakingOnly() = 0;
+
     //! Get available balance.
     virtual CAmount getAvailableBalance(const CCoinControl& coin_control) = 0;
 

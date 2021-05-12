@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>598</width>
-    <height>222</height>
+    <height>250</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -29,6 +29,25 @@
    <property name="sizeConstraint">
     <enum>QLayout::SetMinimumSize</enum>
    </property>
+   <item>
+    <widget class="QLabel" name="vericoinIcon">
+     <property name="minimumSize">
+      <size>
+       <width>550</width>
+       <height>100</height>
+      </size>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap resource="../vericonomy.qrc">:/icons/vericoin</pixmap>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignHCenter</set>
+     </property>
+    </widget>
+   </item>
    <item>
     <widget class="QLabel" name="warningLabel">
      <property name="text">
@@ -129,7 +148,9 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../vericonomy.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>buttonBox</sender>

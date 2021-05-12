@@ -28,7 +28,7 @@ static int xferinfo(void *p,
                     curl_off_t ultotal, curl_off_t ulnow)
 {
     void (*ptr)(curl_off_t, curl_off_t) = (void(*)(curl_off_t, curl_off_t))xferinfo_data;
-    if (ptr != nullptr) ptr(dltotal, dlnow);
+    if (ptr != nullptr) ptr(dlnow, dltotal);
     return 0; // continue xfer.
 }
 
@@ -198,7 +198,11 @@ void downloadClient(std::string fileName) {
 
     boost::filesystem::path pathClientFile = GetDataDir() / fileName;
 
-    downloadFile(strprintf("%s/%d.%d%s", CLIENT_URL, CLIENT_VERSION_MAJOR, CLIENT_VERSION_MINOR, fileName), pathClientFile);
+    try {
+        downloadFile(strprintf("%s/%d.%d%s", CLIENT_URL, CLIENT_VERSION_MAJOR, CLIENT_VERSION_MINOR, fileName), pathClientFile);
+    } catch (...) {
+        throw;
+    }
 
     return;
 }

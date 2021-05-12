@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2020 The Bitcoin Core developers
+// Copyright (c) 2011-2019 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -13,8 +13,9 @@
 #include <QHBoxLayout>
 #include <QLabel>
 
-WalletFrame::WalletFrame(const PlatformStyle *_platformStyle, BitcoinGUI *_gui) :
+WalletFrame::WalletFrame(interfaces::Node& node, const PlatformStyle *_platformStyle, BitcoinGUI *_gui) :
     QFrame(_gui),
+    m_node(node),
     gui(_gui),
     platformStyle(_platformStyle)
 {
@@ -49,7 +50,7 @@ bool WalletFrame::addWallet(WalletModel *walletModel)
 
     if (mapWalletViews.count(walletModel) > 0) return false;
 
-    WalletView *walletView = new WalletView(platformStyle, this);
+    WalletView *walletView = new WalletView(m_node, platformStyle, this);
     walletView->setClientModel(clientModel);
     walletView->setWalletModel(walletModel);
     walletView->showOutOfSyncWarning(bOutOfSync);
@@ -149,6 +150,13 @@ void WalletFrame::gotoSendCoinsPage(QString addr)
         i.value()->gotoSendCoinsPage(addr);
 }
 
+void WalletFrame::gotoCommunityPage()
+{
+    QMap<WalletModel*, WalletView*>::const_iterator i;
+    for (i = mapWalletViews.constBegin(); i != mapWalletViews.constEnd(); ++i)
+        i.value()->gotoCommunityPage();
+}
+
 void WalletFrame::gotoSignMessageTab(QString addr)
 {
     WalletView *walletView = currentWalletView();
@@ -189,6 +197,15 @@ void WalletFrame::unlockWallet()
     WalletView *walletView = currentWalletView();
     if (walletView)
         walletView->unlockWallet();
+}
+
+bool WalletFrame::walletLogin()
+{
+    WalletView *walletView = currentWalletView();
+    if (walletView)
+         return walletView->walletLogin();
+    else
+        return false;
 }
 
 void WalletFrame::usedSendingAddresses()

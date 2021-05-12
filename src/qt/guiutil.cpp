@@ -108,7 +108,8 @@ void setupAddressWidget(QValidatedLineEdit *widget, QWidget *parent)
     widget->setFont(fixedPitchFont());
     // We don't want translators to use own addresses in translations
     // and this is the only place, where this address is supplied.
-    widget->setPlaceholderText(QObject::tr("Enter a Bitcoin address (e.g. %1)").arg(
+    widget->setPlaceholderText(QObject::tr("Enter a %1 address (e.g. %2)").arg(
+        GetCoinName()).arg(
         QString::fromStdString(DummyAddress(Params()))));
     widget->setValidator(new BitcoinAddressEntryValidator(parent));
     widget->setCheckValidator(new BitcoinAddressCheckValidator(parent));
@@ -117,7 +118,11 @@ void setupAddressWidget(QValidatedLineEdit *widget, QWidget *parent)
 bool parseBitcoinURI(const QUrl &uri, SendCoinsRecipient *out)
 {
     // return if URI is not valid or is no bitcoin: URI
-    if(!uri.isValid() || uri.scheme() != QString("bitcoin"))
+    QString uriScheme = QString("vericoin");
+    if( ! Params().IsVericoin() )
+        uriScheme = QString("verium");
+
+    if(!uri.isValid() || uri.scheme() != uriScheme)
         return false;
 
     SendCoinsRecipient rv;
@@ -181,7 +186,11 @@ QString formatBitcoinURI(const SendCoinsRecipient &info)
 {
     bool bech_32 = info.address.startsWith(QString::fromStdString(Params().Bech32HRP() + "1"));
 
-    QString ret = QString("bitcoin:%1").arg(bech_32 ? info.address.toUpper() : info.address);
+    QString uriScheme = QString("vericoin");
+    if( ! Params().IsVericoin() )
+        uriScheme = QString("verium");
+
+    QString ret = uriScheme + QString(":%1").arg(bech_32 ? info.address.toUpper() : info.address);
     int paramCount = 0;
 
     if (info.amount)
@@ -558,7 +567,7 @@ fs::path static StartupShortcutPath()
         return GetSpecialFolderPath(CSIDL_STARTUP) / "Vericoin.lnk";
     if (chain == CBaseChainParams::VERIUM)
         return GetSpecialFolderPath(CSIDL_STARTUP) / "Verium.lnk";
-    return GetSpecialFolderPath(CSIDL_STARTUP) / strprintf("Bitcoin (%s).lnk", chain);
+    return GetSpecialFolderPath(CSIDL_STARTUP) / strprintf("Vericonomy (%s).lnk", chain);
 }
 
 bool GetStartOnSystemStartup()
@@ -641,7 +650,7 @@ fs::path static GetAutostartFilePath()
         return GetAutostartDir() / "vericoin.desktop";
     if (chain == CBaseChainParams::VERIUM)
         return GetAutostartDir() / "verium.desktop";
-    return GetAutostartDir() / strprintf("bitcoin-%s.desktop", chain);
+    return GetAutostartDir() / strprintf("vericonomy-%s.desktop", chain);
 }
 
 bool GetStartOnSystemStartup()
@@ -689,7 +698,7 @@ bool SetStartOnSystemStartup(bool fAutoStart)
         else if (chain == CBaseChainParams::VERIUM)
             optionFile << "Name=Verium\n";
         else
-            optionFile << strprintf("Name=Bitcoin (%s)\n", chain);
+            optionFile << strprintf("Name=Vericonomy (%s)\n", chain);
         optionFile << "Exec=" << pszExePath << strprintf(" -min -chain=%s\n", chain);
         optionFile << "Terminal=false\n";
         optionFile << "Hidden=false\n";
@@ -906,6 +915,21 @@ void LogQtInfo()
     for (const QScreen* s : QGuiApplication::screens()) {
         LogPrintf("Screen: %s %dx%d, pixel ratio=%.1f\n", s->name().toStdString(), s->size().width(), s->size().height(), s->devicePixelRatio());
     }
+}
+
+bool IsVericoin()
+{
+    return Params().IsVericoin();
+}
+
+QString GetCoinName()
+{
+    return QString::fromStdString(Params().GetCoinName());
+}
+
+QString GetCurrencyName()
+{
+    return QString::fromStdString(Params().GetCurrencyName());
 }
 
 } // namespace GUIUtil

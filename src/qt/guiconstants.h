@@ -21,6 +21,8 @@ static const bool DEFAULT_SPLASHSCREEN = true;
 /* Invalid field background style */
 #define STYLE_INVALID "background:#FF8080"
 
+/* Transaction list -- positive amount */
+#define COLOR_POSITIVE QColor(53, 155, 55)
 /* Transaction list -- unconfirmed transaction */
 #define COLOR_UNCONFIRMED QColor(128, 128, 128)
 /* Transaction list -- negative amount */
@@ -42,15 +44,19 @@ static const int TOOLTIP_WRAP_THRESHOLD = 80;
 /* Number of frames in spinner animation */
 #define SPINNER_FRAMES 36
 
-#define QAPP_ORG_NAME "Bitcoin"
-#define QAPP_ORG_DOMAIN "bitcoin.org"
-#define QAPP_APP_NAME_VERICOIN "Vericoin-Qt"
-#define QAPP_APP_NAME_VERIUM "Verium-Qt"
+#define QAPP_ORG_NAME "Vericonomy"
+#define QAPP_ORG_DOMAIN "vericonomy.com"
+#define QAPP_APP_NAME_VERICOIN "Vericoin"
+#define QAPP_APP_NAME_VERIUM "Verium"
+
+#define COMMUNITY_VRM_EXPLORER_URL "https://explorer-vrm.vericonomy.com/"
+#define COMMUNITY_VRC_EXPLORER_URL "https://explorer-vrc.vericonomy.com/"
+#define COMMUNITY_TWITTER_URL "https://twitter.com/vericonomy"
+#define COMMUNITY_CHAT_URL "https://slack.vericoin.info"
+#define COMMUNITY_WEBSITE_URL "https://vericonomy.com"
+
 
 /* One gigabyte (GB) in bytes */
 static constexpr uint64_t GB_BYTES{1000000000};
-
-// Default prune target displayed in GUI.
-static constexpr int DEFAULT_PRUNE_TARGET_GB{2};
 
 #endif // BITCOIN_QT_GUICONSTANTS_H

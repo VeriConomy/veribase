@@ -19,6 +19,10 @@ QT_BEGIN_NAMESPACE
 class QStackedWidget;
 QT_END_NAMESPACE
 
+namespace interfaces {
+class Node;
+}
+
 /**
  * A container for embedding all wallet-related
  * controls into BitcoinGUI. The purpose of this class is to allow future
@@ -31,7 +35,7 @@ class WalletFrame : public QFrame
     Q_OBJECT
 
 public:
-    explicit WalletFrame(const PlatformStyle *platformStyle, BitcoinGUI *_gui = nullptr);
+    explicit WalletFrame(interfaces::Node& node, const PlatformStyle *platformStyle, BitcoinGUI *_gui = nullptr);
     ~WalletFrame();
 
     void setClientModel(ClientModel *clientModel);
@@ -50,6 +54,7 @@ Q_SIGNALS:
     void requestedSyncWarningInfo();
 
 private:
+    interfaces::Node& m_node;
     QStackedWidget *walletStack;
     BitcoinGUI *gui;
     ClientModel *clientModel;
@@ -72,6 +77,8 @@ public Q_SLOTS:
     void gotoReceiveCoinsPage();
     /** Switch to send coins page */
     void gotoSendCoinsPage(QString addr = "");
+    /** Switch to community page */
+    void gotoCommunityPage();
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");
@@ -86,6 +93,8 @@ public Q_SLOTS:
     void changePassphrase();
     /** Ask for passphrase to unlock wallet temporarily */
     void unlockWallet();
+    /** Ask for passphrase to access wallet while client is open */
+    bool walletLogin();
 
     /** Show used sending addresses */
     void usedSendingAddresses();

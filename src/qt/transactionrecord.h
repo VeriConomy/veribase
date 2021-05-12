@@ -81,11 +81,16 @@ public:
         SendToOther,
         RecvWithAddress,
         RecvFromOther,
-        SendToSelf
+        SendToSelf,
+        Stake
     };
 
     /** Number of confirmation recommended for accepting a transaction */
-    static const int RecommendedNumConfirmations = 6;
+#if CLIENT_IS_VERUIM
+    static const int RecommendedNumConfirmations = 30;
+#else
+    static const int RecommendedNumConfirmations = 10;
+#endif
 
     TransactionRecord():
             hash(), time(0), type(Other), address(""), debit(0), credit(0), idx(0)

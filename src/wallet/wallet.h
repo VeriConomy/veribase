@@ -55,7 +55,7 @@ std::shared_ptr<CWallet> GetWallet(const std::string& name);
 std::shared_ptr<CWallet> LoadWallet(interfaces::Chain& chain, const WalletLocation& location, std::string& error, std::vector<std::string>& warnings);
 std::unique_ptr<interfaces::Handler> HandleLoadWallet(LoadWalletFn load_wallet);
 
-extern bool fWalletUnlockMintOnly;
+extern bool fWalletUnlockStakingOnly;
 
 enum class WalletCreationStatus {
     SUCCESS,
@@ -968,7 +968,6 @@ public:
      * @param[in] orderForm BIP 70 / BIP 21 order form details to be set on the transaction.
      */
     void CommitTransaction(CTransactionRef tx, mapValue_t mapValue, std::vector<std::pair<std::string, std::string>> orderForm);
-    //XXX bool CreateCoinStake(const CWallet* pwallet, unsigned int nBits, int64_t nSearchInterval, CMutableTransaction &txNew);
 
     bool DummySignTx(CMutableTransaction &txNew, const std::set<CTxOut> &txouts, bool use_max_sig = false) const
     {
@@ -1194,7 +1193,8 @@ public:
     bool HasEncryptionKeys() const override;
 
     bool GetStakeWeight(uint64_t& nWeight);
-
+    bool IsUnlockStakingOnly();
+    uint64_t GetTimeToStake();
     bool CreateCoinStake(const CWallet* pwallet, unsigned int nBits, int64_t nSearchInterval, int64_t nFees, CMutableTransaction& txNew);
 
     /** Get last block processed height */

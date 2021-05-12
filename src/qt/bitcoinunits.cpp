@@ -4,6 +4,8 @@
 
 #include <qt/bitcoinunits.h>
 
+#include <qt/guiutil.h>
+
 #include <QStringList>
 
 BitcoinUnits::BitcoinUnits(QObject *parent):
@@ -40,10 +42,10 @@ QString BitcoinUnits::longName(int unit)
 {
     switch(unit)
     {
-    case BTC: return QString("BTC");
-    case mBTC: return QString("mBTC");
-    case uBTC: return QString::fromUtf8("µBTC (bits)");
-    case SAT: return QString("Satoshi (sat)");
+    case BTC: return GUIUtil::GetCurrencyName();
+    case mBTC: return QString("m") + GUIUtil::GetCurrencyName();
+    case uBTC: return QString::fromUtf8("µ") + GUIUtil::GetCurrencyName() + QString(" (bits)");
+    case SAT: return GUIUtil::GetCurrencyName() + QString("toshi (") + GUIUtil::GetCurrencyName() + QString("i)");
     default: return QString("???");
     }
 }
@@ -52,8 +54,8 @@ QString BitcoinUnits::shortName(int unit)
 {
     switch(unit)
     {
-    case uBTC: return QString::fromUtf8("bits");
-    case SAT: return QString("sat");
+    case uBTC: return QString::fromUtf8("µ") + GUIUtil::GetCurrencyName();
+    case SAT: return GUIUtil::GetCurrencyName() + QString("i");
     default: return longName(unit);
     }
 }
@@ -62,10 +64,10 @@ QString BitcoinUnits::description(int unit)
 {
     switch(unit)
     {
-    case BTC: return QString("Bitcoins");
-    case mBTC: return QString("Milli-Bitcoins (1 / 1" THIN_SP_UTF8 "000)");
-    case uBTC: return QString("Micro-Bitcoins (bits) (1 / 1" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
-    case SAT: return QString("Satoshi (sat) (1 / 100" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
+    case BTC: return GUIUtil::GetCoinName() + QString("s");
+    case mBTC: return QString("Milli-") + GUIUtil::GetCoinName() + QString("s (1 / 1" THIN_SP_UTF8 "000)");
+    case uBTC: return QString("Micro-") + GUIUtil::GetCoinName() + QString("s (bits) (1 / 1" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
+    case SAT: return GUIUtil::GetCurrencyName() + QString("toshi (") + GUIUtil::GetCurrencyName() + QString("i) (1 / 100" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
     default: return QString("???");
     }
 }

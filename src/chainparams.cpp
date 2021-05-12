@@ -69,6 +69,8 @@ class CVericoinParams : public CChainParams {
 public:
     CVericoinParams() {
         strNetworkID = CBaseChainParams::VERICOIN;
+        strCoinName = "Vericoin";
+        strCurrencyName = "VRC";
         consensus.BIP34Height = 1;
         consensus.BIP65Height = 600000; // 00000000007f6655f22f98e72ed80d8b06dc761d5da09df0fa1dc4be4f861eb6
         consensus.BIP66Height = 600000; // 000000002104c8c45e99a8853285a3b592602a3ccde2b832481da85e9e4ba182
@@ -173,9 +175,9 @@ public:
 
         chainTxData = ChainTxData{
             // Data from RPC: getchaintxstats 4096 000000000000056c49030c174179b52a928c870e6e8a822c75973b7970cfbd01
-            /* nTime    */ 1499513240,
-            /* nTxCount */ 1499513240,
-            /* dTxRate  */ 0.0013,
+            /* nTime    */ 1546638575,
+            /* nTxCount */ 5838812,
+            /* dTxRate  */ 0.03587197431109405,
         };
     }
 };
@@ -187,6 +189,8 @@ class CVeriumParams : public CChainParams {
 public:
     CVeriumParams() {
         strNetworkID = CBaseChainParams::VERIUM;
+        strCoinName = "Verium";
+        strCurrencyName = "VRM";
         consensus.BIP34Height = 1;
         consensus.BIP65Height = 600000; // 00000000007f6655f22f98e72ed80d8b06dc761d5da09df0fa1dc4be4f861eb6
         consensus.BIP66Height = 600000; // 000000002104c8c45e99a8853285a3b592602a3ccde2b832481da85e9e4ba182

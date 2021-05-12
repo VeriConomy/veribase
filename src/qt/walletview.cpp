@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 The Bitcoin Core developers
+// Copyright (c) 2011-2018 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -6,7 +6,9 @@
 
 #include <qt/addressbookpage.h>
 #include <qt/askpassphrasedialog.h>
+#include <qt/bitcoingui.h>
 #include <qt/clientmodel.h>
+#include <qt/communitypage.h>
 #include <qt/guiutil.h>
 #include <qt/optionsmodel.h>
 #include <qt/overviewpage.h>
@@ -17,6 +19,7 @@
 #include <qt/transactiontablemodel.h>
 #include <qt/transactionview.h>
 #include <qt/walletmodel.h>
+#include <wallet/wallet.h> // for CRecipient
 
 #include <interfaces/node.h>
 #include <ui_interface.h>
@@ -29,24 +32,28 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
-WalletView::WalletView(const PlatformStyle *_platformStyle, QWidget *parent):
+WalletView::WalletView(interfaces::Node& node, const PlatformStyle *_platformStyle, QWidget *parent):
     QStackedWidget(parent),
+    m_node(node),
     clientModel(nullptr),
     walletModel(nullptr),
     platformStyle(_platformStyle)
 {
     // Create tabs
-    overviewPage = new OverviewPage(platformStyle);
+    overviewPage = new OverviewPage(m_node, platformStyle);
 
     transactionsPage = new QWidget(this);
     QVBoxLayout *vbox = new QVBoxLayout();
+    vbox->setContentsMargins(9,4,9,4);
+    vbox->setSpacing(6);
     QHBoxLayout *hbox_buttons = new QHBoxLayout();
     transactionView = new TransactionView(platformStyle, this);
     vbox->addWidget(transactionView);
     QPushButton *exportButton = new QPushButton(tr("&Export"), this);
+    exportButton->setObjectName("exportButtonTxView");
     exportButton->setToolTip(tr("Export the data in the current tab to a file"));
     if (platformStyle->getImagesOnButtons()) {
-        exportButton->setIcon(platformStyle->SingleColorIcon(":/icons/export"));
+        exportButton->setIcon(QIcon(":/icons/export"));
     }
     hbox_buttons->addStretch();
     hbox_buttons->addWidget(exportButton);
@@ -55,6 +62,7 @@ WalletView::WalletView(const PlatformStyle *_platformStyle, QWidget *parent):
 
     receiveCoinsPage = new ReceiveCoinsDialog(platformStyle);
     sendCoinsPage = new SendCoinsDialog(platformStyle);
+    communityPage = new CommunityPage(platformStyle);
 
     usedSendingAddressesPage = new AddressBookPage(platformStyle, AddressBookPage::ForEditing, AddressBookPage::SendingTab, this);
     usedReceivingAddressesPage = new AddressBookPage(platformStyle, AddressBookPage::ForEditing, AddressBookPage::ReceivingTab, this);
@@ -63,12 +71,16 @@ WalletView::WalletView(const PlatformStyle *_platformStyle, QWidget *parent):
     addWidget(transactionsPage);
     addWidget(receiveCoinsPage);
     addWidget(sendCoinsPage);
+    addWidget(communityPage);
 
     connect(overviewPage, &OverviewPage::transactionClicked, this, &WalletView::transactionClicked);
     // Clicking on a transaction on the overview pre-selects the transaction on the transaction history page
     connect(overviewPage, &OverviewPage::transactionClicked, transactionView, static_cast<void (TransactionView::*)(const QModelIndex&)>(&TransactionView::focusTransaction));
 
     connect(overviewPage, &OverviewPage::outOfSyncWarningClicked, this, &WalletView::requestedSyncWarningInfo);
+
+    connect(overviewPage, &OverviewPage::receiveClicked, this, &WalletView::gotoReceiveCoinsPage);
+    connect(overviewPage, &OverviewPage::sendClicked, [this]{ gotoSendCoinsPage(); });
 
     connect(sendCoinsPage, &SendCoinsDialog::coinsSent, this, &WalletView::coinsSent);
     // Highlight transaction after send
@@ -173,6 +185,11 @@ void WalletView::gotoSendCoinsPage(QString addr)
         sendCoinsPage->setAddress(addr);
 }
 
+void WalletView::gotoCommunityPage()
+{
+    setCurrentWidget(communityPage);
+}
+
 void WalletView::gotoSignMessageTab(QString addr)
 {
     // calls show() in showTab_SM()
@@ -260,6 +277,29 @@ void WalletView::unlockWallet()
         dlg.setModel(walletModel);
         dlg.exec();
     }
+}
+
+bool WalletView::walletLogin()
+{
+    if(walletModel){
+        if(!loggedIn){
+            if (walletModel->getEncryptionStatus() == WalletModel::Locked){
+                fWalletUnlockStakingOnly = true;
+                WalletModel::UnlockContext ctx(walletModel->requestUnlock());
+                if(ctx.isValid()){
+                    loggedIn = true;
+                }
+            }
+            if (walletModel->getEncryptionStatus() == WalletModel::Unencrypted){
+                AskPassphraseDialog dlg(true ? AskPassphraseDialog::Encrypt : AskPassphraseDialog::Decrypt, this);
+                dlg.setModel(walletModel);
+                dlg.exec();
+                updateEncryptionStatus();
+                loggedIn = true;
+            }
+        }
+    }
+    return loggedIn;
 }
 
 void WalletView::usedSendingAddresses()

@@ -169,7 +169,7 @@ void BitcoinCore::shutdown()
 }
 
 static int qt_argc = 1;
-static const char* qt_argv = "bitcoin-qt";
+static const char* qt_argv = "vericonomy-qt";
 
 BitcoinApplication::BitcoinApplication(interfaces::Node& node):
     QApplication(qt_argc, const_cast<char **>(&qt_argv)),
@@ -349,6 +349,9 @@ void BitcoinApplication::initializeResult(bool success)
         Q_EMIT windowShown(window);
 
 #ifdef ENABLE_WALLET
+        // Require wallet login to access tabs
+        window->walletLogin();
+
         // Now that initialization/startup is done, process any command-line
         // bitcoin: URIs or payment requests:
         if (paymentServer) {
@@ -374,7 +377,7 @@ void BitcoinApplication::shutdownResult()
 
 void BitcoinApplication::handleRunawayException(const QString &message)
 {
-    QMessageBox::critical(nullptr, "Runaway exception", BitcoinGUI::tr("A fatal error occurred. Bitcoin can no longer continue safely and will quit.") + QString("\n\n") + message);
+    QMessageBox::critical(nullptr, "Runaway exception", BitcoinGUI::tr("A fatal error occurred. %1 can no longer continue safely and will quit.").arg(GUIUtil::GetCoinName()) + QString("\n\n") + message);
     ::exit(EXIT_FAILURE);
 }
 
@@ -414,13 +417,9 @@ int GuiMain(int argc, char* argv[])
 
     // Do not refer to data directory yet, this can be overridden by Intro::pickDataDirectory
 
-    /// 1. Basic Qt initialization (not dependent on parameters or configuration)vericoin
-#if CLIENT_IS_VERIUM
-        Q_INIT_RESOURCE(verium);
-#else
-        Q_INIT_RESOURCE(vericonomy);
-#endif
-    Q_INIT_RESOURCE(vericonomy_locale);
+    /// 1. Basic Qt initialization (not dependent on parameters or configuration)
+    Q_INIT_RESOURCE(bitcoin);
+    Q_INIT_RESOURCE(bitcoin_locale);
 
     // Generate high-dpi pixmaps
     QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
@@ -451,7 +450,7 @@ int GuiMain(int argc, char* argv[])
     if (!node->parseParameters(argc, argv, error)) {
         node->initError(strprintf("Error parsing command line arguments: %s\n", error));
         // Create a message box, because the gui has neither been created nor has subscribed to core signals
-        QMessageBox::critical(nullptr, PACKAGE_NAME,
+        QMessageBox::critical(nullptr, GUIUtil::GetCoinName(),
             // message can not be translated because translations have not been initialized
             QString::fromStdString("Error parsing command line arguments: %1.").arg(QString::fromStdString(error)));
         return EXIT_FAILURE;
@@ -465,7 +464,7 @@ int GuiMain(int argc, char* argv[])
     // as it is used to locate QSettings
     QApplication::setOrganizationName(QAPP_ORG_NAME);
     QApplication::setOrganizationDomain(QAPP_ORG_DOMAIN);
-    if( Params().IsVericoin() )
+    if( IsVericoin() )
         QApplication::setApplicationName(QAPP_APP_NAME_VERICOIN);
     else
         QApplication::setApplicationName(QAPP_APP_NAME_VERIUM);
@@ -492,13 +491,13 @@ int GuiMain(int argc, char* argv[])
     /// - Do not call GetDataDir(true) before this step finishes
     if (!CheckDataDirOption()) {
         node->initError(strprintf("Specified data directory \"%s\" does not exist.\n", gArgs.GetArg("-datadir", "")));
-        QMessageBox::critical(nullptr, PACKAGE_NAME,
+        QMessageBox::critical(nullptr, GUIUtil::GetCoinName(),
             QObject::tr("Error: Specified data directory \"%1\" does not exist.").arg(QString::fromStdString(gArgs.GetArg("-datadir", ""))));
         return EXIT_FAILURE;
     }
     if (!node->readConfigFiles(error)) {
         node->initError(strprintf("Error reading configuration file: %s\n", error));
-        QMessageBox::critical(nullptr, PACKAGE_NAME,
+        QMessageBox::critical(nullptr, GUIUtil::GetCoinName(),
             QObject::tr("Error: Cannot parse configuration file: %1.").arg(QString::fromStdString(error)));
         return EXIT_FAILURE;
     }
@@ -514,7 +513,7 @@ int GuiMain(int argc, char* argv[])
         node->selectParams(gArgs.GetChainName());
     } catch(std::exception &e) {
         node->initError(strprintf("%s\n", e.what()));
-        QMessageBox::critical(nullptr, PACKAGE_NAME, QObject::tr("Error: %1").arg(e.what()));
+        QMessageBox::critical(nullptr, GUIUtil::GetCoinName(), QObject::tr("Error: %1").arg(e.what()));
         return EXIT_FAILURE;
     }
 #ifdef ENABLE_WALLET

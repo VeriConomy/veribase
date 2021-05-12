@@ -125,11 +125,16 @@ FUZZ_TARGETS = \
 if ENABLE_FUZZ
 noinst_PROGRAMS += $(FUZZ_TARGETS:=)
 else
-bin_PROGRAMS += test/test_bitcoin
+if CLIENT_IS_VERIUM
+  bin_PROGRAMS += test/test_verium
+  TEST_BINARY=test/test_verium$(EXEEXT)
+else
+  bin_PROGRAMS += test/test_vericoin
+  TEST_BINARY=test/test_vericoin$(EXEEXT)
+endif
 endif
 
 TEST_SRCDIR = test
-TEST_BINARY=test/test_bitcoin$(EXEEXT)
 
 JSON_TEST_FILES = \
   test/data/script_tests.json \
@@ -260,22 +265,46 @@ BITCOIN_TEST_SUITE += \
   wallet/test/init_test_fixture.h
 endif
 
-test_test_bitcoin_SOURCES = $(BITCOIN_TEST_SUITE) $(BITCOIN_TESTS) $(JSON_TEST_FILES) $(RAW_TEST_FILES)
-test_test_bitcoin_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(TESTDEFS) $(EVENT_CFLAGS)
-test_test_bitcoin_LDADD = $(LIBTEST_UTIL) $(CRYPTO_LIBS)
+if CLIENT_IS_VERIUM
+
+test_test_verium_SOURCES = $(BITCOIN_TEST_SUITE) $(BITCOIN_TESTS) $(JSON_TEST_FILES) $(RAW_TEST_FILES)
+test_test_verium_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(TESTDEFS) $(EVENT_CFLAGS)
+test_test_verium_LDADD = $(LIBTEST_UTIL) $(CRYPTO_LIBS)
 if ENABLE_WALLET
-test_test_bitcoin_LDADD += $(LIBBITCOIN_WALLET)
+test_test_verium_LDADD += $(LIBBITCOIN_WALLET)
 endif
 
-test_test_bitcoin_LDADD += $(LIBBITCOIN_SERVER) $(LIBBITCOIN_CLI) $(LIBBITCOIN_COMMON) $(LIBBITCOIN_UTIL) $(LIBBITCOIN_CONSENSUS) $(LIBBITCOIN_CRYPTO) $(LIBUNIVALUE) \
+test_test_verium_LDADD += $(LIBBITCOIN_SERVER) $(LIBBITCOIN_CLI) $(LIBBITCOIN_COMMON) $(LIBBITCOIN_UTIL) $(LIBBITCOIN_CONSENSUS) $(LIBBITCOIN_CRYPTO) $(LIBUNIVALUE) \
   $(LIBLEVELDB) $(LIBLEVELDB_SSE42) $(LIBMEMENV) $(BOOST_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LIBSECP256K1) $(EVENT_LIBS) $(EVENT_PTHREADS_LIBS)
-test_test_bitcoin_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+test_test_verium_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 
-test_test_bitcoin_LDADD += $(BDB_LIBS) $(MINIUPNPC_LIBS) $(MINIZIP_LIBS) $(CURL_LIBS)
-test_test_bitcoin_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -static
+test_test_verium_LDADD += $(BDB_LIBS) $(MINIUPNPC_LIBS) $(MINIZIP_LIBS) $(CURL_LIBS)
+test_test_verium_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -static
 
 if ENABLE_ZMQ
-test_test_bitcoin_LDADD += $(LIBBITCOIN_ZMQ) $(ZMQ_LIBS)
+test_test_verium_LDADD += $(LIBBITCOIN_ZMQ) $(ZMQ_LIBS)
+endif
+
+else
+
+test_test_vericoin_SOURCES = $(BITCOIN_TEST_SUITE) $(BITCOIN_TESTS) $(JSON_TEST_FILES) $(RAW_TEST_FILES)
+test_test_vericoin_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(TESTDEFS) $(EVENT_CFLAGS)
+test_test_vericoin_LDADD = $(LIBTEST_UTIL) $(CRYPTO_LIBS)
+if ENABLE_WALLET
+test_test_vericoin_LDADD += $(LIBBITCOIN_WALLET)
+endif
+
+test_test_vericoin_LDADD += $(LIBBITCOIN_SERVER) $(LIBBITCOIN_CLI) $(LIBBITCOIN_COMMON) $(LIBBITCOIN_UTIL) $(LIBBITCOIN_CONSENSUS) $(LIBBITCOIN_CRYPTO) $(LIBUNIVALUE) \
+  $(LIBLEVELDB) $(LIBLEVELDB_SSE42) $(LIBMEMENV) $(BOOST_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LIBSECP256K1) $(EVENT_LIBS) $(EVENT_PTHREADS_LIBS)
+test_test_vericoin_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+
+test_test_vericoin_LDADD += $(BDB_LIBS) $(MINIUPNPC_LIBS) $(MINIZIP_LIBS) $(CURL_LIBS)
+test_test_vericoin_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -static
+
+if ENABLE_ZMQ
+test_test_vericoin_LDADD += $(LIBBITCOIN_ZMQ) $(ZMQ_LIBS)
+endif
+
 endif
 
 if ENABLE_FUZZ
@@ -1003,7 +1032,16 @@ test_fuzz_uint256_deserialize_SOURCES = test/fuzz/deserialize.cpp
 
 endif # ENABLE_FUZZ
 
-nodist_test_test_bitcoin_SOURCES = $(GENERATED_TEST_FILES)
+
+if CLIENT_IS_VERIUM
+
+nodist_test_test_verium_SOURCES = $(GENERATED_TEST_FILES)
+
+else
+
+nodist_test_test_vericoin_SOURCES = $(GENERATED_TEST_FILES)
+
+endif
 
 $(BITCOIN_TESTS): $(GENERATED_TEST_FILES)
 
@@ -1011,20 +1049,22 @@ CLEAN_BITCOIN_TEST = test/*.gcda test/*.gcno $(GENERATED_TEST_FILES) $(BITCOIN_T
 
 CLEANFILES += $(CLEAN_BITCOIN_TEST)
 
+if CLIENT_IS_VERIUM
+
 if TARGET_WINDOWS
-bitcoin_test: $(TEST_BINARY)
+verium_test: $(TEST_BINARY)
 else
 if ENABLE_BENCH
-bitcoin_test: $(TEST_BINARY) $(BENCH_BINARY)
+verium_test: $(TEST_BINARY) $(BENCH_BINARY)
 else
-bitcoin_test: $(TEST_BINARY)
+verimu_test: $(TEST_BINARY)
 endif
 endif
 
-bitcoin_test_check: $(TEST_BINARY) FORCE
+verium_test_check: $(TEST_BINARY) FORCE
 	$(MAKE) check-TESTS TESTS=$^
 
-bitcoin_test_clean : FORCE
+verium_test_clean : FORCE
 	rm -f $(CLEAN_BITCOIN_TEST) $(test_test_bitcoin_OBJECTS) $(TEST_BINARY)
 
 check-local: $(BITCOIN_TESTS:.cpp=.cpp.test)
@@ -1037,13 +1077,53 @@ endif
 if TARGET_WINDOWS
 else
 if ENABLE_BENCH
-	@echo "Running bench/bench_bitcoin -evals=1 -scaling=0..."
+	@echo "Running bench/bench_verium -evals=1 -scaling=0..."
 	$(BENCH_BINARY) -evals=1 -scaling=0 > /dev/null
 endif
 endif
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C secp256k1 check
 if EMBEDDED_UNIVALUE
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C univalue check
+endif
+
+else
+
+
+if TARGET_WINDOWS
+vericoin_test: $(TEST_BINARY)
+else
+if ENABLE_BENCH
+vericoin_test: $(TEST_BINARY) $(BENCH_BINARY)
+else
+vericoin_test: $(TEST_BINARY)
+endif
+endif
+
+vericoin_test_check: $(TEST_BINARY) FORCE
+	$(MAKE) check-TESTS TESTS=$^
+
+vericoin_test_clean : FORCE
+	rm -f $(CLEAN_BITCOIN_TEST) $(test_test_bitcoin_OBJECTS) $(TEST_BINARY)
+
+check-local: $(BITCOIN_TESTS:.cpp=.cpp.test)
+if BUILD_BITCOIN_TX
+	@echo "Running test/util/bitcoin-util-test.py..."
+	$(PYTHON) $(top_builddir)/test/util/bitcoin-util-test.py
+endif
+	@echo "Running test/util/rpcauth-test.py..."
+	$(PYTHON) $(top_builddir)/test/util/rpcauth-test.py
+if TARGET_WINDOWS
+else
+if ENABLE_BENCH
+	@echo "Running bench/bench_vericoin -evals=1 -scaling=0..."
+	$(BENCH_BINARY) -evals=1 -scaling=0 > /dev/null
+endif
+endif
+	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C secp256k1 check
+if EMBEDDED_UNIVALUE
+	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C univalue check
+endif
+
 endif
 
 %.cpp.test: %.cpp

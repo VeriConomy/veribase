@@ -60,6 +60,8 @@ public:
     const Consensus::Params& GetConsensus() const { return consensus; }
     const CMessageHeader::MessageStartChars& MessageStart() const { return pchMessageStart; }
     int GetDefaultPort() const { return nDefaultPort; }
+    std::string GetCoinName() const { return strCoinName; }
+    std::string GetCurrencyName() const { return strCurrencyName; }
 
     const CBlock& GenesisBlock() const { return genesis; }
     /** Make miner wait to have peers to avoid wasting work */
@@ -101,6 +103,8 @@ protected:
     std::vector<unsigned char> base58Prefixes[MAX_BASE58_TYPES];
     std::string bech32_hrp;
     std::string strNetworkID;
+    std::string strCoinName;
+    std::string strCurrencyName;
     CBlock genesis;
     std::vector<SeedSpec6> vFixedSeeds;
     bool fDefaultConsistencyChecks;

@@ -270,6 +270,10 @@ namespace GUIUtil
      * Writes to debug.log short info about the used Qt and the host system.
      */
     void LogQtInfo();
+
+    bool IsVericoin();
+    QString GetCoinName();
+    QString GetCurrencyName();
 } // namespace GUIUtil
 
 #endif // BITCOIN_QT_GUIUTIL_H

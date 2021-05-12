@@ -10,6 +10,7 @@
 #include <qt/forms/ui_askpassphrasedialog.h>
 
 #include <qt/guiconstants.h>
+#include <qt/guiutil.h>
 #include <qt/walletmodel.h>
 
 #include <support/allocators/secure.h>
@@ -27,7 +28,7 @@ AskPassphraseDialog::AskPassphraseDialog(Mode _mode, QWidget *parent, SecureStri
     m_passphrase_out(passphrase_out)
 {
     ui->setupUi(this);
-
+    setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
     ui->passEdit1->setMinimumSize(ui->passEdit1->sizeHint());
     ui->passEdit2->setMinimumSize(ui->passEdit2->sizeHint());
     ui->passEdit3->setMinimumSize(ui->passEdit3->sizeHint());
@@ -41,6 +42,15 @@ AskPassphraseDialog::AskPassphraseDialog(Mode _mode, QWidget *parent, SecureStri
     ui->passEdit2->installEventFilter(this);
     ui->passEdit3->installEventFilter(this);
 
+    // set the correct icon
+    if( GUIUtil::IsVericoin())
+        ui->vericoinIcon->setPixmap(QPixmap(":/icons/vericoin"));
+    else
+        ui->vericoinIcon->setPixmap(QPixmap(":/icons/verium"));
+
+    ui->vericoinIcon->setMinimumSize(QSize(550, 100));
+
+
     switch(mode)
     {
         case Encrypt: // Ask passphrase x2
@@ -50,7 +60,7 @@ AskPassphraseDialog::AskPassphraseDialog(Mode _mode, QWidget *parent, SecureStri
             setWindowTitle(tr("Encrypt wallet"));
             break;
         case Unlock: // Ask passphrase
-            ui->warningLabel->setText(tr("This operation needs your wallet passphrase to unlock the wallet."));
+            ui->warningLabel->hide();
             ui->passLabel2->hide();
             ui->passEdit2->hide();
             ui->passLabel3->hide();
@@ -75,6 +85,9 @@ AskPassphraseDialog::AskPassphraseDialog(Mode _mode, QWidget *parent, SecureStri
     connect(ui->passEdit1, &QLineEdit::textChanged, this, &AskPassphraseDialog::textChanged);
     connect(ui->passEdit2, &QLineEdit::textChanged, this, &AskPassphraseDialog::textChanged);
     connect(ui->passEdit3, &QLineEdit::textChanged, this, &AskPassphraseDialog::textChanged);
+
+    ui->buttonBox->button(QDialogButtonBox::Cancel)->setStyleSheet(QString("QPushButton { background-color: #e93a5d; } QPushButton:hover { background-color: #e61942; }"));
+    ui->buttonBox->button(QDialogButtonBox::Ok)->setStyleSheet(QString("QPushButton { background-color: #359b37; } QPushButton:hover { background-color: #2e852f; }"));
 }
 
 AskPassphraseDialog::~AskPassphraseDialog()
@@ -113,7 +126,7 @@ void AskPassphraseDialog::accept()
             break;
         }
         QMessageBox::StandardButton retval = QMessageBox::question(this, tr("Confirm wallet encryption"),
-                 tr("Warning: If you encrypt your wallet and lose your passphrase, you will <b>LOSE ALL OF YOUR BITCOINS</b>!") + "<br><br>" + tr("Are you sure you wish to encrypt your wallet?"),
+                 tr("Warning: If you encrypt your wallet and lose your passphrase, you will <b>Lose all of your %1</b>!").arg(GUIUtil::GetCoinName()) + "<br><br>" + tr("Are you sure you wish to encrypt your wallet?"),
                  QMessageBox::Yes|QMessageBox::Cancel,
                  QMessageBox::Cancel);
         if(retval == QMessageBox::Yes)
@@ -121,7 +134,7 @@ void AskPassphraseDialog::accept()
             if(newpass1 == newpass2)
             {
                 QString encryption_reminder = tr("Remember that encrypting your wallet cannot fully protect "
-                "your bitcoins from being stolen by malware infecting your computer.");
+                "your %1s from being stolen by malware infecting your computer.").arg(GUIUtil::GetCoinName());
                 if (m_passphrase_out) {
                     m_passphrase_out->assign(newpass1);
                     QMessageBox::warning(this, tr("Wallet to be encrypted"),

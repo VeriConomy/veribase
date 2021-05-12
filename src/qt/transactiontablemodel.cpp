@@ -326,16 +326,11 @@ QString TransactionTableModel::formatTxDate(const TransactionRecord *wtx) const
 QString TransactionTableModel::lookupAddress(const std::string &address, bool tooltip) const
 {
     QString label = walletModel->getAddressTableModel()->labelForAddress(QString::fromStdString(address));
-    QString description;
-    if(!label.isEmpty())
-    {
-        description += label;
-    }
     if(label.isEmpty() || tooltip)
     {
-        description += QString(" (") + QString::fromStdString(address) + QString(")");
+        label = QString::fromStdString(address);
     }
-    return description;
+    return label;
 }
 
 QString TransactionTableModel::formatTxType(const TransactionRecord *wtx) const
@@ -353,6 +348,8 @@ QString TransactionTableModel::formatTxType(const TransactionRecord *wtx) const
         return tr("Payment to yourself");
     case TransactionRecord::Generated:
         return tr("Mined");
+    case TransactionRecord::Stake:
+        return tr("Staking reward");
     default:
         return QString();
     }
@@ -390,6 +387,7 @@ QString TransactionTableModel::formatTxToAddress(const TransactionRecord *wtx, b
     case TransactionRecord::RecvWithAddress:
     case TransactionRecord::SendToAddress:
     case TransactionRecord::Generated:
+    case TransactionRecord::Stake:
         return lookupAddress(wtx->address, tooltip) + watchAddress;
     case TransactionRecord::SendToOther:
         return QString::fromStdString(wtx->address) + watchAddress;
@@ -407,6 +405,7 @@ QVariant TransactionTableModel::addressColor(const TransactionRecord *wtx) const
     {
     case TransactionRecord::RecvWithAddress:
     case TransactionRecord::SendToAddress:
+    case TransactionRecord::Stake:
     case TransactionRecord::Generated:
         {
         QString label = walletModel->getAddressTableModel()->labelForAddress(QString::fromStdString(wtx->address));
@@ -554,6 +553,12 @@ QVariant TransactionTableModel::data(const QModelIndex &index, int role) const
         {
             return COLOR_TX_STATUS_DANGER;
         }
+
+        if(index.column() == Amount && (rec->credit+rec->debit) > 0)
+        {
+            return COLOR_POSITIVE;
+        }
+
         // Non-confirmed (but not immature) as transactions are grey
         if(!rec->status.countsForBalance && rec->status.status != TransactionStatus::Immature)
         {

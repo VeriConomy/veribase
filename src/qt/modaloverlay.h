@@ -31,6 +31,7 @@ public Q_SLOTS:
     void toggleVisibility();
     // will show or hide the modal layer
     void showHide(bool hide = false, bool userRequested = false);
+    void openBootstrapClicked();
     void closeClicked();
     bool isLayerVisible() const { return layerIsVisible; }
 

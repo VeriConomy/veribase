@@ -65,7 +65,8 @@ public:
         DuplicateAddress,
         TransactionCreationFailed, // Error returned when wallet is still locked
         AbsurdFee,
-        PaymentRequestExpired
+        PaymentRequestExpired,
+        StakingOnlyMode
     };
 
     enum EncryptionStatus
@@ -146,6 +147,7 @@ public:
     QString getDisplayName() const;
 
     bool isMultiwallet();
+    void manageProcess(bool state, int procs = 0);
 
     AddressTableModel* getAddressTableModel() const { return addressTableModel; }
 private:

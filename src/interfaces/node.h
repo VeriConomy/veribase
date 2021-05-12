@@ -253,6 +253,28 @@ public:
         std::function<void(bool initial_download, int height, int64_t block_time, double verification_progress)>;
     virtual std::unique_ptr<Handler> handleNotifyHeaderTip(NotifyHeaderTipFn fn) = 0;
 
+    //! Get Current Interest Rate
+    virtual double getCurrentInterestRate() = 0;
+
+    //! Get Current Inflation rate
+    virtual double getCurrentInflationRate() = 0;
+
+    //! Get Network Stake Weight
+    virtual double getNetworkStakeWeight() = 0;
+
+    //! Get Block Reward
+    virtual double getBlockReward() = 0;
+
+    //! Get Current staking state
+    virtual bool isStaking() = 0;
+
+    //! Get Current mining state
+    virtual bool isMining() = 0;
+
+    virtual void manageStaking(std::string walletName, bool state) = 0;
+
+    virtual void manageMining(std::string walletName, bool state, int procs) = 0;
+
     //! Return pointer to internal chain interface, useful for testing.
     virtual NodeContext* context() { return nullptr; }
 };

@@ -149,7 +149,7 @@ WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransact
             {
                 return InvalidAddress;
             }
-            if(rcp.amount <= 0)
+            if(rcp.amount < 0)
             {
                 return InvalidAmount;
             }
@@ -419,6 +419,11 @@ void WalletModel::unsubscribeFromCoreSignals()
 WalletModel::UnlockContext WalletModel::requestUnlock()
 {
     bool was_locked = getEncryptionStatus() == Locked;
+    if ((!was_locked) && fWalletUnlockStakingOnly)
+    {
+        setWalletLocked(true);
+        was_locked = getEncryptionStatus() == Locked;
+    }
     if(was_locked)
     {
         // Request UI to unlock wallet
@@ -427,7 +432,7 @@ WalletModel::UnlockContext WalletModel::requestUnlock()
     // If wallet is still locked, unlock was failed or cancelled, mark context as invalid
     bool valid = getEncryptionStatus() != Locked;
 
-    return UnlockContext(this, valid, was_locked);
+    return UnlockContext(this, valid, was_locked && !fWalletUnlockStakingOnly);
 }
 
 WalletModel::UnlockContext::UnlockContext(WalletModel *_wallet, bool _valid, bool _relock):
@@ -490,4 +495,22 @@ QString WalletModel::getDisplayName() const
 bool WalletModel::isMultiwallet()
 {
     return m_node.getWallets().size() > 1;
+}
+
+void WalletModel::manageProcess(bool state, int procs)
+{
+    QString qSprocs = QString::number(procs);
+    std::string Sprocs = qSprocs.toStdString();
+    gArgs.SoftSetArg("-genproclimit", Sprocs);
+
+    if( GUIUtil::IsVericoin() ) {
+        if( m_node.isStaking() != state ) {
+            m_node.manageStaking(m_wallet->getWalletName(), state);
+        }
+    }
+    else {
+        if( m_node.isMining() != state ) {
+            m_node.manageMining(m_wallet->getWalletName(), state, procs);
+        }
+    }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 The Bitcoin Core developers
+// Copyright (c) 2011-2018 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -18,11 +18,16 @@ class SendCoinsRecipient;
 class TransactionView;
 class WalletModel;
 class AddressBookPage;
+class CommunityPage;
 
 QT_BEGIN_NAMESPACE
 class QModelIndex;
 class QProgressDialog;
 QT_END_NAMESPACE
+
+namespace interfaces {
+class Node;
+}
 
 /*
   WalletView class. This class represents the view to a single wallet.
@@ -35,7 +40,7 @@ class WalletView : public QStackedWidget
     Q_OBJECT
 
 public:
-    explicit WalletView(const PlatformStyle *platformStyle, QWidget *parent);
+    explicit WalletView(interfaces::Node& node, const PlatformStyle *platformStyle, QWidget *parent);
     ~WalletView();
 
     /** Set the client model.
@@ -53,7 +58,10 @@ public:
 
     void showOutOfSyncWarning(bool fShow);
 
+    bool loggedIn = false;
+
 private:
+    interfaces::Node& m_node;
     ClientModel *clientModel;
     WalletModel *walletModel;
 
@@ -61,6 +69,7 @@ private:
     QWidget *transactionsPage;
     ReceiveCoinsDialog *receiveCoinsPage;
     SendCoinsDialog *sendCoinsPage;
+    CommunityPage *communityPage;
     AddressBookPage *usedSendingAddressesPage;
     AddressBookPage *usedReceivingAddressesPage;
 
@@ -78,6 +87,8 @@ public Q_SLOTS:
     void gotoReceiveCoinsPage();
     /** Switch to send coins page */
     void gotoSendCoinsPage(QString addr = "");
+    /** Switch to communityPage */
+    void gotoCommunityPage();
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");
@@ -98,6 +109,8 @@ public Q_SLOTS:
     /** Ask for passphrase to unlock wallet temporarily */
     void unlockWallet();
 
+    /** Ask for passphrase to gain wallet access while client is open */
+    bool walletLogin();
     /** Show used sending addresses */
     void usedSendingAddresses();
     /** Show used receiving addresses */
@@ -115,6 +128,8 @@ public Q_SLOTS:
 Q_SIGNALS:
     void transactionClicked();
     void coinsSent();
+    /** Signal that we want to show the main window */
+    void showNormalIfMinimized();
     /**  Fired when a message should be reported to the user */
     void message(const QString &title, const QString &message, unsigned int style);
     /** Encryption status of wallet changed */

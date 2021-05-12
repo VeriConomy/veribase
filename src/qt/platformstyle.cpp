@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2019 The Bitcoin Core developers
+// Copyright (c) 2015-2018 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -18,8 +18,8 @@ static const struct {
     /** Extra padding/spacing in transactionview */
     const bool useExtraSpacing;
 } platform_styles[] = {
-    {"macosx", false, false, true},
-    {"windows", true, false, false},
+    {"macosx", true, true, false},
+    {"windows", true, true, false},
     /* Other: linux, unix, ... */
     {"other", true, true, false}
 };
@@ -78,8 +78,9 @@ PlatformStyle::PlatformStyle(const QString &_name, bool _imagesOnButtons, bool _
 {
     // Determine icon highlighting color
     if (colorizeIcons) {
-        const QColor colorHighlightBg(QApplication::palette().color(QPalette::Highlight));
-        const QColor colorHighlightFg(QApplication::palette().color(QPalette::HighlightedText));
+        // Verium, might put that in a const
+        const QColor colorHighlightBg(255, 255, 255);
+        const QColor colorHighlightFg(255, 255, 255);
         const QColor colorText(QApplication::palette().color(QPalette::WindowText));
         const int colorTextLightness = colorText.lightness();
         QColor colorbase;
@@ -134,4 +135,3 @@ const PlatformStyle *PlatformStyle::instantiate(const QString &platformId)
     }
     return nullptr;
 }
-

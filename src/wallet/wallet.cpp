@@ -269,7 +269,7 @@ const uint256 CWalletTx::ABANDON_HASH(UINT256_ONE());
 
 // optional setting to unlock wallet for block minting only;
 //         serves to disable the trivial sendmoney when OS account compromised
-bool fWalletUnlockMintOnly = false;
+bool fWalletUnlockStakingOnly = false;
 
 /** @defgroup mapWallet
  *
@@ -4497,7 +4497,25 @@ bool CWallet::GetStakeWeight(uint64_t& nWeight)
     return true;
 }
 
-// // ppcoin: create coin stake transaction
+bool CWallet::IsUnlockStakingOnly()
+{
+    return fWalletUnlockStakingOnly;
+}
+
+uint64_t CWallet::GetTimeToStake()
+{
+    uint64_t nWeight=0;
+    u_int64_t nEstimateTime=0;
+    GetStakeWeight(nWeight);
+    double nNetworkWeight = GetPoSKernelPS();
+    if (nWeight != 0)
+    {
+        nEstimateTime = Params().GetConsensus().nStakeTargetSpacing * nNetworkWeight / nWeight;
+    }
+    return nEstimateTime;
+}
+
+// create coin stake transaction
 typedef std::vector<unsigned char> valtype;
 bool CWallet::CreateCoinStake(const CWallet* pwallet, unsigned int nBits, int64_t nSearchInterval, int64_t nFees, CMutableTransaction& txNew)
 {
