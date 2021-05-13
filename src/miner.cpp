@@ -747,6 +747,11 @@ void Miner(std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* memp
     }
 }
 
+bool IsMining()
+{
+    return fGenerateVerium;
+}
+
 void GenerateVerium(bool fGenerate, std::shared_ptr<CWallet> pwallet, int nThreads, CConnman* connman, CTxMemPool* mempool)
 {
     fGenerateVerium = fGenerate;
@@ -892,6 +897,11 @@ void Staker(std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* mem
         fGenerateVericoin = false;
         return;
     }
+}
+
+bool IsStaking()
+{
+    return fGenerateVericoin;
 }
 
 void GenerateVericoin(bool fGenerate, std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* mempool)

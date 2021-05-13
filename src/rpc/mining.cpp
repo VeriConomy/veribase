@@ -759,6 +759,33 @@ static UniValue submitheader(const JSONRPCRequest& request)
     throw JSONRPCError(RPC_VERIFY_ERROR, state.GetRejectReason());
 }
 
+
+UniValue minerstatus(const JSONRPCRequest& request)
+{
+    RPCHelpMan{"minerstatus",
+        "\nMining status (Verium only)",
+        {},
+        RPCResult{
+            RPCResult::Type::OBJ, "", "",
+            {
+                {RPCResult::Type::STR, "status", "Mining status (active/stopped)"},
+            }
+        },
+        RPCExamples{
+            HelpExampleCli("minerstatus", "")
+    + HelpExampleRpc("minerstatus", "")
+        },
+    }.Check(request);
+
+    if( Params().IsVericoin())
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Action impossible on Vericoin");
+
+    UniValue obj(UniValue::VOBJ);
+    obj.pushKV("status",   ( IsMining() ? "active" : "stopped"));
+
+    return obj;
+}
+
 UniValue minerstart(const JSONRPCRequest& request)
 {
     RPCHelpMan{"minerstart",
@@ -846,6 +873,31 @@ UniValue minerstop(const JSONRPCRequest& request)
     return obj;
 }
 
+UniValue stakingstatus(const JSONRPCRequest& request)
+{
+    RPCHelpMan{"stakingstatus",
+        "\nstaking status (Vericoin only)",
+        {},
+        RPCResult{
+            RPCResult::Type::OBJ, "", "",
+            {
+                {RPCResult::Type::STR, "status", "Staking status (active/stopped)"},
+            }
+        },
+        RPCExamples{
+            HelpExampleCli("stakingstatus", "")
+    + HelpExampleRpc("stakingstatus", "")
+        },
+    }.Check(request);
+
+    if( ! Params().IsVericoin())
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Action impossible on Verium");
+
+    UniValue obj(UniValue::VOBJ);
+    obj.pushKV("status",   ( IsStaking() ? "active" : "stopped"));
+
+    return obj;
+}
 
 UniValue stakingstart(const JSONRPCRequest& request)
 {
@@ -855,7 +907,7 @@ UniValue stakingstart(const JSONRPCRequest& request)
         RPCResult{
             RPCResult::Type::OBJ, "", "",
             {
-                {RPCResult::Type::STR, "status", "Mining status (active/stopped)"},
+                {RPCResult::Type::STR, "status", "Staking status (active/stopped)"},
             }
         },
         RPCExamples{
@@ -894,7 +946,7 @@ UniValue stakingstop(const JSONRPCRequest& request)
         RPCResult{
             RPCResult::Type::OBJ, "", "",
             {
-                {RPCResult::Type::STR, "status", "Mining status (active/stopped)"},
+                {RPCResult::Type::STR, "status", "Staking status (active/stopped)"},
             }
         },
         RPCExamples{
@@ -938,9 +990,11 @@ static const CRPCCommand commands[] =
     { "mining",             "submitblock",            &submitblock,            {"hexdata","dummy"} },
     { "mining",             "submitheader",           &submitheader,           {"hexdata"} },
 
+    { "miner",              "minerstatus",            &minerstatus,            {} },
     { "miner",              "minerstop",              &minerstop,              {} },
     { "miner",              "minerstart",             &minerstart,             {"nthreads"} },
 
+    { "staking",            "stakingstatus",          &stakingstatus,            {} },
     { "staking",            "stakingstop",            &stakingstop,              {} },
     { "staking",            "stakingstart",           &stakingstart,             {} },
 

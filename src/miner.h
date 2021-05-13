@@ -209,6 +209,8 @@ void SHA256Transform(void* pstate, void* pinput, const void* pinit);
 
 void GenerateVerium(bool fGenerate, std::shared_ptr<CWallet> pwallet, int nThreads, CConnman* connman, CTxMemPool* mempool);
 void GenerateVericoin(bool fGenerate, std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* mempool);
+bool IsMining();
+bool IsStaking();
 
 extern double hashrate;
 
