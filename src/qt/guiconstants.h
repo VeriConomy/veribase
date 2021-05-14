@@ -42,8 +42,8 @@ static const int TOOLTIP_WRAP_THRESHOLD = 80;
 /* Number of frames in spinner animation */
 #define SPINNER_FRAMES 36
 
-#define QAPP_ORG_NAME "Bitcoin"
-#define QAPP_ORG_DOMAIN "bitcoin.org"
+#define QAPP_ORG_NAME "Vericonomy"
+#define QAPP_ORG_DOMAIN "vericonomy.com"
 #define QAPP_APP_NAME_VERICOIN "Vericoin-Qt"
 #define QAPP_APP_NAME_VERIUM "Verium-Qt"
 

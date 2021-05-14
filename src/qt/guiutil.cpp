@@ -641,7 +641,7 @@ fs::path static GetAutostartFilePath()
         return GetAutostartDir() / "vericoin.desktop";
     if (chain == CBaseChainParams::VERIUM)
         return GetAutostartDir() / "verium.desktop";
-    return GetAutostartDir() / strprintf("bitcoin-%s.desktop", chain);
+    return GetAutostartDir() / strprintf("vericonomy-%s.desktop", chain);
 }
 
 bool GetStartOnSystemStartup()
