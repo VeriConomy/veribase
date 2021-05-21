@@ -208,6 +208,11 @@ static UniValue getnewaddress(const JSONRPCRequest& request)
 
     OutputType output_type = pwallet->m_default_address_type;
     if (!request.params[1].isNull()) {
+        // Preparing for bech32 in future implementation
+        // XXX: To remove in future version to allow bech32
+        if ( request.params[1].get_str() != "legacy" ) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, strprintf("Unknown address type '%s'", request.params[1].get_str()));
+        }
         if (!ParseOutputType(request.params[1].get_str(), output_type)) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, strprintf("Unknown address type '%s'", request.params[1].get_str()));
         }

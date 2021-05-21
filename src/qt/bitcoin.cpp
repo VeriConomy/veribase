@@ -414,9 +414,13 @@ int GuiMain(int argc, char* argv[])
 
     // Do not refer to data directory yet, this can be overridden by Intro::pickDataDirectory
 
-    /// 1. Basic Qt initialization (not dependent on parameters or configuration)
-    Q_INIT_RESOURCE(bitcoin);
-    Q_INIT_RESOURCE(bitcoin_locale);
+    /// 1. Basic Qt initialization (not dependent on parameters or configuration)vericoin
+#if CLIENT_IS_VERIUM
+        Q_INIT_RESOURCE(verium);
+#else
+        Q_INIT_RESOURCE(vericonomy);
+#endif
+    Q_INIT_RESOURCE(vericonomy_locale);
 
     // Generate high-dpi pixmaps
     QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
