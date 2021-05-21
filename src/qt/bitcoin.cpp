@@ -418,7 +418,7 @@ int GuiMain(int argc, char* argv[])
 #if CLIENT_IS_VERIUM
         Q_INIT_RESOURCE(verium);
 #else
-        Q_INIT_RESOURCE(vericoin);
+        Q_INIT_RESOURCE(vericonomy);
 #endif
     Q_INIT_RESOURCE(vericonomy_locale);
 
