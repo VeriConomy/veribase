@@ -205,6 +205,8 @@ RES_ICONS = \
   qt/res/icons/tx_input.png \
   qt/res/icons/tx_output.png \
   qt/res/icons/tx_mined.png \
+  qt/res/icons/vericoin-splash.png \
+  qt/res/icons/verium-splash.png \
   qt/res/icons/warning.png
 
 BITCOIN_QT_BASE_CPP = \
