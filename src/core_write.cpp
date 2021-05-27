@@ -144,7 +144,7 @@ void ScriptToUniv(const CScript& script, UniValue& out, bool include_address)
     out.pushKV("type", GetTxnOutputType(type));
 
     CTxDestination address;
-    if (include_address && ExtractDestination(script, address) && type != TX_PUBKEY) {
+    if (include_address && ExtractDestination(script, address)) {
         out.pushKV("address", EncodeDestination(address));
     }
 }
