@@ -66,11 +66,11 @@
         <translation>स्वीकृती पत्ते</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <source>These are your %1 addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
         <translation>पैसे पाठविण्यासाठीचे हे तुमचे बिटकॉईन पत्त्ते आहेत. नाणी पाठविण्यापूर्वी नेहमी रक्कम आणि प्राप्त होणारा पत्ता तपासून पहा.</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.</source>
+        <source>These are your %1 addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.</source>
         <translation>पैसे प्राप्त करण्यासाठीचे हे आपले बिटकॉइन पत्ते आहेत. नवीन पत्ते तयार करण्यासाठी प्राप्त टॅबमधील 'नवीन प्राप्त करण्याचा पत्ता तयार करा' बटण वापरा.</translation>
     </message>
     <message>

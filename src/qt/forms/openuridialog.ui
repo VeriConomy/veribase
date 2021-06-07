@@ -26,7 +26,7 @@
      <item>
       <widget class="QValidatedLineEdit" name="uriEdit">
        <property name="placeholderText">
-        <string notr="true">verium:</string>
+        <string notr="true">%1:</string>
        </property>
       </widget>
      </item>

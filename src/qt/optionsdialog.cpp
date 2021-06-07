@@ -35,6 +35,11 @@ OptionsDialog::OptionsDialog(QWidget *parent, bool enableWallet) :
 {
     ui->setupUi(this);
 
+    // translate
+    ui->mapPortUpnp->setToolTip(ui->mapPortUpnp->toolTip().arg(GUIUtil::GetCoinName()));
+    ui->connectSocks->setToolTip(ui->connectSocks->toolTip().arg(GUIUtil::GetCoinName()));
+    ui->connectSocksTor->setToolTip(ui->connectSocksTor->toolTip().arg(GUIUtil::GetCoinName()));
+
     /* Main elements init */
     ui->databaseCache->setMinimum(nMinDbCache);
     ui->databaseCache->setMaximum(nMaxDbCache);

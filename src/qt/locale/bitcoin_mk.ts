@@ -126,8 +126,8 @@
         <translation>Повторно индексирање на блокови од дискот...</translation>
     </message>
     <message>
-        <source>Send coins to a Bitcoin address</source>
-        <translation>Испрати биткоини на Биткоин адреса</translation>
+        <source>Send coins to a %1 address</source>
+        <translation>Испрати биткоини на %1 адреса</translation>
     </message>
     <message>
         <source>&amp;Verify message...</source>

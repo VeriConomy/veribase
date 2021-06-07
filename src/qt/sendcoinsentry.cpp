@@ -27,6 +27,11 @@ SendCoinsEntry::SendCoinsEntry(const PlatformStyle *_platformStyle, QWidget *par
 {
     ui->setupUi(this);
 
+    // translate
+    ui->payTo->setToolTip(ui->payTo->toolTip().arg(GUIUtil::GetCoinName().toLower()));
+    ui->checkboxSubtractFeeFromAmount->setToolTip(ui->checkboxSubtractFeeFromAmount->toolTip().arg(GUIUtil::GetCoinName().toLower()));
+    ui->messageTextLabel->setToolTip(ui->messageTextLabel->toolTip().arg(GUIUtil::GetCoinName().toLower()).arg(GUIUtil::GetCoinName()));
+
     ui->addressBookButton->setIcon(QIcon(":/icons/address-book"));
     ui->pasteButton->setIcon(QIcon(":/icons/editpaste"));
     ui->deleteButton->setIcon(QIcon(":/icons/remove"));

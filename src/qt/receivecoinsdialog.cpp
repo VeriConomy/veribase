@@ -29,6 +29,10 @@ ReceiveCoinsDialog::ReceiveCoinsDialog(const PlatformStyle *_platformStyle, QWid
 {
     ui->setupUi(this);
 
+    // translate
+    ui->reqMessage->setToolTip(ui->reqMessage->toolTip().arg(GUIUtil::GetCoinName().toLower()));
+    ui->label_3->setToolTip(ui->label_3->toolTip().arg(GUIUtil::GetCoinName().toLower()));
+
     if (!_platformStyle->getImagesOnButtons()) {
         ui->clearButton->setIcon(QIcon());
         ui->receiveButton->setIcon(QIcon());

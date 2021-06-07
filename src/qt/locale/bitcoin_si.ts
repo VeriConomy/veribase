@@ -54,11 +54,11 @@
         <translation>ලබන ලිපින</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <source>These are your %1 addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
         <translation>මේවා ඔබගේ ගෙවීම් යැවීම සඳහා වන බිට්කොයින් ලිපින වේ. කාසි යැවීමට පෙර සෑම විටම මුදල සහ ලැබීමේ ලිපිනය පරීක්ෂා කරන්න.</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.</source>
+        <source>These are your %1 addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.</source>
         <translation> මේවා ඔබගේ ගෙවීම් ලැබීම සඳහා වන බිට්කොයින් ලිපින වේ. නව ලිපින සෑදීම සඳහා ලැබීම් ටැබ් එකෙහි ඇති 'නව ලැබීමේ ලිපිනයක් සාදන්න' බොත්තම භාවිතා කරන්න.</translation>
     </message>
     <message>
@@ -136,7 +136,7 @@
         <translation>පසුම්බි සංකේතනය තහවුරු කරන්න</translation>
     </message>
     <message>
-        <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR BITCOINS&lt;/b&gt;!</source>
+        <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR %1&lt;/b&gt;!</source>
         <translation>අවවාදයයි: ඔබ ඔබේ මුදල් පසුම්බිය සංකේතනය කල පසු ඔබගේ මුරපදය නැති වුවහොත්, ඔබේ  &lt;b&gt;බිට්කොයින් සියල්ලම ඔබට අහිමි වනු ඇත&lt;/b&gt;!</translation>
     </message>
     <message>

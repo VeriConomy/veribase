@@ -159,7 +159,7 @@ void SendCoinsDialog::setModel(WalletModel *_model)
 
         if (model->wallet().privateKeysDisabled()) {
             ui->sendButton->setText(tr("Cr&eate Unsigned"));
-            ui->sendButton->setToolTip(tr("Creates a Partially Signed Bitcoin Transaction (PSBT) for use with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(GUIUtil::GetCoinName()));
+            ui->sendButton->setToolTip(tr("Creates a Partially Signed %1 Transaction (PSBT) for use with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(GUIUtil::GetCoinName()));
         }
     }
 }
@@ -270,7 +270,7 @@ void SendCoinsDialog::on_sendButton_clicked()
 
     questionString.append("<br /><span style='font-size:10pt;'>");
     if (model->wallet().privateKeysDisabled()) {
-        questionString.append(tr("Please, review your transaction proposal. This will produce a Partially Signed Bitcoin Transaction (PSBT) which you can copy and then sign with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(GUIUtil::GetCoinName()));
+        questionString.append(tr("Please, review your transaction proposal. This will produce a Partially Signed %1 Transaction (PSBT) which you can copy and then sign with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(GUIUtil::GetCoinName()));
     } else {
         questionString.append(tr("Please, review your transaction."));
     }

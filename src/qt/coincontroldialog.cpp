@@ -50,6 +50,11 @@ CoinControlDialog::CoinControlDialog(CCoinControl& coin_control, WalletModel* _m
 {
     ui->setupUi(this);
 
+    // translate
+    ui->labelCoinControlAmount->setText(ui->labelCoinControlAmount->text().arg(GUIUtil::GetCurrencyName()));
+    ui->labelCoinControlFee->setText(ui->labelCoinControlFee->text().arg(GUIUtil::GetCurrencyName()));
+    ui->labelCoinControlAfterFee->setText(ui->labelCoinControlAfterFee->text().arg(GUIUtil::GetCurrencyName()));
+    ui->labelCoinControlChange->setText(ui->labelCoinControlChange->text().arg(GUIUtil::GetCurrencyName()));
     // context menu actions
     QAction *copyAddressAction = new QAction(tr("Copy address"), this);
     QAction *copyLabelAction = new QAction(tr("Copy label"), this);

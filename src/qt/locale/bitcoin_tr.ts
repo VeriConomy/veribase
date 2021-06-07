@@ -58,13 +58,13 @@
         <translation>Alıcı adresler</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>Bunlar Bitcoinleriniz için gönderici adreslerinizdir.
+        <source>These are your %1 addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <translation>Bunlar %1leriniz için gönderici adreslerinizdir.
 Gönderim yapmadan önce her zaman tutarı ve alıcı adresi kontrol ediniz.</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.</source>
-        <translation>Bunlar Bitcoinleriniz için alıcı adreslerinizdir.
+        <source>These are your %1 addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.</source>
+        <translation>Bunlar %1leriniz için alıcı adreslerinizdir.
 Yeni adres oluşturmak için alım sekmesinden 'Yeni alıcı adresi oluşturun' düğmesini kullanınız.</translation>
     </message>
     <message>

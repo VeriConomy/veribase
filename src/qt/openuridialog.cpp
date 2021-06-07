@@ -15,6 +15,9 @@ OpenURIDialog::OpenURIDialog(QWidget *parent) :
     ui(new Ui::OpenURIDialog)
 {
     ui->setupUi(this);
+    
+    // translate
+    ui->uriEdit->setPlaceholderText(ui->uriEdit->placeholderText().arg(GUIUtil::GetCoinName().toLower()));
 }
 
 OpenURIDialog::~OpenURIDialog()

@@ -24,6 +24,10 @@ userClosed(false)
     ui->setupUi(this);
     ui->bootstrapModal->hide();
 
+    // translate
+    ui->infoTextStrong->setText(ui->infoTextStrong->text().arg(GUIUtil::GetCoinName().toLower()));
+    ui->infoText->setText(ui->infoText->text().arg(GUIUtil::GetCoinName().toLower()));
+
     connect(ui->closeButton, &QPushButton::clicked, this, &ModalOverlay::closeClicked);
     connect(ui->bootstrapButton, &QPushButton::clicked, this, &ModalOverlay::openBootstrapClicked);
 

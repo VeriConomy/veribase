@@ -26,6 +26,13 @@ SignVerifyMessageDialog::SignVerifyMessageDialog(const PlatformStyle *_platformS
 {
     ui->setupUi(this);
 
+    // Translation
+    ui->infoLabel_SM->setText(ui->infoLabel_SM->text().arg(GUIUtil::GetCoinName()));
+    ui->addressIn_SM->setToolTip(ui->addressIn_SM->toolTip().arg(GUIUtil::GetCoinName()));
+    ui->signMessageButton_SM->setToolTip(ui->signMessageButton_SM->toolTip().arg(GUIUtil::GetCoinName()));
+    ui->addressIn_VM->setToolTip(ui->addressIn_VM->toolTip().arg(GUIUtil::GetCoinName()));
+    ui->verifyMessageButton_VM->setToolTip(ui->verifyMessageButton_VM->toolTip().arg(GUIUtil::GetCoinName()));
+
     ui->addressBookButton_SM->setIcon(platformStyle->SingleColorIcon(":/icons/address-book"));
     ui->pasteButton_SM->setIcon(platformStyle->SingleColorIcon(":/icons/editpaste"));
     ui->copySignatureButton_SM->setIcon(platformStyle->SingleColorIcon(":/icons/editcopy"));
