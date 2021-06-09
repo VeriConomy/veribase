@@ -35,6 +35,31 @@ bool VerifyWallets(interfaces::Chain& chain, const std::vector<std::string>& wal
 
     LogPrintf("Using wallet directory %s\n", GetWalletDir().string());
 
+    // check if we can copy an old wallet
+    std::string walletDatPath = strprintf("%s/%s", GetWalletDir().string(), "wallet.dat");
+    if (! boost::filesystem::exists(walletDatPath) ) {
+
+        LogPrintf("No wallet found, trying to copy one from a previous version...\n");
+
+#if CLIENT_IS_VERIUM
+        fs::path oldWalletPath = GetDataPathForAppName("verium");
+#else
+        fs::path oldWalletPath = GetDataPathForAppName("vericoin");
+#endif
+
+        std::string oldWalletDatPath = strprintf("%s/%s", oldWalletPath.string(), "wallet.dat");
+        if ( boost::filesystem::exists(oldWalletDatPath) ) {
+            LogPrintf("Found a wallet.dat from a previous version\n");
+
+            try {
+                boost::filesystem::copy_file(oldWalletDatPath, walletDatPath);
+            }
+            catch(...) {
+                LogPrintf("Fail to copy the previous wallet.dat\n");
+            }
+        }
+    }
+
     chain.initMessage(_("Verifying wallet(s)...").translated);
 
     // Parameter interaction code should have thrown an error if -salvagewallet

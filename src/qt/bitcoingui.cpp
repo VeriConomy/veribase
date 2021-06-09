@@ -285,27 +285,6 @@ BitcoinGUI::BitcoinGUI(interfaces::Node& node, const PlatformStyle *_platformSty
     QTextStream ts(&f);
     setStyleSheet(ts.readAll());
     f.close();
-
-    // Force Check for update
-    bool needUpdate = false;
-    try {
-        needUpdate = needClientUpdate();
-    } catch(const std::runtime_error& re) {
-        QMessageBox failBox;
-        failBox.setWindowTitle("Checking for update");
-        failBox.setText("The following error happened while retrieving update information:\n\n" + QString::fromStdString(re.what()));
-        failBox.exec();
-    } catch(...) {
-        QMessageBox failBox;
-        failBox.setWindowTitle("Checking for update");
-        failBox.setText("An error happened while retrieving update information");
-        failBox.exec();
-    }
-
-    if( needUpdate ) {
-        auto updatedialog = new UpdateDialog(this);
-        updatedialog->exec();
-    }
 }
 
 BitcoinGUI::~BitcoinGUI()
@@ -774,6 +753,8 @@ void BitcoinGUI::setClientModel(ClientModel *_clientModel)
 
         updateProxyIcon();
 
+        checkForUpdate();
+
 #ifdef ENABLE_WALLET
         if(walletFrame)
         {
@@ -790,6 +771,7 @@ void BitcoinGUI::setClientModel(ClientModel *_clientModel)
             // initialize the disable state of the tray icon with the current value in the model.
             setTrayIconVisible(optionsModel->getHideTrayIcon());
         }
+
     } else {
         // Disable possibility to show main window via action
         toggleHideAction->setEnabled(false);
@@ -1104,6 +1086,31 @@ void BitcoinGUI::gotoCommunityPage()
     if (walletFrame) walletFrame->gotoCommunityPage();
 }
 #endif // ENABLE_WALLET
+
+
+void BitcoinGUI::checkForUpdate()
+{
+    // Force Check for update
+    bool needUpdate = false;
+    try {
+        needUpdate = needClientUpdate();
+    } catch(const std::runtime_error& re) {
+        QMessageBox failBox;
+        failBox.setWindowTitle("Checking for update");
+        failBox.setText("The following error happened while retrieving update information:\n\n" + QString::fromStdString(re.what()));
+        failBox.exec();
+    } catch(...) {
+        QMessageBox failBox;
+        failBox.setWindowTitle("Checking for update");
+        failBox.setText("An error happened while retrieving update information");
+        failBox.exec();
+    }
+
+    if( needUpdate ) {
+        auto updatedialog = new UpdateDialog(this);
+        updatedialog->exec();
+    }
+}
 
 void BitcoinGUI::updateNetworkState()
 {

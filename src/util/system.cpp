@@ -64,7 +64,7 @@
 #include <malloc.h>
 #endif
 
-#include <boost/algorithm/string/replace.hpp>
+#include <boost/algorithm/string.hpp>
 #include <thread>
 #include <typeinfo>
 #include <univalue.h>
@@ -579,6 +579,35 @@ fs::path GetDefaultDataDir()
 #else
     // Unix-like
     return pathRet / ".vericonomy";
+#endif
+#endif
+}
+
+fs::path GetDataPathForAppName(std::string walletName)
+{
+
+    boost::algorithm::to_lower(walletName);
+    // Windows: C:\Users\Username\AppData\Roaming
+    // macOS: ~/Library/Application Support/
+    // Unix-like: ~/
+#ifdef WIN32
+    walletName[0] = toupper(walletName[0]);
+    // Windows
+    return GetSpecialFolderPath(CSIDL_APPDATA) / walletName;
+#else
+    fs::path pathRet;
+    char* pszHome = getenv("HOME");
+    if (pszHome == nullptr || strlen(pszHome) == 0)
+        pathRet = fs::path("/");
+    else
+        pathRet = fs::path(pszHome);
+#ifdef MAC_OSX
+    // macOS
+    walletName[0] = toupper(walletName[0]);
+    return pathRet / "Library/Application Support" / walletName;
+#else
+    // Unix-like
+    return pathRet / strprintf(".%s", walletName);
 #endif
 #endif
 }

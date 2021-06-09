@@ -164,7 +164,7 @@ std::string getUpdatedClient()
                 case 4: bld = stoi(*it); break;
                 }
         }
-        if( bld == 0 )
+        if( bld == 0 && CLIENT_VERSION_BUILD != 0)
             bld = 99; // when no build, we are on release. release is stronger than anything
         int nVersion = (1000000 * maj) + (10000 * min) + (100 * rev) + (1 * bld);
 
@@ -191,6 +191,7 @@ void processUpdate(QString qClientName)
     newArgv.clear();
     // Installer created by Inno Setup
     command = QString(GetDataDir().string().c_str()) + QString("/") + qClientName;
+
 #else
 #ifdef MAC_OSX
     // If Mac, replace argv[0] with Finder and pass the location of the pkg file.
@@ -198,19 +199,30 @@ void processUpdate(QString qClientName)
     // Installer created by pkgbuild or Package MakerGetArg
     command = QString("/usr/bin/open");
     newArgv.append(QString(GetDataDir().c_str()) + QString("/") + qClientName);
+
 #else
-    // If Linux, just restart (already extracted verium-qt from the zip in downloader.cpp).
-    newArgv.clear();
-    // Installer created by makeself.sh
-    command = QString(GetDataDir().c_str()) + QString("/") + qClientName;
-    newArgv.append(QString("--target"));
-    newArgv.append(QDir::currentPath());
-    newArgv.append(QString("--nox11"));
-    // Make executable
-    boost::filesystem::path installer(GetDataDir() / qClientName.toStdString());
-    boost::filesystem::permissions(installer, status(installer).permissions() | boost::filesystem::owner_exe | boost::filesystem::group_exe);
+    // If Linux, we can just put it in Download directory
+    boost::filesystem::path downloadDir(GetDataPathForAppName("") / "Downloads");
+    boost::filesystem::path downloadFile(GetDataPathForAppName("") / "Downloads" / qClientName.toStdString());
+    boost::filesystem::path tmpFile(GetDataDir() / qClientName.toStdString());
+    if (!fs::is_directory(downloadDir)) {
+        QMessageBox::information(nullptr, QObject::tr("Update failed"), QObject::tr("Impossible to put the installer in your Download Directory. \n\n Please download the new version from our website."), QMessageBox::Ok, QMessageBox::Ok);
+    }
+    else {
+        boost::filesystem::permissions(tmpFile, status(tmpFile).permissions() | boost::filesystem::owner_exe | boost::filesystem::group_exe);
+        boost::filesystem::rename(tmpFile, downloadFile);
+
+        QMessageBox::information(nullptr, QObject::tr("Successfully Updated"), QObject::tr("The new wallet has been downloaded and put in your Download directory. \n\n Path: %1").arg(downloadFile.string().c_str()), QMessageBox::Ok, QMessageBox::Ok);
+
+        // We cannot launch it because of the lock and the X minutes of turning off
+        // // If Linux, just restart (already extracted verium-qt from the zip in downloader.cpp).
+        // newArgv.clear();
+        // // Installer created by makeself.sh
+        // command = QString::fromStdString(downloadFile.string());
+    }
 #endif
 #endif
+
     // run installer and quit
     QProcess::startDetached(command, newArgv);
     QApplication::quit();

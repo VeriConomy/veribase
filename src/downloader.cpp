@@ -199,7 +199,7 @@ void downloadClient(std::string fileName) {
     boost::filesystem::path pathClientFile = GetDataDir() / fileName;
 
     try {
-        downloadFile(strprintf("%s/%d.%d%s", CLIENT_URL, CLIENT_VERSION_MAJOR, CLIENT_VERSION_MINOR, fileName), pathClientFile);
+        downloadFile(strprintf("%s/%d.%d/releases/%s", CLIENT_URL, CLIENT_VERSION_MAJOR, CLIENT_VERSION_MINOR, fileName), pathClientFile);
     } catch (...) {
         throw;
     }

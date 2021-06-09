@@ -199,6 +199,9 @@ private:
     /** Connect core signals to GUI client */
     void subscribeToCoreSignals();
 
+    /** Check for new update */
+    void checkForUpdate();
+
     /** Update UI with latest network info from model. */
     void updateNetworkState();
 
