@@ -1596,7 +1596,7 @@ void CWalletTx::GetAmounts(std::list<COutputEntry>& listReceived,
         nFee = nDebit - nValueOut;
     }
 
-    // treat coinstake as a single "recieve" entry
+    // treat coinstake as a single "receive" entry
     if (IsCoinStake())
     {
         for (unsigned int i = 0; i < tx->vout.size(); ++i)

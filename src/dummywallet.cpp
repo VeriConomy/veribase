@@ -51,6 +51,8 @@ void DummyWalletInit::AddWalletOptions() const
         "-flushwallet",
         "-privdb",
         "-walletrejectlongchains",
+        "-mining",
+        "-staking"
     });
 }
 

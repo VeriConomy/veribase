@@ -580,7 +580,7 @@
              </size>
             </property>
             <property name="text">
-             <string>VeriConomy website is the entrypoint to the community. You will find informations, resources, and all the useful links</string>
+             <string>VeriConomy website is the entrypoint to the community. You will find information, resources, and all the useful links</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>

@@ -6,9 +6,16 @@
 
 export LC_ALL=C.UTF-8
 
-BITCOIN_CONFIG_ALL="--disable-dependency-tracking --prefix=$DEPENDS_DIR/$HOST --bindir=$BASE_OUTDIR/bin --libdir=$BASE_OUTDIR/lib"
+BITCOIN_CONFIG_ALL="--disable-dependency-tracking --enable-tests --enable-gui-tests --prefix=$DEPENDS_DIR/$HOST --bindir=$BASE_OUTDIR/bin --libdir=$BASE_OUTDIR/lib"
 if [ -z "$NO_DEPENDS" ]; then
   DOCKER_EXEC ccache --max-size=$CCACHE_SIZE
+fi
+
+if [ "$INSTALL_DB4" = "true" ]; then
+  BEGIN_FOLD db4
+  DOCKER_EXEC ./contrib/install_db4.sh $DEPENDS_DIR > /dev/null # only error log
+  BITCOIN_CONFIG_ALL+=" BDB_LIBS=\"-L${DEPENDS_DIR}/db4/lib -ldb_cxx-4.8\" BDB_CFLAGS=\"-I${DEPENDS_DIR}/db4/include\""
+  END_FOLD
 fi
 
 BEGIN_FOLD autogen
@@ -28,11 +35,11 @@ END_FOLD
 
 BEGIN_FOLD distdir
 # Create folder on host and docker, so that `cd` works
-mkdir -p "bitcoin-$HOST"
+mkdir -p "$APPNAME-$HOST"
 DOCKER_EXEC make distdir VERSION=$HOST
 END_FOLD
 
-export P_CI_DIR="$P_CI_DIR/bitcoin-$HOST"
+export P_CI_DIR="$P_CI_DIR/$APPNAME-$HOST"
 
 BEGIN_FOLD configure
 DOCKER_EXEC ./configure --cache-file=../config.cache $BITCOIN_CONFIG_ALL $BITCOIN_CONFIG || ( (DOCKER_EXEC cat config.log) && false)

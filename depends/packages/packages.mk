@@ -1,4 +1,4 @@
-packages:=boost libevent
+packages:=boost openssl libevent curl minizip
 
 qt_packages = zlib
 

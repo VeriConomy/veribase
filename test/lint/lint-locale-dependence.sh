@@ -23,6 +23,12 @@ KNOWN_VIOLATIONS=(
     "src/util/strencodings.cpp:.*strtoul"
     "src/util/strencodings.h:.*atoi"
     "src/util/system.cpp:.*atoi"
+    "src/bignum.h:.*isspace"
+    "src/bignum.h:.*isxdigit"
+    "src/bignum.h:.*tolower"
+    "src/qt/updatedialog.cpp:.*stoi"
+    "src/util/system.cpp:.*to_lower"
+    "src/util/system.cpp:.*toupper"
 )
 
 REGEXP_IGNORE_EXTERNAL_DEPENDENCIES="^src/(crypto/ctaes/|leveldb/|secp256k1/|tinyformat.h|univalue/)"

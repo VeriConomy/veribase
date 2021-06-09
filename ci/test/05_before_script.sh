@@ -6,11 +6,20 @@
 
 export LC_ALL=C.UTF-8
 
+export APPNAME="verium"
+export APPDIRMAC="Verium"
+if grep -Fxq "client_is_verium=no" "$BASE_ROOT_DIR/configure.ac"
+then
+export APPNAME="vericoin"
+export APPDIRMAC="Vericoin"
+fi
+
+
 # Make sure default datadir does not exist and is never read by creating a dummy file
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-  echo > $HOME/Library/Application\ Support/Bitcoin
+  echo > $HOME/Library/Application\ Support/${APPDIRMAC}
 else
-  DOCKER_EXEC echo \> \$HOME/.bitcoin
+  DOCKER_EXEC echo \> \$HOME/.$APPNAME
 fi
 
 DOCKER_EXEC mkdir -p ${DEPENDS_DIR}/SDKs ${DEPENDS_DIR}/sdk-sources

@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Name=Verium Vault
+Comment=Connect to the Verium P2P Network
+Comment[de]=Verbinde mit dem Verium peer-to-peer Netzwerk
+Comment[fr]=Verium, monnaie virtuelle cryptographique pair à pair
+Comment[tr]=Verium, eşten eşe kriptografik sanal para birimi
+Exec=verium.qt %u
+Terminal=false
+Type=Application
+Icon=${SNAP}/share/pixmaps/verium128.png
+MimeType=x-scheme-handler/verium;
+Categories=Office;Finance;P2P;Network;Qt;
+StartupWMClass=Verium-qt

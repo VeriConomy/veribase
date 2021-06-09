@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Name=Vericoin Wallet
+Comment=Connect to the Vericoin P2P Network
+Comment[de]=Verbinde mit dem Vericoin peer-to-peer Netzwerk
+Comment[fr]=Vericoin, monnaie virtuelle cryptographique pair à pair
+Comment[tr]=Vericoin, eşten eşe kriptografik sanal para birimi
+Exec=vericoin-qt %U
+Terminal=false
+Type=Application
+Icon=vericoin-qt
+MimeType=x-scheme-handler/vericoin;
+Categories=Office;Finance;P2P;Network;Qt;
+StartupWMClass=Vericoin-qt

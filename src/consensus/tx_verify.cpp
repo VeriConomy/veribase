@@ -10,7 +10,6 @@
 #include <script/interpreter.h>
 #include <consensus/validation.h>
 #include <pos.h>
-#include <validation.h>
 
 // TODO remove the following dependencies
 #include <chain.h>

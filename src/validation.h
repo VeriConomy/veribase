@@ -162,7 +162,7 @@ struct BlockHasher
     size_t operator()(const uint256& hash) const { return ReadLE64(hash.begin()); }
 };
 
-/** If false, overide the minRelayTxfee when fee change **/
+/** If false, override the minRelayTxfee when fee change **/
 extern bool fEnforceMinRelayTxFee;
 extern RecursiveMutex cs_main;
 extern CTxMemPool mempool;

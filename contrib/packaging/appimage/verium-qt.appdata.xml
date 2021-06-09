@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2013 First Lastname <your@email.com> -->
+<component type="desktop-application">
+  <id>verium-qt</id>
+  <metadata_license>FSFAP</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Verium Vault</name>
+  <summary>Connect to the Verium P2P Network</summary>
+
+  <description>
+    <p>
+        Verium is an experimental digital currency that enables instant payments to anyone, anywhere in the world. Verium uses peer-to-peer technology to operate with no central authority: managing transactions and issuing money are carried out collectively by the network. Verium is the name of open source software which enables the use of this currency.
+    </p>
+    <p>
+        Verium is designed to be ASIC / GPU Resistant and is the first CPU mineable digital commoditt.
+    </p>
+    <p>
+        Verium is part of the Vericonomy opensource and decentralized organisation.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">verium-qt.desktop</launchable>
+
+  <url type="homepage">https://www.vericonomy.com</url>
+  <developer_name>Verium Team</developer_name>
+  <update_contact>dev@vericoin.info</update_contact>
+
+  <provides>
+    <binary>verium-qt</binary>
+  </provides>
+
+  <releases>
+      <release version="1.3.2" date="2020-10-04">
+      <description>
+        <p>Release note one https://github.com/VeriumReserve/verium/blob/master/doc/release-notes/release-notes-1.3.2.md</p>
+      </description>
+    </release>
+    <release version="1.3.1" date="2020-09-11">
+      <description>
+        <p>Complete rewrite of Verium Vault</p>
+      </description>
+    </release>
+  </releases>
+</component>

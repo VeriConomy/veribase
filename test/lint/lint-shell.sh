@@ -21,11 +21,15 @@ disabled=(
     SC2046 # Quote this to prevent word splitting.
     SC2086 # Double quote to prevent globbing and word splitting.
     SC2162 # read without -r will mangle backslashes.
+    SC2090 # Quotes/backslashes in this variable will not be respected
+    SC2089 # Quotes/backslashes will be treated literally. Use an array.
 )
 disabled_gitian=(
     SC2094 # Make sure not to read and write the same file in the same pipeline.
     SC2129 # Consider using { cmd1; cmd2; } >> file instead of individual redirects.
     SC2230 # which is non-standard. Use builtin 'command -v' instead.
+    SC2090 # Quotes/backslashes in this variable will not be respected
+    SC2089 # Quotes/backslashes will be treated literally. Use an array.
 )
 
 EXIT_CODE=0

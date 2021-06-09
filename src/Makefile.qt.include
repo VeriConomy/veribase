@@ -224,8 +224,10 @@ RES_ICONS = \
   qt/res/icons/tx_mined.png \
   qt/res/icons/warning.png \
   qt/res/icons/vericoin.png \
+  qt/res/icons/vericoin.ico \
   qt/res/icons/vericonomy.png \
   qt/res/icons/verium.png \
+  qt/res/icons/verium.ico \
   qt/res/icons/vericoin-splash.png \
   qt/res/icons/verium-splash.png \
   qt/res/icons/close.png \
@@ -323,7 +325,7 @@ RES_STYLES = \
   qt/res/vrm-style.qss \
   qt/res/vrc-style.qss
 
-BITCOIN_RC = qt/res/bitcoin-qt-res.rc
+BITCOIN_RC = qt/res/vericonomy-qt-res.rc
 
 BITCOIN_QT_INCLUDES = -DQT_NO_KEYWORDS
 

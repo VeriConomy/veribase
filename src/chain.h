@@ -203,7 +203,7 @@ public:
         BLOCK_STAKE_MODIFIER = (1 << 2), // regenerated stake modifier
     };
     uint64_t nStakeModifier{0}; // hash modifier for proof-of-stake
-    unsigned int nStakeModifierChecksum{0}; // checksum of index; in-memeory only
+    unsigned int nStakeModifierChecksum{0}; // checksum of index; in-memory only
     COutPoint prevoutStake{};
     unsigned int nStakeTime{0};
     uint256 hashProofOfStake{};

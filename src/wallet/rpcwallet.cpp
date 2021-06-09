@@ -3524,7 +3524,7 @@ UniValue showkeypair(const JSONRPCRequest& request)
     if (!key.IsValid()) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Private key outside allowed range");
 
     CPubKey pubkey = key.GetPubKey();
-    assert(key.VerifyPubKey(pubkey));
+    CHECK_NONFATAL(key.VerifyPubKey(pubkey));
 
     // Test signing some message
     std::string strMsg = "Test sign by showkeypair";

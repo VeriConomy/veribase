@@ -19,6 +19,12 @@ if [ -n "${FILE_ENV}" ]; then
   source "${FILE_ENV}"
 fi
 
+export APPNAME="verium"
+if grep -Fxq "client_is_verium=no" "$BASE_ROOT_DIR/configure.ac"
+then
+export APPNAME="vericoin"
+fi
+
 echo "Fallback to default values in env (if not yet set)"
 # The number of parallel jobs to pass down to make and test_runner.py
 export MAKEJOBS=${MAKEJOBS:--j4}
@@ -31,8 +37,8 @@ export BASE_SCRATCH_DIR=${BASE_SCRATCH_DIR:-$BASE_ROOT_DIR/ci/scratch/}
 export HOST=${HOST:-$("$BASE_ROOT_DIR/depends/config.guess")}
 # Whether to prefer BusyBox over GNU utilities
 export USE_BUSY_BOX=${USE_BUSY_BOX:-false}
-export RUN_UNIT_TESTS=${RUN_UNIT_TESTS:-true}
-export RUN_FUNCTIONAL_TESTS=${RUN_FUNCTIONAL_TESTS:-true}
+export RUN_UNIT_TESTS=${RUN_UNIT_TESTS:-false}
+export RUN_FUNCTIONAL_TESTS=${RUN_FUNCTIONAL_TESTS:-false}
 export TEST_PREVIOUS_RELEASES=${TEST_PREVIOUS_RELEASES:-false}
 export RUN_FUZZ_TESTS=${RUN_FUZZ_TESTS:-false}
 export CONTAINER_NAME=${CONTAINER_NAME:-ci_unnamed}

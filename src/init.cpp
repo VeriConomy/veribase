@@ -55,8 +55,6 @@
 #include <util/threadnames.h>
 #include <util/translation.h>
 #include <validation.h>
-#include <hash.h>
-
 
 #include <validationinterface.h>
 #include <walletinitinterface.h>
@@ -292,7 +290,7 @@ void Shutdown(NodeContext& node)
         try {
             applyBootstrap();
         } catch(std::exception &e) {
-            LogPrintf("%s: Unable to change databse: %s\n",__func__,e.what());
+            LogPrintf("%s: Unable to change database: %s\n",__func__,e.what());
         }
     }
 

@@ -219,7 +219,7 @@ static UniValue getmininginfo(const JSONRPCRequest& request)
                             {RPCResult::Type::NUM, "combined", "Combined stake weight"},
                         },
                     },
-                    {RPCResult::Type::NUM, "stakeinterest", "The current Staking intereset"},
+                    {RPCResult::Type::NUM, "stakeinterest", "The current Staking interest"},
                     {RPCResult::Type::NUM, "stakeinflation", "The current staking inflation"},
                     {RPCResult::Type::NUM, "networkhashps", "The network hashes per second"},
                     {RPCResult::Type::NUM, "networkstakeweight", "The network average stake weight"},

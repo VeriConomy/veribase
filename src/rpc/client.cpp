@@ -35,7 +35,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "generatetodescriptor", 2, "maxtries" },
     { "sendtoaddress", 1, "amount" },
     { "sendtoaddress", 4, "subtractfeefromamount" },
-    { "sendtoaddress", 6, "avoid_reuse" },
+    { "sendtoaddress", 5, "avoid_reuse" },
     { "settxfee", 0, "amount" },
     { "sethdseed", 0, "newkeypool" },
     { "getreceivedbyaddress", 1, "minconf" },
@@ -158,6 +158,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "createwallet", 4, "avoid_reuse"},
     { "getnodeaddresses", 0, "count"},
     { "stop", 0, "wait" },
+    { "reservebalance", 1, "amount" },
 };
 // clang-format on
 

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2013 First Lastname <your@email.com> -->
+<component type="desktop-application">
+  <id>vericoin-qt</id>
+  <metadata_license>FSFAP</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Vericoin Vault</name>
+  <summary>Connect to the Vericoin P2P Network</summary>
+
+  <description>
+    <p>
+        Vericoin is an experimental digital currency that enables instant payments to anyone, anywhere in the world. Vericoin uses peer-to-peer technology to operate with no central authority: managing transactions and issuing money are carried out collectively by the network. Vericoin is the name of open source software which enables the use of this currency.
+    </p>
+    <p>
+        Vericoin is part of the Vericonomy opensource and decentralized organisation.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">vericonomy-qt.desktop</launchable>
+
+  <url type="homepage">https://www.vericonomy.com</url>
+  <developer_name>Vericonomy Team</developer_name>
+  <update_contact>dev@vericoin.info</update_contact>
+
+  <provides>
+    <binary>vericonomy-qt</binary>
+  </provides>
+
+  <releases>
+      <release version="2.0.0" date="2021-06-04">
+      <description>
+        <p>Release note on Github</p>
+      </description>
+    </release>
+  </releases>
+</component>

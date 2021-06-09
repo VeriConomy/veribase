@@ -11,7 +11,6 @@ export LC_ALL=C
 EXPECTED_CIRCULAR_DEPENDENCIES=(
     "chainparamsbase -> util/system -> chainparamsbase"
     "index/txindex -> validation -> index/txindex"
-    "policy/fees -> txmempool -> policy/fees"
     "qt/addresstablemodel -> qt/walletmodel -> qt/addresstablemodel"
     "qt/bitcoingui -> qt/walletframe -> qt/bitcoingui"
     "qt/recentrequeststablemodel -> qt/walletmodel -> qt/recentrequeststablemodel"
@@ -20,7 +19,16 @@ EXPECTED_CIRCULAR_DEPENDENCIES=(
     "txmempool -> validation -> txmempool"
     "wallet/fees -> wallet/wallet -> wallet/fees"
     "wallet/wallet -> wallet/walletdb -> wallet/wallet"
-    "policy/fees -> txmempool -> validation -> policy/fees"
+    "downloader -> init -> downloader"
+    "pos -> validation -> pos"
+    "pow -> validation -> pow"
+    "qt/bitcoinunits -> qt/guiutil -> qt/bitcoinunits"
+    "pos -> wallet/wallet -> pos"
+    "consensus/tx_verify -> pos -> validation -> consensus/tx_verify"
+    "consensus/tx_verify -> pos -> wallet/wallet -> consensus/tx_verify"
+    "downloader -> init -> rpc/blockchain -> downloader"
+    "pow -> validation -> txdb -> pow"
+    "consensus/tx_verify -> pos -> wallet/wallet -> txmempool -> consensus/tx_verify"
 )
 
 EXIT_CODE=0

@@ -32,7 +32,7 @@
 #include <thread>
 #include <boost/thread/thread.hpp>
 
-#include "openssl/sha.h"
+#include <openssl/sha.h>
 
 int64_t nLastCoinStakeSearchInterval = 0;
 int64_t UpdateTime(CBlockHeader* pblock)
@@ -126,7 +126,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     // if coinstake available add coinstake tx
     static int64_t nLastCoinStakeSearchTime = GetAdjustedTime();  // only initialized at startup
 
-    if (pwallet && fPos)  // attemp to find a coinstake
+    if (pwallet && fPos)  // attempt to find a coinstake
     {
         *pfPoSCancel = true;
         CMutableTransaction txCoinStake;
@@ -583,7 +583,7 @@ bool CheckWork(CBlock* pblock)
         if (pblock->hashPrevBlock != pindexPrev->GetBlockHash()){
             return error("CheckWork() : generated block is stale");
         }
-        LogPrintf("Found block: %s", pblock->ToString());
+        LogPrintf("Found block: %s\n", pblock->ToString());
         LogPrintf("New proof-of-work block found with: %s coins generated.\n", FormatMoney(pblock->vtx[0]->vout[0].nValue).c_str());
 
         // Process this block the same as if we had received it from another node
