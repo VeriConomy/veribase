@@ -362,7 +362,6 @@ public:
         return true;
     }
     CAmount getBalance() override { return m_wallet->GetBalance().m_mine_trusted; }
-    CAmount getStake() override { return m_wallet->GetStake(); }
     uint64_t getTimeToStake() override { return m_wallet->GetTimeToStake(); }
     bool isUnlockStakingOnly() override { return m_wallet->IsUnlockStakingOnly(); }
     CAmount getAvailableBalance(const CCoinControl& coin_control) override

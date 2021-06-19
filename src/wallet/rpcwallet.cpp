@@ -8,6 +8,7 @@
 #include <interfaces/chain.h>
 #include <interfaces/wallet.h>
 #include <key_io.h>
+#include <miner.h>
 #include <node/context.h>
 #include <outputtype.h>
 #include <rpc/rawtransaction_util.h>
@@ -2384,7 +2385,7 @@ static UniValue getbalances(const JSONRPCRequest& request)
         balances_mine.pushKV("trusted", ValueFromAmount(bal.m_mine_trusted));
         balances_mine.pushKV("untrusted_pending", ValueFromAmount(bal.m_mine_untrusted_pending));
         balances_mine.pushKV("immature", ValueFromAmount(bal.m_mine_immature));
-        balances_mine.pushKV("staking", ValueFromAmount(wallet.GetStake()));
+        balances_mine.pushKV("staking", ValueFromAmount(bal.m_mine_stake));
         if (wallet.IsWalletFlagSet(WALLET_FLAG_AVOID_REUSE)) {
             // If the AVOID_REUSE flag is set, bal has been set to just the un-reused address balance. Get
             // the total balance, and then subtract bal to get the reused address balance.
@@ -2485,6 +2486,7 @@ static UniValue getwalletinfo(const JSONRPCRequest& request)
                         },
                         {RPCResult::Type::STR_AMOUNT, "newmint", "New mint"},
                         {RPCResult::Type::STR_AMOUNT, "stake", "total of coin being stake"},
+                        {RPCResult::Type::NUM, "stake_time", "Estimated Staking time to get a reward in hour"},
                     }
                 }
             },
@@ -2544,7 +2546,19 @@ static UniValue getwalletinfo(const JSONRPCRequest& request)
     if( Params().IsVericoin() )
     {
         obj.pushKV("newmint", ValueFromAmount(pwallet->GetNewMint()));
-        obj.pushKV("stake", ValueFromAmount(pwallet->GetStake()));
+        obj.pushKV("stake", ValueFromAmount(bal.m_mine_stake));
+
+        if( IsStaking() ) {
+            uint64_t staketime = pwallet->GetTimeToStake();
+            int stakerate = 1;
+            if (staketime > 3600){
+                stakerate = staketime/(60*60);
+            }
+            obj.pushKV("staketime", stakerate);
+        }
+        else {
+            obj.pushKV("staketime", 0);
+        }
     }
     return obj;
 }

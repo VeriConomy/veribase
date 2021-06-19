@@ -98,7 +98,7 @@ BitcoinGUI::BitcoinGUI(interfaces::Node& node, const PlatformStyle *_platformSty
     int mainWidth = screenSize.width() * 0.6f;
     if( mainWidth < 860)
         mainWidth = 860;
-    else if( mainWidth < 1152)
+    else if( mainWidth > 1152)
         mainWidth = 1152;
 
     // XXX: FOR DEVELOPMENT

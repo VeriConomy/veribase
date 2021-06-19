@@ -877,7 +877,6 @@ public:
 
     bool SelectCoinsSimple(int64_t nTargetValue, unsigned int nSpendTime, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet) const;
     int64_t GetNewMint() const;
-    int64_t GetStake() const;
     void WalletUpdateSpent(const CTransactionRef& tx);
     void MarkDirty();
     bool AddToWallet(const CWalletTx& wtxIn, bool fFlushOnClose=true);
@@ -1192,9 +1191,9 @@ public:
     const CKeyingMaterial& GetEncryptionKey() const override;
     bool HasEncryptionKeys() const override;
 
-    bool GetStakeWeight(uint64_t& nWeight);
-    bool IsUnlockStakingOnly();
-    uint64_t GetTimeToStake();
+    bool GetStakeWeight(uint64_t& nWeight) const;
+    bool IsUnlockStakingOnly() const;
+    uint64_t GetTimeToStake() const;
     bool CreateCoinStake(const CWallet* pwallet, unsigned int nBits, int64_t nSearchInterval, int64_t nFees, CMutableTransaction& txNew);
 
     /** Get last block processed height */

@@ -224,9 +224,8 @@ void OverviewPage::setBalance(const interfaces::WalletBalances& balances)
         ui->labelUnconfirmed->setText(BitcoinUnits::formatWithUnit(unit, balances.unconfirmed_watch_only_balance, false, BitcoinUnits::separatorAlways));
 
         if( GUIUtil::IsVericoin() ) {
-            CAmount stake = walletModel->wallet().getStake();
-            ui->labelImmature->setText(BitcoinUnits::formatWithUnit(unit, stake, false, BitcoinUnits::separatorAlways));
-            ui->labelTotal->setText(BitcoinUnits::formatWithUnit(unit, balances.watch_only_balance + balances.unconfirmed_watch_only_balance + balances.immature_watch_only_balance + stake, false, BitcoinUnits::separatorAlways));
+            ui->labelImmature->setText(BitcoinUnits::formatWithUnit(unit, balances.stake, false, BitcoinUnits::separatorAlways));
+            ui->labelTotal->setText(BitcoinUnits::formatWithUnit(unit, balances.watch_only_balance + balances.unconfirmed_watch_only_balance + balances.immature_watch_only_balance + balances.stake, false, BitcoinUnits::separatorAlways));
         }
         else {
             ui->labelImmature->setText(BitcoinUnits::formatWithUnit(unit, balances.immature_watch_only_balance, false, BitcoinUnits::separatorAlways));
@@ -242,9 +241,8 @@ void OverviewPage::setBalance(const interfaces::WalletBalances& balances)
 
 
         if( GUIUtil::IsVericoin()) {
-            CAmount stake = walletModel->wallet().getStake();
-            ui->labelImmature->setText(BitcoinUnits::formatWithUnit(unit, stake, false, BitcoinUnits::separatorAlways));
-            ui->labelTotal->setText(BitcoinUnits::formatWithUnit(unit, balances.balance + balances.unconfirmed_balance + balances.immature_balance + stake, false, BitcoinUnits::separatorAlways));
+            ui->labelImmature->setText(BitcoinUnits::formatWithUnit(unit, balances.stake, false, BitcoinUnits::separatorAlways));
+            ui->labelTotal->setText(BitcoinUnits::formatWithUnit(unit, balances.balance + balances.unconfirmed_balance + balances.immature_balance + balances.stake, false, BitcoinUnits::separatorAlways));
         }
         else {
             ui->labelImmature->setText(BitcoinUnits::formatWithUnit(unit, balances.immature_balance, false, BitcoinUnits::separatorAlways));

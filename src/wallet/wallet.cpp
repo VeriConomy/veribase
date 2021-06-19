@@ -863,8 +863,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFlushOnClose)
     wtx.MarkDirty();
 
     // since AddToWallet is called directly for self-originating transactions, check for consumption of own coins
-    if( Params().IsVericoin() )
-        WalletUpdateSpent(wtx.tx);
+    WalletUpdateSpent(wtx.tx);
 
     // Notify UI of new or updated transaction
     NotifyTransactionChanged(this, hash, fInsertedNew ? CT_NEW : CT_UPDATED);
@@ -1193,6 +1192,11 @@ void CWallet::blockDisconnected(const CBlock& block, int height)
     m_last_block_processed_height = height - 1;
     m_last_block_processed = block.hashPrevBlock;
     for (const CTransactionRef& ptx : block.vtx) {
+        if (ptx.get()->IsCoinStake() && IsFromMe(*ptx.get())) {
+            LogPrintf("Abandoning wtx %s\n", ptx.get()->GetHash().ToString());
+		    AbandonTransaction(ptx.get()->GetHash());
+	        continue;
+        }
         SyncTransaction(ptx, {CWalletTx::Status::UNCONFIRMED, /* block height */ 0, /* block hash */ {}, /* index */ 0});
     }
 }
@@ -1859,7 +1863,7 @@ bool CWalletTx::SubmitMemoryPoolAndRelay(std::string& err_string, bool relay)
     if (isAbandoned()) return false;
     // Don't try to submit coinbase transactions. These would fail anyway but would
     // cause log spam.
-    if (IsCoinBase()) return false;
+    if (IsCoinBase() || IsCoinStake()) return false;
     // Don't try to submit conflicted or confirmed transactions.
     if (GetDepthInMainChain() != 0) return false;
 
@@ -2131,7 +2135,7 @@ CWallet::Balance CWallet::GetBalance(const int min_depth, bool avoid_reuse) cons
             const int tx_depth{wtx.GetDepthInMainChain()};
             const CAmount tx_credit_mine{wtx.GetAvailableCredit(/* fUseCache */ true, ISMINE_SPENDABLE | reuse_filter)};
             const CAmount tx_credit_watchonly{wtx.GetAvailableCredit(/* fUseCache */ true, ISMINE_WATCH_ONLY | reuse_filter)};
-            if (is_trusted ) {
+            if (is_trusted && tx_depth >= min_depth) {
                 ret.m_mine_trusted += tx_credit_mine;
                 ret.m_watchonly_trusted += tx_credit_watchonly;
             }
@@ -2139,7 +2143,7 @@ CWallet::Balance CWallet::GetBalance(const int min_depth, bool avoid_reuse) cons
                 ret.m_mine_untrusted_pending += tx_credit_mine;
                 ret.m_watchonly_untrusted_pending += tx_credit_watchonly;
             }
-            if (wtx.IsCoinStake())
+            if (wtx.IsCoinStake() && tx_depth > 0 && wtx.GetBlocksToMaturity() > 0)
                 ret.m_mine_stake += wtx.GetCredit(ISMINE_ALL);
             ret.m_mine_immature += wtx.GetImmatureCredit();
             ret.m_watchonly_immature += wtx.GetImmatureWatchOnlyCredit();
@@ -3059,7 +3063,6 @@ bool CWallet::CreateTransaction(interfaces::Chain::Lock& locked_chain, const std
 
         // Note how the sequence number is set to non-maxint so that
         // the nLockTime set above actually works.
-        //
         const uint32_t nSequence = CTxIn::SEQUENCE_FINAL - 1;
         for (const auto& coin : selected_coins) {
             txNew.vin.push_back(CTxIn(coin.outpoint, CScript(), nSequence));
@@ -4390,6 +4393,8 @@ bool CWallet::SelectCoinsSimple(int64_t nTargetValue, unsigned int nSpendTime, s
     std::vector<COutput> availableCoins;
     auto locked_chain = chain().lock();
 
+    LOCK(cs_wallet);
+
     AvailableCoins(*locked_chain, availableCoins);
     setCoinsRet.clear();
     nValueRet = 0;
@@ -4442,21 +4447,7 @@ int64_t CWallet::GetNewMint() const
     return nTotal;
 }
 
-int64_t CWallet::GetStake() const
-{
-    int64_t nTotal = 0;
-    LOCK(cs_wallet);
-    for (std::map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
-    {
-        const CWalletTx* pcoin = &(*it).second;
-
-        if (pcoin->IsCoinStake() && pcoin->GetBlocksToMaturity() > 0 && pcoin->GetDepthInMainChain() > 0)
-            nTotal += pcoin->GetCredit(ISMINE_ALL);
-    }
-    return nTotal;
-}
-
-bool CWallet::GetStakeWeight(uint64_t& nWeight)
+bool CWallet::GetStakeWeight(uint64_t& nWeight) const
 {
     CAmount nBalance = GetBalance().m_mine_trusted;
     CAmount nReserveBalance = 0;
@@ -4497,15 +4488,15 @@ bool CWallet::GetStakeWeight(uint64_t& nWeight)
     return true;
 }
 
-bool CWallet::IsUnlockStakingOnly()
+bool CWallet::IsUnlockStakingOnly() const
 {
     return fWalletUnlockStakingOnly;
 }
 
-uint64_t CWallet::GetTimeToStake()
+uint64_t CWallet::GetTimeToStake() const
 {
     uint64_t nWeight=0;
-    u_int64_t nEstimateTime=0;
+    uint64_t nEstimateTime=0;
     GetStakeWeight(nWeight);
     double nNetworkWeight = GetPoSKernelPS();
     if (nWeight != 0)
