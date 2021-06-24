@@ -134,7 +134,7 @@ OverviewPage::OverviewPage(interfaces::Node& node, const PlatformStyle *platform
     updateStatsTimer = new QTimer(this);
     connect(updateStatsTimer, &QTimer::timeout, this, &OverviewPage::updateStats);
     updateStats();
-    updateStatsTimer->start(2000);
+    updateStatsTimer->start(5000);
 
     for (int i = 0; i < ui->topBoxes->count(); ++i)
     {
@@ -377,15 +377,15 @@ void OverviewPage::updateStats()
         if( m_node.isStaking() ) {
             ui->mineButton->setIcon(QIcon(":/icons/stakingon"));
             ui->labelMinerButton->setText(tr("Click to stop:"));
-            // uint64_t timetillstake = walletModel->wallet().getTimeToStake();
-            // int stakerate = 0;
-            // if (timetillstake > 0){
-            //     stakerate = 1;
-
-            //     if (timetillstake > 3600)
-            //         stakerate = timetillstake/(60*60);
-            // }
-            // ui->mineButton->setToolTip(tr("<html><head/><body><p>Next reward estimated in %1 hour</p></body></html>").arg(stakerate));
+            if ( walletModel )
+            {
+                uint64_t staketime = walletModel->wallet().getTimeToStake();
+                int stakerate = 1;
+                if (staketime > 3600){
+                    stakerate = staketime/(60*60);
+                }
+                ui->mineButton->setToolTip(tr("<html><head/><body><p>Next reward estimated in %1 hour</p></body></html>").arg(stakerate));
+            }
         } else {
             ui->mineButton->setToolTip(tr("<html><head/><body><p>Click to start/stop</p></body></html>"));
             ui->mineButton->setIcon(QIcon(":/icons/stakingoff"));
