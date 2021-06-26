@@ -1,0 +1,33 @@
+# /etc/conf.d/vericoind: config file for /etc/init.d/vericoind
+
+# Config file location
+#VERICOIND_CONFIGFILE="/etc/vericoin/vericonomy.conf"
+
+# What directory to write pidfile to?  (created and owned by $VERICOIND_USER)
+#VERICOIND_PIDDIR="/var/run/vericoind"
+
+# What filename to give the pidfile
+#VERICOIND_PIDFILE="${VERICOIND_PIDDIR}/vericoind.pid"
+
+# Where to write vericoind data (be mindful that the blockchain is large)
+#VERICOIND_DATADIR="/var/lib/vericoind"
+
+# User and group to own vericoind process
+#VERICOIND_USER="vericoin"
+#VERICOIND_GROUP="vericoin"
+
+# Path to vericoind executable
+#VERICOIND_BIN="/usr/bin/vericoind"
+
+# Nice value to run vericoind under
+#VERICOIND_NICE=0
+
+# Additional options (avoid -conf and -datadir, use flags above)
+#VERICOIND_OPTS=""
+
+# The timeout in seconds OpenRC will wait for vericoind to terminate
+# after a SIGTERM has been raised.
+# Note that this will be mapped as argument to start-stop-daemon's
+# '--retry' option, which means you can specify a retry schedule
+# here. For more information see man 8 start-stop-daemon.
+VERICOIND_SIGTERM_TIMEOUT=600

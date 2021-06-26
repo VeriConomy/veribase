@@ -3,8 +3,7 @@ Unauthenticated REST Interface
 
 The REST API can be enabled with the `-rest` option.
 
-The interface runs on the same port as the JSON-RPC interface, by default port 8332 for mainnet, port 18332 for testnet,
-and port 18443 for regtest.
+The interface runs on the same port as the JSON-RPC interface, by default port 58683 for vericoin, port 33987 for verium.
 
 REST Interface consistency guarantees
 -------------------------------------
@@ -50,7 +49,7 @@ Given a height: returns hash of block in best-block-chain at height provided.
 
 Returns various state info regarding block chain processing.
 Only supports JSON as output format.
-* chain : (string) current network name (main, test, regtest)
+* chain : (string) current network name (vericoin/verium)
 * blocks : (numeric) the current number of blocks processed in the server
 * headers : (numeric) the current number of headers we have validated
 * bestblockhash : (string) the hash of the currently best block
@@ -58,10 +57,6 @@ Only supports JSON as output format.
 * mediantime : (numeric) the median time of the 11 blocks before the most recent block on the blockchain
 * verificationprogress : (numeric) estimate of verification progress [0..1]
 * chainwork : (string) total amount of work in active chain, in hexadecimal
-* pruned : (boolean) if the blocks are subject to pruning
-* pruneheight : (numeric) highest block available
-* softforks : (array) status of softforks in progress
-* bip9_softforks : (object) status of BIP9 softforks in progress
 
 #### Query UTXO set
 `GET /rest/getutxos/<checkmempool>/<txid>-<n>/<txid>-<n>/.../<txid>-<n>.<bin|hex|json>`
@@ -72,7 +67,7 @@ https://github.com/bitcoin/bips/blob/master/bip-0064.mediawiki
 
 Example:
 ```
-$ curl localhost:18332/rest/getutxos/checkmempool/b2cdfd7b89def827ff8af7cd9bff7627ff72e5e8b0f71210f92ea7a4000c5d75-0.json 2>/dev/null | json_pp
+$ curl localhost:58683/rest/getutxos/checkmempool/b2cdfd7b89def827ff8af7cd9bff7627ff72e5e8b0f71210f92ea7a4000c5d75-0.json 2>/dev/null | json_pp
 {
    "chainHeight" : 325347,
    "chaintipHash" : "00000000fb01a7f3745a717f8caebee056c484e6e0bfe4a9591c235bb70506fb",
@@ -115,4 +110,4 @@ Only supports JSON as output format.
 
 Risks
 -------------
-Running a web browser on the same node with a REST enabled bitcoind can be a risk. Accessing prepared XSS websites could read out tx/block data of your node by placing links like `<script src="http://127.0.0.1:8332/rest/tx/1234567890.json">` which might break the nodes privacy.
+Running a web browser on the same node with a REST enabled vericoind or veriumd can be a risk. Accessing prepared XSS websites could read out tx/block data of your node by placing links like `<script src="http://127.0.0.1:58683/rest/tx/1234567890.json">` which might break the nodes privacy.

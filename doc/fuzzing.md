@@ -1,12 +1,12 @@
-# Fuzzing Bitcoin Core using libFuzzer
+# Fuzzing Veribase using libFuzzer
 
 ## Quickstart guide
 
-To quickly get started fuzzing Bitcoin Core using [libFuzzer](https://llvm.org/docs/LibFuzzer.html):
+To quickly get started fuzzing Veribase using [libFuzzer](https://llvm.org/docs/LibFuzzer.html):
 
 ```sh
-$ git clone https://github.com/bitcoin/bitcoin
-$ cd bitcoin/
+$ git clone https://github.com/VeriConomy/veribase
+$ cd veribase/
 $ ./autogen.sh
 $ CC=clang CXX=clang++ ./configure --enable-fuzz --with-sanitizers=address,fuzzer,undefined
 # macOS users: If you have problem with this step then make sure to read "macOS hints for

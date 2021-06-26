@@ -1,4 +1,4 @@
-Vericonomy Vault packaging
+Vericonomy packaging
 =======
 
 Vericonomy is packaged and distributed through different channels.

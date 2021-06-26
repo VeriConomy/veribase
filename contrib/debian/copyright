@@ -1,13 +1,12 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: Bitcoin
-Upstream-Contact: Satoshi Nakamoto <satoshin@gmx.com>
- irc://#bitcoin@freenode.net
-Source: https://github.com/bitcoin/bitcoin
+Upstream-Name: Vericoin
+Upstream-Contact: Vericonomy Developers <dev@vericoin.info>
+Source: https://github.com/VeriConomy/veribase
 
 Files: *
-Copyright: 2009-2020, Bitcoin Core Developers
+Copyright: 2009-2020, Vericoin Developers
 License: Expat
-Comment: The Bitcoin Core Developers encompasses the current developers listed on bitcoin.org,
+Comment: The Vericoin Developers encompasses the current developers listed on vericoin.info,
          as well as the numerous contributors to the project.
 
 Files: debian/*

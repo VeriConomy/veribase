@@ -1,0 +1,92 @@
+#!/sbin/openrc-run
+
+# backward compatibility for existing gentoo layout
+#
+if [ -d "/var/lib/vericoin/.vericonomy" ]; then
+	VERICOIND_DEFAULT_DATADIR="/var/lib/vericoin/.vericonomy"
+else
+	VERICOIND_DEFAULT_DATADIR="/var/lib/vericoind"
+fi
+
+VERICOIND_CONFIGFILE=${VERICOIND_CONFIGFILE:-/etc/vericoin/vericonomy.conf}
+VERICOIND_PIDDIR=${VERICOIND_PIDDIR:-/var/run/vericoind}
+VERICOIND_PIDFILE=${VERICOIND_PIDFILE:-${VERICOIND_PIDDIR}/vericoind.pid}
+VERICOIND_DATADIR=${VERICOIND_DATADIR:-${VERICOIND_DEFAULT_DATADIR}}
+VERICOIND_USER=${VERICOIND_USER:-${VERICOIN_USER:-vericoin}}
+VERICOIND_GROUP=${VERICOIND_GROUP:-vericoin}
+VERICOIND_BIN=${VERICOIND_BIN:-/usr/bin/vericoind}
+VERICOIND_NICE=${VERICOIND_NICE:-${NICELEVEL:-0}}
+VERICOIND_OPTS="${VERICOIND_OPTS:-${VERICOIN_OPTS}}"
+
+name="Vericoin Daemon"
+description="Vericoin cryptocurrency P2P network daemon"
+
+command="/usr/bin/vericoind"
+command_args="-pid=\"${VERICOIND_PIDFILE}\" \
+		-conf=\"${VERICOIND_CONFIGFILE}\" \
+		-datadir=\"${VERICOIND_DATADIR}\" \
+		-daemon \
+		${VERICOIND_OPTS}"
+
+required_files="${VERICOIND_CONFIGFILE}"
+start_stop_daemon_args="-u ${VERICOIND_USER} \
+			-N ${VERICOIND_NICE} -w 2000"
+pidfile="${VERICOIND_PIDFILE}"
+
+# The retry schedule to use when stopping the daemon. Could be either
+# a timeout in seconds or multiple signal/timeout pairs (like
+# "SIGKILL/180 SIGTERM/300")
+retry="${VERICOIND_SIGTERM_TIMEOUT}"
+
+depend() {
+	need localmount net
+}
+
+# verify
+# 1) that the datadir exists and is writable (or create it)
+# 2) that a directory for the pid exists and is writable
+# 3) ownership and permissions on the config file
+start_pre() {
+	checkpath \
+	-d \
+	--mode 0750 \
+	--owner "${VERICOIND_USER}:${VERICOIND_GROUP}" \
+	"${VERICOIND_DATADIR}"
+
+	checkpath \
+	-d \
+	--mode 0755 \
+	--owner "${VERICOIND_USER}:${VERICOIND_GROUP}" \
+	"${VERICOIND_PIDDIR}"
+
+	checkpath -f \
+	-o ${VERICOIND_USER}:${VERICOIND_GROUP} \
+	-m 0660 \
+	${VERICOIND_CONFIGFILE}
+
+	checkconfig || return 1
+}
+
+checkconfig()
+{
+	if ! grep -qs '^rpcpassword=' "${VERICOIND_CONFIGFILE}" ; then
+		eerror ""
+		eerror "ERROR: You must set a secure rpcpassword to run vericoind."
+		eerror "The setting must appear in ${VERICOIND_CONFIGFILE}"
+		eerror ""
+		eerror "This password is security critical to securing wallets "
+		eerror "and must not be the same as the rpcuser setting."
+		eerror "You can generate a suitable random password using the following "
+		eerror "command from the shell:"
+		eerror ""
+		eerror "bash -c 'tr -dc a-zA-Z0-9 < /dev/urandom | head -c32 && echo'"
+		eerror ""
+		eerror "It is recommended that you also set alertnotify so you are "
+		eerror "notified of problems:"
+		eerror ""
+		eerror "ie: alertnotify=echo %%s | mail -s \"Vericoin Alert\"" \
+			"admin@foo.com"
+		eerror ""
+		return 1
+	fi
+}

@@ -1,8 +1,8 @@
-name: verium
+name: vericoin
 version: 1.3.2
 summary:   peer-to-peer network based digital currency
 description: |
-  Verium is a free open source peer-to-peer electronic cash system that
+  Vericoin is a free open source peer-to-peer electronic cash system that
   is completely decentralized, without the need for a central server or
   trusted parties.  Users hold the crypto keys to their own money and
   transact directly with each other, with the help of a P2P network to
@@ -13,41 +13,41 @@ confinement: strict
 
 apps:
   daemon:
-    command: veriumd
+    command: vericoind
     plugs: [removable-media, network, network-bind]
     environment:
       # Override HOME so the datadir is located at
-      # ~/snap/verium/common/.verium/ instead of
-      # ~/snap/verium/current/.verimu/, and each new version of the
+      # ~/snap/vericonomy/common/.vericonomy/ instead of
+      # ~/snap/vericonomy/current/.vericonomy/, and each new version of the
       # snap won't have a different data directory:
       # https://docs.snapcraft.io/environment-variables/7983
       HOME: $SNAP_USER_COMMON
   qt:
-    command: desktop-launch verium-qt
+    command: desktop-launch vericoin-qt
     plugs: [removable-media, network, network-bind, desktop, x11]
     environment:
       HOME: $SNAP_USER_COMMON
       DISABLE_WAYLAND: 1
   cli:
-    command: verium-cli
+    command: vericoin-cli
     plugs: [removable-media, network]
     environment:
       HOME: $SNAP_USER_COMMON
 
 parts:
-  verium-core:
+  vericoin:
     plugin: nil
     override-build: |
       env | grep SNAP
-      wget https://cdn.vericonomy.com/verium-${SNAPCRAFT_PROJECT_VERSION}/verium-${SNAPCRAFT_PROJECT_VERSION}.tar.gz
-      wget https://cdn.vericonomy.com/verium-${SNAPCRAFT_PROJECT_VERSION}/verium-${SNAPCRAFT_PROJECT_VERSION}-${SNAPCRAFT_ARCH_TRIPLET}.tar.gz
-      tar -xvf verium-${SNAPCRAFT_PROJECT_VERSION}-${SNAPCRAFT_ARCH_TRIPLET}.tar.gz
-      tar -xvf verium-${SNAPCRAFT_PROJECT_VERSION}.tar.gz
-      install -m 0755 -D -t $SNAPCRAFT_PART_INSTALL/bin verium-${SNAPCRAFT_PROJECT_VERSION}/bin/veriumd
-      install -m 0755 -D -t $SNAPCRAFT_PART_INSTALL/bin verium-${SNAPCRAFT_PROJECT_VERSION}/bin/verium-qt
-      install -m 0755 -D -t $SNAPCRAFT_PART_INSTALL/bin verium-${SNAPCRAFT_PROJECT_VERSION}/bin/verium-cli
-      wget https://raw.githubusercontent.com/VeriumReserve/verium/v${SNAPCRAFT_PROJECT_VERSION}/share/pixmaps/verium128.png
-      install -m 0644 -D -t $SNAPCRAFT_PART_INSTALL/share/pixmaps verium128.png
+      wget https://cdn.vericonomy.com/vericoin-${SNAPCRAFT_PROJECT_VERSION}/vericoin-${SNAPCRAFT_PROJECT_VERSION}.tar.gz
+      wget https://cdn.vericonomy.com/vericoin-${SNAPCRAFT_PROJECT_VERSION}/vericoin-${SNAPCRAFT_PROJECT_VERSION}-${SNAPCRAFT_ARCH_TRIPLET}.tar.gz
+      tar -xvf vericoin-${SNAPCRAFT_PROJECT_VERSION}-${SNAPCRAFT_ARCH_TRIPLET}.tar.gz
+      tar -xvf vericoin-${SNAPCRAFT_PROJECT_VERSION}.tar.gz
+      install -m 0755 -D -t $SNAPCRAFT_PART_INSTALL/bin vericoin-${SNAPCRAFT_PROJECT_VERSION}/bin/vericoind
+      install -m 0755 -D -t $SNAPCRAFT_PART_INSTALL/bin vericoin-${SNAPCRAFT_PROJECT_VERSION}/bin/vericoin-qt
+      install -m 0755 -D -t $SNAPCRAFT_PART_INSTALL/bin vericoin-${SNAPCRAFT_PROJECT_VERSION}/bin/vericoin-cli
+      wget https://raw.githubusercontent.com/VeriConomy/vericoin/v${SNAPCRAFT_PROJECT_VERSION}/share/pixmaps/vericoin128.png
+      install -m 0644 -D -t $SNAPCRAFT_PART_INSTALL/share/pixmaps vericoin128.png
     build-packages:
       - wget
     after:

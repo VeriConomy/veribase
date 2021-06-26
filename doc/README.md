@@ -1,41 +1,54 @@
-Bitcoin Core
+Veribase
 =============
+
+What's Veribase
+---------------------
+Veribase is the code base behind Vericoin and Verium. It allow to keep both coins at the same level of feature and update.
+Therefore, it's a first step into a common wallet for Vericoin & Verium.
+In the following docs and code, reference to veribase will often be made and you might have to adapt based on your need.
 
 Setup
 ---------------------
-Bitcoin Core is the original Bitcoin client and it builds the backbone of the network. It downloads and, by default, stores the entire history of Bitcoin transactions, which requires a few hundred gigabytes of disk space. Depending on the speed of your computer and network connection, the synchronization process can take anywhere from a few hours to a day or more.
+Veribase is the original Vericoin & Verium client and it builds the backbone of the network. It downloads and, by default, stores the entire history of Vericoin & Verium transactions, which requires a few gigabytes of disk space. Depending on the speed of your computer and network connection, the synchronization process can take anywhere from a few hours to a day or more.
 
-To download Bitcoin Core, visit [bitcoincore.org](https://bitcoincore.org/en/download/).
+To download Vericoin / Verium, visit [vericonomy.com](https://vericonomy.com/).
 
 Running
 ---------------------
-The following are some helpful notes on how to run Bitcoin Core on your native platform.
+The following are some helpful notes on how to run Vericoin and verium on your native platform.
 
 ### Unix
 
 Unpack the files into a directory and run:
 
-- `bin/bitcoin-qt` (GUI) or
-- `bin/bitcoind` (headless)
+For Vericoin:
+- `bin/vericoin-qt` (GUI) or
+- `bin/vericoind` (headless)
+
+For Verium
+- `bin/verium-qt` (GUI) or
+- `bin/veriumd` (headless)
 
 ### Windows
 
-Unpack the files into a directory, and then run bitcoin-qt.exe.
+Unpack the files into a directory, and then run vericoin-qt.exe or verium-qt.exe .
 
 ### macOS
 
-Drag Bitcoin Core to your applications folder, and then run Bitcoin Core.
+Drag Vericoin / Verium to your applications folder, and then run it.
 
 ### Need Help?
 
-* See the documentation at the [Bitcoin Wiki](https://en.bitcoin.it/wiki/Main_Page)
+* See the documentation at the [Vericoin & Verium Wiki](https://wiki.vericoin.info/)
 for help and more information.
-* Ask for help on [#bitcoin](https://webchat.freenode.net/#bitcoin) on Freenode. If you don't have an IRC client, use [webchat here](https://webchat.freenode.net/#bitcoin).
-* Ask for help on the [BitcoinTalk](https://bitcointalk.org/) forums, in the [Technical Support board](https://bitcointalk.org/index.php?board=4.0).
+* Ask for help on
+ - [Slack](https://slack.vericoin.info)
+ - [Telegram](https://t.me/vericoinandverium)
+ - [Vericoin & Verium Reddit](https://www.reddit.com/r/vericoin)
 
 Building
 ---------------------
-The following are developer notes on how to build Bitcoin Core on your native platform. They are not complete guides, but include notes on the necessary libraries, compile flags, etc.
+The following are developer notes on how to build Veribase on your native platform. They are not complete guides, but include notes on the necessary libraries, compile flags, etc.
 
 - [Dependencies](dependencies.md)
 - [macOS Build Notes](build-osx.md)
@@ -44,17 +57,15 @@ The following are developer notes on how to build Bitcoin Core on your native pl
 - [FreeBSD Build Notes](build-freebsd.md)
 - [OpenBSD Build Notes](build-openbsd.md)
 - [NetBSD Build Notes](build-netbsd.md)
-- [Gitian Building Guide (External Link)](https://github.com/bitcoin-core/docs/blob/master/gitian-building.md)
 
 Development
 ---------------------
-The Bitcoin repo's [root README](/README.md) contains relevant information on the development process and automated testing.
+The Veribase repo's [root README](/README.md) contains relevant information on the development process and automated testing.
 
 - [Developer Notes](developer-notes.md)
 - [Productivity Notes](productivity.md)
 - [Release Notes](release-notes.md)
 - [Release Process](release-process.md)
-- [Source Code Documentation (External Link)](https://doxygen.bitcoincore.org/)
 - [Translation Process](translation_process.md)
 - [Translation Strings Policy](translation_strings_policy.md)
 - [JSON-RPC Interface](JSON-RPC-interface.md)
@@ -65,13 +76,12 @@ The Bitcoin repo's [root README](/README.md) contains relevant information on th
 - [Benchmarking](benchmarking.md)
 
 ### Resources
-* Discuss on the [BitcoinTalk](https://bitcointalk.org/) forums, in the [Development & Technical Discussion board](https://bitcointalk.org/index.php?board=6.0).
-* Discuss project-specific development on #bitcoin-core-dev on Freenode. If you don't have an IRC client, use [webchat here](https://webchat.freenode.net/#bitcoin-core-dev).
-* Discuss general Bitcoin development on #bitcoin-dev on Freenode. If you don't have an IRC client, use [webchat here](https://webchat.freenode.net/#bitcoin-dev).
+* Discuss on the [Slack](https://slack.vericoin.info), in the development channel.
+* Follow the [Development Kanban](https://trello.com/b/Fna9ydfw/vericonomy).
 
 ### Miscellaneous
 - [Assets Attribution](assets-attribution.md)
-- [bitcoin.conf Configuration File](bitcoin-conf.md)
+- [vericonomy.conf Configuration File](vericonomy-conf.md)
 - [Files](files.md)
 - [Fuzz-testing](fuzzing.md)
 - [Reduce Memory](reduce-memory.md)

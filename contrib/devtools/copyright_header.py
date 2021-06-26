@@ -103,6 +103,8 @@ EXPECTED_HOLDER_NAMES = [
     r"Intel Corporation ?",
     r"The Zcash developers",
     r"Jeremy Rubin",
+    r"The Vericonomy Core developers",
+    r"The Vericonomy developers",
 ]
 
 DOMINANT_STYLE_COMPILED = {}
@@ -272,7 +274,7 @@ Usage:
     $ ./copyright_header.py report <base_directory> [verbose]
 
 Arguments:
-    <base_directory> - The base directory of a bitcoin source code repository.
+    <base_directory> - The base directory of a veribase source code repository.
     [verbose] - Includes a list of every file of each subcategory in the report.
 """
 
@@ -335,7 +337,7 @@ def write_file_lines(filename, file_lines):
 COPYRIGHT = r'Copyright \(c\)'
 YEAR = "20[0-9][0-9]"
 YEAR_RANGE = '(%s)(-%s)?' % (YEAR, YEAR)
-HOLDER = 'The Bitcoin Core developers'
+HOLDER = 'The Vericonomy developers'
 UPDATEABLE_LINE_COMPILED = re.compile(' '.join([COPYRIGHT, YEAR_RANGE, HOLDER]))
 
 def get_updatable_copyright_line(file_lines):

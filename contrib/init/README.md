@@ -1,11 +1,11 @@
 Sample configuration files for:
 ```
-SystemD: bitcoind.service
-Upstart: bitcoind.conf
-OpenRC:  bitcoind.openrc
-         bitcoind.openrcconf
-CentOS:  bitcoind.init
-macOS:   org.bitcoin.bitcoind.plist
+SystemD: vericoind.service
+Upstart: vericoind.conf
+OpenRC:  vericoind.openrc
+         vericoind.openrcconf
+CentOS:  vericoind.init
+macOS:   org.vericonomy.vericoind.plist
 ```
 have been made available to assist packagers in creating node packages here.
 
