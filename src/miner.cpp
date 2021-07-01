@@ -632,8 +632,9 @@ void Miner(std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* memp
         {
             while (::ChainstateActive().IsInitialBlockDownload() || connman->GetNodeCount(CConnman::CONNECTIONS_ALL) < 1 || ::ChainActive().Tip()->nHeight < connman->GetBestHeight()-10){
                 LogPrintf("Mining inactive while chain is syncing...\n");
-                UninterruptibleSleep(std::chrono::milliseconds{5000});
 
+                if (!connman->interruptNet.sleep_for(std::chrono::seconds(3)))
+                    return;
                 if (!fGenerateVerium)
                     return;
             }
@@ -822,22 +823,31 @@ void Staker(std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* mem
         {
             while (::ChainstateActive().IsInitialBlockDownload() || ::ChainActive().Tip()->nHeight < connman->GetBestHeight()-10)
             {
-                LogPrintf("Staking inactive while chain is syncing / not enough node...\n");
-                UninterruptibleSleep(std::chrono::milliseconds{5000});
+                LogPrintf("Staking inactive while chain is syncing\n");
+
                 if (!fGenerateVericoin)
+                    return;
+
+                if (!connman->interruptNet.sleep_for(std::chrono::seconds(10)))
                     return;
             }
             while (connman->GetNodeCount(CConnman::CONNECTIONS_ALL) < 5)
             {
                 LogPrintf("Staking inactive, not enough node...\n");
-                UninterruptibleSleep(std::chrono::milliseconds{5000});
+
                 if (!fGenerateVericoin)
+                    return;
+
+                if (!connman->interruptNet.sleep_for(std::chrono::seconds(10)))
                     return;
             }
             while (pwallet->IsLocked()) {
                 LogPrintf("Staking inactive because wallet is locked...\n");
-                UninterruptibleSleep(std::chrono::milliseconds{5000});
+
                 if (!fGenerateVericoin)
+                    return;
+
+                if (!connman->interruptNet.sleep_for(std::chrono::seconds(5)))
                     return;
             }
 
@@ -856,7 +866,8 @@ void Staker(std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* mem
             {
                 if (fPoSCancel == true)
                 {
-                    UninterruptibleSleep(std::chrono::milliseconds{25000});
+                    if (!connman->interruptNet.sleep_for(std::chrono::seconds(25)))
+                        return;
                     continue;
                 }
 
@@ -885,10 +896,12 @@ void Staker(std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* mem
                 reservedest.KeepDestination();
 
                 // Rest for ~3 minutes after successful block to preserve close quick
-                UninterruptibleSleep(std::chrono::seconds(60 + GetRand(4)));
+                if (!connman->interruptNet.sleep_for(std::chrono::seconds(60 + GetRand(4))))
+                    return;
             }
 
-            UninterruptibleSleep(std::chrono::milliseconds{25000});
+            if (!connman->interruptNet.sleep_for(std::chrono::seconds(25)))
+                return;
         }
         fGenerateVericoin = false;
     }
