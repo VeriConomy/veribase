@@ -97,8 +97,8 @@ public:
         consensus.nModifierInterval = 10 * 60;
         consensus.nTargetTimespan = 16 * 60;
 
-        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000000000");
-        consensus.defaultAssumeValid = uint256S("0x0000000000000000000000000000000000000000000000000000000000000000"); // 654683
+        consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000000000ffc68baecd62e"); // 3000000
+        consensus.defaultAssumeValid = uint256S("0x335fcdca698d63447f3c2e181071fc315131c8867f56e0e84cdc9d220b39c033"); // 3000000
 
         consensus.fIsVericoin = true;
 
@@ -107,8 +107,8 @@ public:
         pchMessageStart[2] = 0x22;
         pchMessageStart[3] = 0x05;
         nDefaultPort = 58684;
-        m_assumed_blockchain_size = 3;
-        m_assumed_chain_state_size = 10;
+        m_assumed_blockchain_size = 6;
+        m_assumed_chain_state_size = 1;
 
         genesis = CreateGenesisBlock(strNetworkID, 1399690945, 612416, 0x1e0fffff, 1, 2500 * COIN);
         consensus.hashGenesisBlock = genesis.GetWorkHash();
@@ -169,15 +169,14 @@ public:
                 {1751415, uint256S("ccb1350009a6e2bfa684f7461b455cc75db19b30e55f612d4b17b0fcee6585e9")},
                 {2000000, uint256S("5360959829df0cc297074df5b3083d9d671a34dbf709d835d1f913fcb3cb7318")},
                 {4025153, uint256S("d393a326a29747ad196537e5ef336eb8224013e21f440f90d495307937e13d3c")},
-
             }
         };
 
         chainTxData = ChainTxData{
-            // Data from RPC: getchaintxstats 4096 000000000000056c49030c174179b52a928c870e6e8a822c75973b7970cfbd01
-            /* nTime    */ 1546638575,
-            /* nTxCount */ 5838812,
-            /* dTxRate  */ 0.03587197431109405,
+            // Data from RPC: getchaintxstats 4096 ad1bc67b8ef045bd3ade7ca0206bfc69052ff40a1c2556d7ab3c6541d98bdac3 - 4120887
+            /* nTime    */ 1626627216,
+            /* nTxCount */ 8703568,
+            /* dTxRate  */ 0.03584488067744419,
         };
     }
 };
