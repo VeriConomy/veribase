@@ -37,6 +37,7 @@ public:
     explicit TransactionView(const PlatformStyle *platformStyle, QWidget *parent = nullptr);
 
     void setModel(WalletModel *model);
+    QLabel *totalWidget;
 
     // Date ranges for filter
     enum DateEnum
@@ -98,6 +99,7 @@ private Q_SLOTS:
     void openThirdPartyTxUrl(QString url);
     void updateWatchOnlyColumn(bool fHaveWatchOnly);
     void abandonTx();
+    void showTotalAmount(bool reset=false);
 
 Q_SIGNALS:
     void doubleClicked(const QModelIndex&);

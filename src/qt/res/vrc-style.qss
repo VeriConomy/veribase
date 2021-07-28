@@ -693,6 +693,13 @@ QPushButton#exportButtonTxView {
     margin-right: 9px;
 }
 
+QLabel#labelTotalWidget {
+    margin-top: 2px;
+    color: white;
+    font: 11pt "Lato";
+    font-weight: bold;
+}
+
 /** Send Coin **/
 QDialog#SendCoinsDialog QScrollArea#scrollArea,
 QDialog#SendCoinsDialog QFrame#frameFee,

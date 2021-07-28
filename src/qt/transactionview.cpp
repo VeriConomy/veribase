@@ -160,6 +160,14 @@ TransactionView::TransactionView(const PlatformStyle *platformStyle, QWidget *pa
     transactionView = view;
     transactionView->setObjectName("transactionView");
 
+    totalWidget = new QLabel(this);
+    totalWidget->setAlignment(Qt::AlignBottom | Qt::AlignLeft);
+    totalWidget->setFixedHeight(25);
+    totalWidget->setFixedWidth(500);
+    totalWidget->setText(tr("Total: "));
+    totalWidget->setToolTip(tr("Total of displayed transactions.\nHidden decimals are not totaled."));
+    totalWidget->setObjectName(QString::fromUtf8("labelTotalWidget"));
+
     // Actions
     abandonAction = new QAction(tr("Abandon transaction"), this);
     QAction *copyAddressAction = new QAction(tr("Copy address"), this);
@@ -261,12 +269,17 @@ void TransactionView::setModel(WalletModel *_model)
 
         // Watch-only signal
         connect(_model, &WalletModel::notifyWatchonlyChanged, this, &TransactionView::updateWatchOnlyColumn);
+
+        showTotalAmount();
     }
 }
 
 void TransactionView::chooseDate(int idx)
 {
     if (!transactionProxyModel) return;
+
+    transactionProxyModel->setAmountTotal(0);
+
     QDate current = QDate::currentDate();
     dateRangeWidget->setVisible(false);
     switch(dateWidget->itemData(idx).toInt())
@@ -309,27 +322,42 @@ void TransactionView::chooseDate(int idx)
         dateRangeChanged();
         break;
     }
+
+    showTotalAmount();
 }
 
 void TransactionView::chooseType(int idx)
 {
     if(!transactionProxyModel)
         return;
+
+    transactionProxyModel->setAmountTotal(0);
+
     transactionProxyModel->setTypeFilter(
         typeWidget->itemData(idx).toInt());
+
+    showTotalAmount();
 }
 
 void TransactionView::changedSearch()
 {
     if(!transactionProxyModel)
         return;
+
+    transactionProxyModel->setAmountTotal(0);
+
     transactionProxyModel->setSearchString(search_widget->text());
+
+    showTotalAmount();
 }
 
 void TransactionView::changedAmount()
 {
     if(!transactionProxyModel)
         return;
+
+    transactionProxyModel->setAmountTotal(0);
+
     CAmount amount_parsed = 0;
     if (BitcoinUnits::parse(model->getOptionsModel()->getDisplayUnit(), amountWidget->text(), &amount_parsed)) {
         transactionProxyModel->setMinAmount(amount_parsed);
@@ -338,7 +366,24 @@ void TransactionView::changedAmount()
     {
         transactionProxyModel->setMinAmount(0);
     }
+
+    showTotalAmount();
 }
+
+void TransactionView::showTotalAmount(bool reset)
+{
+    if(!transactionProxyModel)
+        return;
+
+    if (reset) {
+        transactionProxyModel->setAmountTotal(0);
+        // Force a refresh using the date widget
+        chooseDate(dateWidget->currentIndex());
+    }
+
+    totalWidget->setText(tr("Total: %1").arg(BitcoinUnits::formatWithUnit(BitcoinUnit::BTC, transactionProxyModel->getAmountTotal(), false, BitcoinUnits::separatorStandard)));
+}
+
 
 void TransactionView::exportClicked()
 {
@@ -564,9 +609,14 @@ void TransactionView::dateRangeChanged()
 {
     if(!transactionProxyModel)
         return;
+
+    transactionProxyModel->setAmountTotal(0);
+
     transactionProxyModel->setDateRange(
             QDateTime(dateFrom->date()),
             QDateTime(dateTo->date()).addDays(1));
+
+    showTotalAmount();
 }
 
 void TransactionView::focusTransaction(const QModelIndex &idx)

@@ -8,6 +8,7 @@
 #include <amount.h>
 
 #include <QStackedWidget>
+#include <QLabel>
 
 class ClientModel;
 class OverviewPage;
@@ -77,6 +78,8 @@ private:
 
     QProgressDialog* progressDialog{nullptr};
     const PlatformStyle *platformStyle;
+
+    QLabel *totalWidget;
 
 public Q_SLOTS:
     /** Switch to overview (home) page */

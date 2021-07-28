@@ -29,13 +29,13 @@ static void xfer_callback(curl_off_t now, curl_off_t total)
 
 void BootstrapDialog::on_startButton_clicked()
 {
+    ui->closeButton->setEnabled(false);
+    ui->startButton->setEnabled(false);
+
     extern void set_xferinfo_data(void*);
 
     bootstrap_callback_instance = this;
     set_xferinfo_data((void*)xfer_callback);
-
-    ui->closeButton->setEnabled(false);
-    ui->startButton->setEnabled(false);
 
     QMessageBox::information(this, "Bootstrap", "The client will now bootstrap the chain. \n\nThe wallet will exit after extracting the bootstrap and need to be restarted.", QMessageBox::Ok, QMessageBox::Ok);
     try {
@@ -50,11 +50,9 @@ void BootstrapDialog::on_startButton_clicked()
         return;
     }
 
-    ui->closeButton->setEnabled(true);
-    ui->startButton->setEnabled(true);
-
     set_xferinfo_data(nullptr);
     bootstrap_callback_instance = nullptr;
+
     this->close();
     QApplication::quit();
 }

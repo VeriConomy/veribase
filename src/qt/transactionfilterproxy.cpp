@@ -14,6 +14,8 @@ const QDateTime TransactionFilterProxy::MIN_DATE = QDateTime::fromTime_t(0);
 // Last date that can be represented (far in the future)
 const QDateTime TransactionFilterProxy::MAX_DATE = QDateTime::fromTime_t(0xFFFFFFFF);
 
+static qint64 nAmountTotal = 0;
+
 TransactionFilterProxy::TransactionFilterProxy(QObject *parent) :
     QSortFilterProxyModel(parent),
     dateFrom(MIN_DATE),
@@ -25,6 +27,7 @@ TransactionFilterProxy::TransactionFilterProxy(QObject *parent) :
     limitRows(-1),
     showInactive(true)
 {
+    nAmountTotal = 0;
 }
 
 bool TransactionFilterProxy::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
@@ -62,7 +65,22 @@ bool TransactionFilterProxy::filterAcceptsRow(int sourceRow, const QModelIndex &
     if (amount < minAmount)
         return false;
 
+    if (!(status == TransactionStatus::Conflicted || status == TransactionStatus::NotAccepted))
+    {
+        nAmountTotal += amount;
+    }
+
     return true;
+}
+
+qint64 TransactionFilterProxy::getAmountTotal()
+{
+    return nAmountTotal;
+}
+
+void TransactionFilterProxy::setAmountTotal(qint64 amount)
+{
+    nAmountTotal = amount;
 }
 
 void TransactionFilterProxy::setDateRange(const QDateTime &from, const QDateTime &to)

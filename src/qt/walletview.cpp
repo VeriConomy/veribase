@@ -48,12 +48,15 @@ WalletView::WalletView(interfaces::Node& node, const PlatformStyle *_platformSty
     QHBoxLayout *hbox_buttons = new QHBoxLayout();
     transactionView = new TransactionView(platformStyle, this);
     vbox->addWidget(transactionView);
+
     QPushButton *exportButton = new QPushButton(tr("&Export"), this);
     exportButton->setObjectName("exportButtonTxView");
     exportButton->setToolTip(tr("Export the data in the current tab to a file"));
     if (platformStyle->getImagesOnButtons()) {
         exportButton->setIcon(QIcon(":/icons/export"));
     }
+
+    hbox_buttons->addWidget(transactionView->totalWidget);
     hbox_buttons->addStretch();
     hbox_buttons->addWidget(exportButton);
     vbox->addLayout(hbox_buttons);

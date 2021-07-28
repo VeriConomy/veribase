@@ -49,6 +49,9 @@ public:
     /** Set whether to show conflicted transactions. */
     void setShowInactive(bool showInactive);
 
+    qint64 getAmountTotal();
+    void setAmountTotal(qint64 amount);
+
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
 
 protected:
