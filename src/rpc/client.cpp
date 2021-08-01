@@ -159,6 +159,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "getnodeaddresses", 0, "count"},
     { "stop", 0, "wait" },
     { "reservebalance", 1, "amount" },
+    { "minerstart", 0, "nthreads" },
 };
 // clang-format on
 

@@ -189,7 +189,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     pblocktemplate->vTxFees[0] = -nFees;
 
     if( ! fPos )
-        coinbaseTx.vout[0].nValue = nFees + GetProofOfWorkReward(nFees, pindexPrev);
+        coinbaseTx.vout[0].nValue = GetProofOfWorkReward(nFees, pindexPrev);
 
     LogPrintf("CreateNewBlock(): block weight: %u txs: %u fees: %ld sigops %d\n", GetBlockWeight(*pblock), nBlockTx, nFees, nBlockSigOpsCost);
 
@@ -630,12 +630,24 @@ void Miner(std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* memp
     {
         while (fGenerateVerium && memory)
         {
-            while (::ChainstateActive().IsInitialBlockDownload() || connman->GetNodeCount(CConnman::CONNECTIONS_ALL) < 1 || ::ChainActive().Tip()->nHeight < connman->GetBestHeight()-10){
-                LogPrintf("Mining inactive while chain is syncing...\n");
+            while (::ChainstateActive().IsInitialBlockDownload() || ::ChainActive().Tip()->nHeight < connman->GetBestHeight()-10)
+            {
+                LogPrintf("Mining inactive while chain is syncing\n");
 
-                if (!connman->interruptNet.sleep_for(std::chrono::seconds(3)))
-                    return;
                 if (!fGenerateVerium)
+                    return;
+
+                if (!connman->interruptNet.sleep_for(std::chrono::seconds(10)))
+                    return;
+            }
+            while (connman->GetNodeCount(CConnman::CONNECTIONS_ALL) < 5)
+            {
+                LogPrintf("Mining inactive, not enough node...\n");
+
+                if (!fGenerateVerium)
+                    return;
+
+                if (!connman->interruptNet.sleep_for(std::chrono::seconds(10)))
                     return;
             }
 
