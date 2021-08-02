@@ -10,7 +10,7 @@ QToolBar#mainToolBar {
 
 /** Main surrounding color **/
 QWidget#central {
-    background-color: #418bca;
+    background-color: #6887a2;
 }
 
 /** Left toolbar color **/

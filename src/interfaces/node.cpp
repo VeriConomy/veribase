@@ -337,6 +337,24 @@ public:
         return GetProofOfWorkReward(0,::ChainActive().Tip()->pprev);
     }
 
+    double getBlockTime() override
+    {
+        LOCK(::cs_main);
+        return CalculateBlocktime(::ChainActive().Tip()->pprev);
+    }
+
+    double getHashRate() override
+    {
+        LOCK(::cs_main);
+        return GetHashRate();
+    }
+
+    double getPoWKHashPM() override
+    {
+        LOCK(::cs_main);
+        return GetPoWKHashPM(Params());
+    }
+
     bool isStaking() override
     {
         return IsStaking();

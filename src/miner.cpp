@@ -600,6 +600,11 @@ void updateHashrate(double nHashrate)
     hashrate = nHashrate;
 }
 
+double GetHashRate()
+{
+    return hashrate;
+}
+
 void Miner(std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* mempool)
 {
     LogPrintf("Miner started\n");

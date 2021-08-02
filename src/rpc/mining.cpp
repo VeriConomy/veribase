@@ -36,6 +36,12 @@
 #include <memory>
 #include <stdint.h>
 
+double getPoWKHashPM()
+{
+    return GetPoWKHashPM(Params());
+}
+
+
 static UniValue generateBlocks(const CTxMemPool& mempool, const CScript& coinbase_script, int nGenerate, uint64_t nMaxTries)
 {
     int nHeightEnd = 0;
@@ -238,7 +244,7 @@ static UniValue getmininginfo(const JSONRPCRequest& request)
     LOCK(cs_main);
     const CTxMemPool& mempool = EnsureMemPool();
 
-    double nethashrate = GetPoWKHashPM();
+    double nethashrate = getPoWKHashPM();
 
     UniValue obj(UniValue::VOBJ);
     obj.pushKV("blocks",           (int)::ChainActive().Height());
@@ -255,7 +261,7 @@ static UniValue getmininginfo(const JSONRPCRequest& request)
     if( ! Params().IsVericoin())
     {
         double blocktime = (double)CalculateBlocktime(::ChainActive().Tip())/60;
-        double totalhashrate = hashrate;
+        double totalhashrate = GetHashRate();
         double minerate;
         if (totalhashrate == 0.0){minerate = 0.0;}
         else{

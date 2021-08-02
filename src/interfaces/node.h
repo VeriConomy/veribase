@@ -265,6 +265,15 @@ public:
     //! Get Block Reward
     virtual double getBlockReward() = 0;
 
+    //! Get Block Time
+    virtual double getBlockTime() = 0;
+
+    //! Get Hash Rate
+    virtual double getHashRate() = 0;
+
+    //! Get PoW Khash Per Minutes
+    virtual double getPoWKHashPM() = 0;
+
     //! Get Current staking state
     virtual bool isStaking() = 0;
 

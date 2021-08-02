@@ -211,8 +211,7 @@ void GenerateVerium(bool fGenerate, std::shared_ptr<CWallet> pwallet, int nThrea
 void GenerateVericoin(bool fGenerate, std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* mempool);
 bool IsMining();
 bool IsStaking();
-
-extern double hashrate;
+double GetHashRate();
 
 namespace boost {
     class thread_group;

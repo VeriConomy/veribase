@@ -13,6 +13,7 @@
 
 class CBlockHeader;
 class CBlockIndex;
+class CChainParams;
 class uint256;
 
 /** Get next required mining work **/
@@ -30,5 +31,7 @@ unsigned int CalculateBlocktime(const CBlockIndex *pindex);
 
 /** Get Block rate per hour **/
 int GetBlockRatePerHour();
+
+double GetPoWKHashPM(const CChainParams& params);
 
 #endif // BITCOIN_POW_H

@@ -175,8 +175,8 @@ OverviewPage::OverviewPage(interfaces::Node& node, const PlatformStyle *platform
         ui->miningOrStakingProcessTitle->setText(tr("Staking Process"));
     }
     else {
-        ui->immatureTitle->setText(tr("Block Reward"));
         ui->immatureTitle->setText(tr("Immature"));
+        ui->blockRewardOrNetworkStakingTitle->setText(tr("Block Reward"));
         ui->minerHashOrInterestTitle->setText(tr("Miner Hashrate"));
         ui->estNextRewardOrInflationTitle->setText(tr("Est. Next Reward"));
         ui->miningOrStakingProcessTitle->setText(tr("Mining Process"));
@@ -398,6 +398,18 @@ void OverviewPage::updateStats()
             ui->mineButton->setIcon(QIcon(":/icons/miningon"));
             ui->labelMinerButton->setText(tr("Click to stop:"));
             // XXX: Add Verium Stat here
+            // XXX: Refacto to stop calling rpc, the active chain & co ...
+            double totalhashrate = m_node.getHashRate();
+            double nethashrate =  m_node.getPoWKHashPM();
+            double blocktime = m_node.getBlockTime()/60;
+            double minerate;
+            if (totalhashrate == 0.0){minerate = 0.0;}
+            else{
+                minerate = 0.694*(nethashrate*blocktime)/(totalhashrate);  //((100/((totalhashrate_Hpm/(nethashrate_kHpm*1000))*100))*blocktime_min)/60*24
+            }
+
+            ui->labelMinerHashrateOrInterest->setText(QString("%1 H/m").arg(QString::number(totalhashrate, 'f', 3)));
+            ui->labelEstNextRewardOrInflation->setText(QString("%1 Day(s)").arg(QString::number(minerate, 'f', 1)));
         } else {
             ui->labelMinerHashrateOrInterest->setText("--- H/m");
             ui->labelEstNextRewardOrInflation->setText("--- Day(s)");
