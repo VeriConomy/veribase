@@ -924,7 +924,7 @@ bool IsVericoin()
 
 QString GetCoinName()
 {
-#if CIENT_IS_VERIUM
+#if CLIENT_IS_VERIUM
     return QString("Verium");
 #else
     return QString("Vericoin");
@@ -933,7 +933,7 @@ QString GetCoinName()
 
 QString GetCurrencyName()
 {
-#if CIENT_IS_VERIUM
+#if CLIENT_IS_VERIUM
     return QString("VRM");
 #else
     return QString("VRC");

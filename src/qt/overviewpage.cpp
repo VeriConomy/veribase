@@ -274,8 +274,10 @@ void OverviewPage::setVericoinInfo()
 
 void OverviewPage::setVeriumInfo()
 {
-    int unit = walletModel->getOptionsModel()->getDisplayUnit();
-    ui->labelblockRewardOrNetworkStaking->setText(BitcoinUnits::formatWithUnit(unit, m_node.getBlockReward(), false, BitcoinUnits::separatorAlways));
+    if(walletModel && walletModel->getOptionsModel()) {
+        int unit = walletModel->getOptionsModel()->getDisplayUnit();
+        ui->labelblockRewardOrNetworkStaking->setText(BitcoinUnits::formatWithUnit(unit, m_node.getBlockReward(), false, BitcoinUnits::separatorAlways));
+    }
 }
 
 void OverviewPage::setClientModel(ClientModel *model)

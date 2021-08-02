@@ -13,12 +13,7 @@ QWidget#central {
     background-color: #418bca;
 }
 
-/** Central color **/
-QDialog#ReceiveRequestDialog {
-    background-color: #418bca;
-}
-
-/** Dialog for coin request **/
+/** Left toolbar color **/
 QToolBar#tabBar {
     background-color: #46505A;
 }
@@ -29,8 +24,6 @@ QToolBar#tabBar QToolButton:hover {
 }
 
 /** Left toolbar - hover button **/
-
-/** background: qlineargradient( x1: 0 y1: 0, x2: 1 y2: 0, stop: 0 #84b4dd, stop: 1 #418bca); **/
 
 /** Left Toolbar **/
 QToolBar {
@@ -63,7 +56,8 @@ QToolBar#tabBar QToolButton:checked {
 QMenuBar#mainMenu {
     background-color: transparent;
     padding: 5px;
-    font-size: 14px;
+    font: 10pt "Lato";
+    font-weight: bold;
     color: white;
     spacing: 15px;
 }
@@ -88,7 +82,7 @@ QComboBox#walletSelector {
     margin-right: 20px;
     min-height: 35px;
     max-height: 35px;
-    background-color: #418bca;
+    background-color: transparent;
     font: 10pt "Lato";
     font-weight: bold;
 }
@@ -197,14 +191,19 @@ QWidget#immatureBox,
 QWidget#receiveBox,
 QWidget#minerStateBox,
 QWidget#lastTransactionsBox,
+QWidget#networkStakingBox,
 QWidget#minerBox {
     border-radius: 5px;
     min-height: 80px;
 }
 
 QWidget#lastTransactionsBox,
-QWidget#minerBox {
+QWidget#networkStakingBox {
     margin-top: 2px;
+}
+
+QWidget#minerBox {
+    margin-top: 9px;
 }
 
 QWidget#availableBox,
@@ -214,7 +213,8 @@ QWidget#totalBox,
 QWidget#immatureBox,
 QWidget#minerStateBox,
 QWidget#lastTransactionsBox,
-QWidget#minerBox {
+QWidget#minerBox,
+QWidget#networkStakingBox {
     background-color: white;
 }
 
@@ -237,23 +237,31 @@ QWidget#receiveBox:hover {
 
 QLabel#availableTitle,
 QLabel#unconfirmedTitle,
-QLabel#minerHashTitle,
+QLabel#minerHashOrInterestTitle,
 QLabel#totalTitle,
 QLabel#immatureTitle,
-QLabel#estNextRewardTitle,
+QLabel#estNextRewardOrInflationTitle,
 QLabel#lastTransactionsTitle,
-QLabel#minerTitle {
+QLabel#minerTitle,
+QLabel#blockRewardOrNetworkStakingTitle,
+QLabel#miningOrStakingProcessTitle {
     color: #586A7A;
     font: 10pt "Lato";
     font-weight: bold;
 }
 
+QLabel#blockRewardOrNetworkStakingTitle,
+QLabel#miningOrStakingProcessTitle {
+    margin-top: 6px;
+}
+
 QLabel#labelBalance,
 QLabel#labelUnconfirmed,
-QLabel#labelMinerHashrate,
+QLabel#labelMinerHashrateOrInterest,
 QLabel#labelTotal,
 QLabel#labelImmature,
-QLabel#labelEstNextReward {
+QLabel#labelEstNextRewardOrInflation,
+QLabel#labelblockRewardOrNetworkStaking {
     color: #46505A;
     font: 13pt "Lato";
     font-weight: bold;
@@ -405,6 +413,11 @@ QWidget#ReceiveCoinsDialog QTableView {
 }
 
 /** ReceiveRequestDialog **/
+
+/** Central color **/
+QDialog#ReceiveRequestDialog {
+    background-color: #1e6d8f;
+}
 QWidget#ReceiveRequestDialog QLabel#lblQRCode,
 QWidget#ReceiveRequestDialog QWidget#addressBox,
 QWidget#ReceiveRequestDialog QWidget#amountBox,
@@ -679,6 +692,13 @@ QPushButton#exportButtonTxView {
     margin-right: 9px;
 }
 
+QLabel#labelTotalWidget {
+    margin-top: 2px;
+    color: white;
+    font: 11pt "Lato";
+    font-weight: bold;
+}
+
 /** Send Coin **/
 QDialog#SendCoinsDialog QScrollArea#scrollArea,
 QDialog#SendCoinsDialog QFrame#frameFee,
@@ -799,9 +819,12 @@ QDialog#SendCoinsDialog QPushButton#clearButton:hover {
     background-color: #e61942;
 }
 
+QDialog#SendCoinsDialog  QCheckBox#checkboxSubtractFeeFromAmount {
+    margin-left: 10px;
+}
 
 /** SendCoin Bottom Balance **/
-QDialog#SendCoinsDialog QLabel#label {
+QDialog#SendCoinsDialog QLabel#labelBalanceName {
     margin-top: 2px;
     color: white;
     font: 11pt "Lato";
