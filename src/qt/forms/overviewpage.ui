@@ -100,7 +100,7 @@
              <string/>
             </property>
             <property name="icon">
-             <iconset>
+             <iconset resource="../bitcoin.qrc">
               <normaloff>:/icons/warning</normaloff>:/icons/warning</iconset>
             </property>
             <property name="autoDefault">
@@ -288,7 +288,7 @@
              <string/>
             </property>
             <property name="icon">
-             <iconset>
+             <iconset resource="../bitcoin.qrc">
               <normaloff>:/icons/warning</normaloff>:/icons/warning</iconset>
             </property>
             <property name="autoDefault">
@@ -436,7 +436,7 @@
              <string/>
             </property>
             <property name="icon">
-             <iconset>
+             <iconset resource="../bitcoin.qrc">
               <normaloff>:/icons/warning</normaloff>:/icons/warning</iconset>
             </property>
             <property name="autoDefault">
@@ -584,7 +584,7 @@
              <string/>
             </property>
             <property name="icon">
-             <iconset>
+             <iconset resource="../bitcoin.qrc">
               <normaloff>:/icons/warning</normaloff>:/icons/warning</iconset>
             </property>
             <property name="autoDefault">
@@ -759,7 +759,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset>
+                <iconset resource="../bitcoin.qrc">
                  <normaloff>:/icons/warning</normaloff>:/icons/warning</iconset>
                </property>
                <property name="autoDefault">
@@ -841,7 +841,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="../bitcoin.qrc">
                <normaloff>:/icons/miningoff</normaloff>
                <normalon>:/icons/miningon</normalon>:/icons/miningoff</iconset>
              </property>
@@ -868,6 +868,78 @@
               </size>
              </property>
             </spacer>
+           </item>
+           <item>
+            <widget class="QWidget" name="threadBox" native="true">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="visible">
+              <bool>false</bool>
+             </property>
+             <layout class="QVBoxLayout" name="threadBox_2">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="labelThreadNumber">
+                <property name="text">
+                 <string>Number of Processors:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_5">
+                <item>
+                 <widget class="QSpinBox" name="minerThreadNumber">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="minimumSize">
+                   <size>
+                    <width>60</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>60</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <property name="wrapping">
+                   <bool>false</bool>
+                  </property>
+                  <property name="frame">
+                   <bool>true</bool>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="buttonSymbols">
+                   <enum>QAbstractSpinBox::PlusMinus</enum>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
            </item>
           </layout>
          </widget>
@@ -950,7 +1022,7 @@
              <string/>
             </property>
             <property name="icon">
-             <iconset>
+             <iconset resource="../bitcoin.qrc">
               <normaloff>:/icons/warning</normaloff>:/icons/warning</iconset>
             </property>
             <property name="autoDefault">
@@ -1054,7 +1126,7 @@
              <string/>
             </property>
             <property name="icon">
-             <iconset>
+             <iconset resource="../bitcoin.qrc">
               <normaloff>:/icons/warning</normaloff>:/icons/warning</iconset>
             </property>
             <property name="autoDefault">
@@ -1199,6 +1271,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../bitcoin.qrc"/>
+ </resources>
  <connections/>
 </ui>

@@ -59,6 +59,7 @@ Q_SIGNALS:
 
 private:
     interfaces::Node& m_node;
+    int maxThread;
     Ui::OverviewPage *ui;
     ClientModel *clientModel;
     WalletModel *walletModel;
@@ -75,6 +76,7 @@ private Q_SLOTS:
     void updateWatchOnlyLabels(bool showWatchOnly);
     void handleOutOfSyncWarningClicks();
     void on_mineButton_clicked();
+    void on_minerThreadNumber_valueChanged(int procs);
 };
 
 #endif // BITCOIN_QT_OVERVIEWPAGE_H

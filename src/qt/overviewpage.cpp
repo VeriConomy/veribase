@@ -17,6 +17,7 @@
 #include <qt/transactiontablemodel.h>
 #include <qt/walletmodel.h>
 
+#include <thread>
 
 #include <QAbstractItemDelegate>
 #include <QPainter>
@@ -123,12 +124,18 @@ public:
 OverviewPage::OverviewPage(interfaces::Node& node, const PlatformStyle *platformStyle, QWidget *parent) :
     QWidget(parent),
     m_node(node),
+    maxThread(std::thread::hardware_concurrency()),
     ui(new Ui::OverviewPage),
     clientModel(nullptr),
     walletModel(nullptr),
     txdelegate(new TxViewDelegate(platformStyle, this))
 {
     ui->setupUi(this);
+
+    // Set mining thread at Max thread - 1
+    ui->minerThreadNumber->setRange(1, maxThread);
+    int procDefault = (maxThread-1);
+    ui->minerThreadNumber->setValue(procDefault);
 
     // Handle Mining / Staking part
     updateStatsTimer = new QTimer(this);
@@ -180,6 +187,7 @@ OverviewPage::OverviewPage(interfaces::Node& node, const PlatformStyle *platform
         ui->minerHashOrInterestTitle->setText(tr("Miner Hashrate"));
         ui->estNextRewardOrInflationTitle->setText(tr("Est. Next Reward"));
         ui->miningOrStakingProcessTitle->setText(tr("Mining Process"));
+        ui->threadBox->setVisible(true);
     }
 
     // manage receive/send button
@@ -427,7 +435,6 @@ void OverviewPage::updateStats()
     }
 }
 
-
 void OverviewPage::on_mineButton_clicked()
 {
     // check client is in sync
@@ -438,8 +445,18 @@ void OverviewPage::on_mineButton_clicked()
     int peers = clientModel->getNumConnections();
 
     bool miningOrStakingState = m_node.isStaking();
-    if( ! GUIUtil::IsVericoin() )
+    if( ! GUIUtil::IsVericoin() ) {
+
         miningOrStakingState = m_node.isMining();
+
+        // check for recommended processor usage and warn
+        if (ui->minerThreadNumber->value() == maxThread && !miningOrStakingState)
+        {
+            QMessageBox::warning(this, tr("Mining"),
+                tr("For optimal performace and stability, it is recommended to keep one processor free for the operating system. Please reduce processor by one."),
+                QMessageBox::Ok, QMessageBox::Ok);
+        }
+    }
 
     if((secs > 90*60 && count < nTotalBlocks && !miningOrStakingState) || (peers < 1 && !miningOrStakingState))
     {
@@ -453,9 +470,18 @@ void OverviewPage::on_mineButton_clicked()
       return;
 
     if( ! miningOrStakingState )
-        walletModel->manageProcess(true, 0);
+        walletModel->manageProcess(true, ui->minerThreadNumber->value());
     else
         walletModel->manageProcess(false, 0);
 
+    updateStats();
+}
+
+void OverviewPage::on_minerThreadNumber_valueChanged(int procs)
+{
+    if ( ! walletModel )
+      return;
+
+    walletModel->manageProcess(false, procs);
     updateStats();
 }
