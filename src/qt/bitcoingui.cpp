@@ -273,12 +273,12 @@ BitcoinGUI::BitcoinGUI(interfaces::Node& node, const PlatformStyle *_platformSty
 #endif
 
     // XXX: FOR DEVELOPMENT
-    //QString strPath(QCoreApplication::applicationDirPath() + "/res/vrc-style.qss");
-    //QFile f(strPath);
+    // QString strPath(QCoreApplication::applicationDirPath() + "/res/vrm-style.qss");
+    // QFile f(strPath);
 
     QFile f(":/vrmstyle");
     if( Params().IsVericoin() ) {
-        f.setFileName(":/vrcstyle");
+       f.setFileName(":/vrcstyle");
     }
 
     f.open(QFile::ReadOnly | QFile::Text);
@@ -753,7 +753,14 @@ void BitcoinGUI::setClientModel(ClientModel *_clientModel)
 
         updateProxyIcon();
 
+        bool currentNetworkState = m_node.getNetworkActive();
+        m_node.setNetworkActive(false);
+
         checkForUpdate();
+
+        checkForBootStrap();
+
+        m_node.setNetworkActive(currentNetworkState);
 
 #ifdef ENABLE_WALLET
         if(walletFrame)
@@ -995,7 +1002,7 @@ void BitcoinGUI::aboutClicked()
 
 // XXX: FOR DEVELOPMENT
 // void BitcoinGUI::refreshStyle() {
-//     QString strPath(QCoreApplication::applicationDirPath() + "/res/vrc-style.qss");
+//     QString strPath(QCoreApplication::applicationDirPath() + "/res/vrm-style.qss");
 //     QFile f(strPath);
 //     f.open(QFile::ReadOnly | QFile::Text);
 //     QTextStream ts(&f);
@@ -1109,6 +1116,25 @@ void BitcoinGUI::checkForUpdate()
     if( needUpdate ) {
         auto updatedialog = new UpdateDialog(this);
         updatedialog->exec();
+    }
+}
+
+void BitcoinGUI::checkForBootStrap()
+{
+    // show bootstrap if older than a week
+    QDateTime blockDate = QDateTime::fromTime_t(m_node.getLastBlockTime());
+    QDateTime currentDate = QDateTime::currentDateTime();
+
+    if( blockDate.secsTo(currentDate) > 60 * 60 * 24 * 60 ) {
+
+        QMessageBox bootstrapSuggestion;
+        bootstrapSuggestion.setWindowTitle(tr("Old chain detected"));
+        bootstrapSuggestion.setText(tr("Your chain seems to be way behind by at least a year.\n\nYou can download the blockchain from the Vericonomy servers to speed up the sync !"));
+        bootstrapSuggestion.setIcon(QMessageBox::Information);
+        bootstrapSuggestion.exec();
+
+        auto bootstrapDialog = new BootstrapDialog(this);
+        bootstrapDialog->exec();
     }
 }
 

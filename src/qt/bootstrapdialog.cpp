@@ -64,8 +64,11 @@ void BootstrapDialog::on_closeButton_clicked()
 
 void BootstrapDialog::setProgress(int now)
 {
-    if ( now > 100 )
+    if ( now >= 100 ) {
         now = 100;
+        ui->progressBar->setVisible(false);
+        ui->unzip->setVisible(true);
+    }
 
     ui->progressBar->setRange(0, 100);
     ui->progressBar->setValue(now);

@@ -199,6 +199,9 @@ private:
     /** Connect core signals to GUI client */
     void subscribeToCoreSignals();
 
+    /** Check for bootstrap if required */
+    void checkForBootStrap();
+
     /** Check for new update */
     void checkForUpdate();
 

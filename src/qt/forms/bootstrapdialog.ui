@@ -29,7 +29,7 @@
   <widget class="QProgressBar" name="progressBar">
    <property name="geometry">
     <rect>
-     <x>33</x>
+     <x>30</x>
      <y>70</y>
      <width>411</width>
      <height>41</height>
@@ -69,6 +69,30 @@
    </property>
    <property name="text">
     <string>Close</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="unzip">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>70</y>
+     <width>411</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Extracting the Bootstrap...</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
    </property>
   </widget>
  </widget>
