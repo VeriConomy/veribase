@@ -8,15 +8,15 @@ define(_CLIENT_VERSION_IS_RELEASE, false)
 define(_COPYRIGHT_YEAR, 2020)
 define(_COPYRIGHT_HOLDERS,[The %s developers])
 define(_COPYRIGHT_HOLDERS_SUBSTITUTION,[[Vericonomy Core]])
-AC_INIT([verium],m4_join([.], _CLIENT_VERSION_MAJOR, _CLIENT_VERSION_MINOR, _CLIENT_VERSION_REVISION, m4_if(_CLIENT_VERSION_BUILD, [0], [], _CLIENT_VERSION_BUILD))m4_if(_CLIENT_VERSION_RC, [0], [], [rc]_CLIENT_VERSION_RC),[https://github.com/VeriConomy/veribase/issues],[verium],[https://vericonomy.com/])
+AC_INIT([Verium],m4_join([.], _CLIENT_VERSION_MAJOR, _CLIENT_VERSION_MINOR, _CLIENT_VERSION_REVISION, m4_if(_CLIENT_VERSION_BUILD, [0], [], _CLIENT_VERSION_BUILD))m4_if(_CLIENT_VERSION_RC, [0], [], [rc]_CLIENT_VERSION_RC),[https://github.com/VeriConomy/veribase/issues],[Verium],[https://vericonomy.com/])
 AC_CONFIG_SRCDIR([src/validation.cpp])
 AC_CONFIG_HEADERS([src/config/bitcoin-config.h])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([build-aux/m4])
 AM_PROG_AS
 
-AC_PACKAGE_NAME=vericoin
-PACKAGE_NAME=vericoin
+AC_PACKAGE_NAME=Vericoin
+PACKAGE_NAME=Vericoin
 BITCOIN_DAEMON_NAME=vericoind
 BITCOIN_GUI_NAME=vericoin-qt
 BITCOIN_CLI_NAME=vericoin-cli
@@ -32,8 +32,8 @@ if test "x$client_is_verium" = xyes; then
   BITCOIN_CLI_NAME=verium-cli
   BITCOIN_TX_NAME=verium-tx
   BITCOIN_WALLET_TOOL_NAME=vericoin-wallet
-  AC_PACKAGE_NAME=verium
-  PACKAGE_NAME=verium
+  AC_PACKAGE_NAME=Verium
+  PACKAGE_NAME=Verium
 fi
 AM_CONDITIONAL([CLIENT_IS_VERIUM],[test x$client_is_verium = xyes])
 

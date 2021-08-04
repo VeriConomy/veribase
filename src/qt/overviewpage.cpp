@@ -141,7 +141,7 @@ OverviewPage::OverviewPage(interfaces::Node& node, const PlatformStyle *platform
     updateStatsTimer = new QTimer(this);
     connect(updateStatsTimer, &QTimer::timeout, this, &OverviewPage::updateStats);
     updateStats();
-    updateStatsTimer->start(5000);
+    updateStatsTimer->start(10000);
 
     for (int i = 0; i < ui->topBoxes->count(); ++i)
     {
@@ -413,7 +413,7 @@ void OverviewPage::updateStats()
             double minerate;
             if (totalhashrate == 0.0){minerate = 0.0;}
             else{
-                minerate = 0.694*(nethashrate*blocktime)/(totalhashrate);  //((100/((totalhashrate_Hpm/(nethashrate_kHpm*1000))*100))*blocktime_min)/60*24
+                minerate = 0.694*(nethashrate*blocktime)/(totalhashrate);
             }
 
             ui->labelMinerHashrateOrInterest->setText(QString("%1 H/m").arg(QString::number(totalhashrate, 'f', 3)));

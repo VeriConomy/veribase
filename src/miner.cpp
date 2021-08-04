@@ -818,7 +818,7 @@ static bool ProcessBlockFound(const CBlock* pblock, const CChainParams& chainpar
 
 void Staker(std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* mempool)
 {
-    SetThreadPriority(THREAD_PRIORITY_LOWEST);
+    SetThreadPriority(THREAD_PRIORITY_ABOVE_NORMAL);
     util::ThreadRename("vericoin-staking");
 
     // Each thread has it's own nonce

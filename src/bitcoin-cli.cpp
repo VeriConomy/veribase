@@ -111,13 +111,14 @@ static int AppInitRPC(int argc, char* argv[])
         return EXIT_FAILURE;
     }
     if (argc < 2 || HelpRequested(gArgs) || gArgs.IsArgSet("-version")) {
+        std::string lowerAppName = ToLower(PACKAGE_NAME);
         std::string strUsage = PACKAGE_NAME " RPC client version " + FormatFullVersion() + "\n";
         if (!gArgs.IsArgSet("-version")) {
             strUsage += "\n"
-                "Usage:  " PACKAGE_NAME "-cli [options] <command> [params]  Send command to " PACKAGE_NAME "\n"
-                "or:     " PACKAGE_NAME "-cli [options] -named <command> [name=value]...  Send command to " PACKAGE_NAME " (with named arguments)\n"
-                "or:     " PACKAGE_NAME "-cli [options] help                List commands\n"
-                "or:     " PACKAGE_NAME "-cli [options] help <command>      Get help for a command\n";
+                "Usage:  " + lowerAppName + "-cli [options] <command> [params]  Send command to " PACKAGE_NAME "\n"
+                "or:     " + lowerAppName + "-cli [options] -named <command> [name=value]...  Send command to " PACKAGE_NAME " (with named arguments)\n"
+                "or:     " + lowerAppName + "-cli [options] help                List commands\n"
+                "or:     " + lowerAppName + "-cli [options] help <command>      Get help for a command\n";
             strUsage += "\n" + gArgs.GetHelpMessage();
         }
 

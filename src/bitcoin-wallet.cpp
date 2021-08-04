@@ -40,12 +40,13 @@ static bool WalletAppInit(int argc, char* argv[])
         return false;
     }
     if (argc < 2 || HelpRequested(gArgs)) {
-        std::string usage = strprintf("%s %s-wallet version", PACKAGE_NAME, PACKAGE_NAME) + " " + FormatFullVersion() + "\n\n" +
-                                      PACKAGE_NAME + "-wallet is an offline tool for creating and interacting with " + PACKAGE_NAME + " wallet files.\n" +
-                                      "By default " + PACKAGE_NAME + "-wallet will act on wallets in the default mainnet wallet directory in the datadir.\n" +
+        std::string lowerAppName = ToLower(PACKAGE_NAME);
+        std::string usage = strprintf("%s %s-wallet version", PACKAGE_NAME, lowerAppName) + " " + FormatFullVersion() + "\n\n" +
+                                      lowerAppName + "-wallet is an offline tool for creating and interacting with " + PACKAGE_NAME + " wallet files.\n" +
+                                      "By default " + lowerAppName + "-wallet will act on wallets in the default mainnet wallet directory in the datadir.\n" +
                                       "To change the target wallet, use the -datadir, -wallet and -testnet/-regtest arguments.\n\n" +
                                       "Usage:\n" +
-                                     "  " + PACKAGE_NAME + "-wallet [options] <command>\n\n" +
+                                     "  " + lowerAppName + "-wallet [options] <command>\n\n" +
                                      gArgs.GetHelpMessage();
 
         tfm::format(std::cout, "%s", usage);
