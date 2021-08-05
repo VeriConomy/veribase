@@ -23,6 +23,9 @@
 /* Build revision */
 #define CLIENT_VERSION_REVISION 2
 
+/* Build for Verium */
+#define CLIENT_IS_VERIUM 0
+
 /* Copyright holder(s) before %s replacement */
 #define COPYRIGHT_HOLDERS "The %s developers"
 

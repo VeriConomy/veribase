@@ -5,6 +5,7 @@
 
 #include <key.h>
 
+#include <clientversion.h>
 #include <crypto/common.h>
 #include <crypto/hmac_sha512.h>
 #include <random.h>
@@ -235,9 +236,9 @@ bool CKey::VerifyPubKey(const CPubKey& pubkey) const {
     }
     unsigned char rnd[8];
     std::string str = "Vericoin key verification\n";
-#if CLIENT_IS_VERIUM
-    str = "Verium key verification\n";
-#endif
+    if( IsVerium() )
+        str = "Verium key verification\n";
+
     GetRandBytes(rnd, sizeof(rnd));
     uint256 hash;
     CHash256().Write((unsigned char*)str.data(), str.size()).Write(rnd, sizeof(rnd)).Finalize(hash.begin());

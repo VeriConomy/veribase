@@ -1,6 +1,10 @@
 #ifndef BITCOIN_CRYPTO_SCRYPT_H
 #define BITCOIN_CRYPTO_SCRYPT_H
 
+#if defined(HAVE_CONFIG_H)
+#include <config/bitcoin-config.h>
+#endif
+
 #include "uint256.h"
 #include "compat/byteswap.h"
 #include "util/strencodings.h"

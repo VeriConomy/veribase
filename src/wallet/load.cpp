@@ -41,11 +41,9 @@ bool VerifyWallets(interfaces::Chain& chain, const std::vector<std::string>& wal
 
         LogPrintf("No wallet found, trying to copy one from a previous version...\n");
 
-#if CLIENT_IS_VERIUM
-        fs::path oldWalletPath = GetDataPathForAppName("verium");
-#else
         fs::path oldWalletPath = GetDataPathForAppName("vericoin");
-#endif
+        if( IsVerium() )
+            oldWalletPath = GetDataPathForAppName("verium");
 
         std::string oldWalletDatPath = strprintf("%s/%s", oldWalletPath.string(), "wallet.dat");
         if ( boost::filesystem::exists(oldWalletDatPath) ) {

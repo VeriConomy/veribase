@@ -6,6 +6,10 @@
 #ifndef BITCOIN_NET_H
 #define BITCOIN_NET_H
 
+#if defined(HAVE_CONFIG_H)
+#include <config/bitcoin-config.h>
+#endif
+
 #include <addrdb.h>
 #include <addrman.h>
 #include <amount.h>

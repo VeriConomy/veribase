@@ -322,7 +322,7 @@ public:
     double getCurrentInflationRate() override
     {
         LOCK(::cs_main);
-        return GetCurrentInflationRate(GetAverageStakeWeight(::ChainActive().Tip()->pprev));
+        return GetCurrentInflationRate(GetAverageStakeWeight(::ChainActive().Tip()));
     }
 
     double getNetworkStakeWeight() override
@@ -334,13 +334,13 @@ public:
     double getBlockReward() override
     {
         LOCK(::cs_main);
-        return GetProofOfWorkReward(0,::ChainActive().Tip()->pprev);
+        return GetProofOfWorkReward(0,::ChainActive().Tip());
     }
 
     double getBlockTime() override
     {
         LOCK(::cs_main);
-        return CalculateBlocktime(::ChainActive().Tip()->pprev);
+        return CalculateBlocktime(::ChainActive().Tip());
     }
 
     double getHashRate() override

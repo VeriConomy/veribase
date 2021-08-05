@@ -6,6 +6,7 @@
 #include <util/system.h>
 
 #include <chainparamsbase.h>
+#include <clientversion.h>
 #include <util/strencodings.h>
 #include <util/string.h>
 #include <util/translation.h>
@@ -889,11 +890,11 @@ std::string ArgsManager::GetChainName() const
         return CBaseChainParams::VERICOIN;
     if (fVerium)
         return CBaseChainParams::VERIUM;
-#if CLIENT_IS_VERIUM
-    return GetArg("-chain", CBaseChainParams::VERIUM);
-#else
-    return GetArg("-chain", CBaseChainParams::VERICOIN);
-#endif
+
+    if( IsVerium() )
+        return GetArg("-chain", CBaseChainParams::VERIUM);
+    else
+        return GetArg("-chain", CBaseChainParams::VERICOIN);
 }
 
 bool ArgsManager::UseDefaultSection(const std::string& arg) const

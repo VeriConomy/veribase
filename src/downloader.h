@@ -1,6 +1,10 @@
 #ifndef BITCOIN_DOWNLOADER_H
 #define BITCOIN_DOWNLOADER_H
 
+#if defined(HAVE_CONFIG_H)
+#include <config/bitcoin-config.h>
+#endif
+
 #include <string>
 
 #if defined(__arm__) || defined(__aarch64__)
@@ -11,11 +15,8 @@ const std::string BOOTSTRAP_PATH("/bootstrap/bootstrap.zip");
 
 const std::string VERSIONFILE_PATH("/VERSION.json");
 
-#if CLIENT_IS_VERIUM
-const std::string CLIENT_URL("https://files.vericonomy.com/vrm");
-#else
-const std::string CLIENT_URL("https://files.vericonomy.com/vrc");
-#endif
+const std::string CLIENT_URL_VRM("https://files.vericonomy.com/vrm");
+const std::string CLIENT_URL_VRC("https://files.vericonomy.com/vrc");
 
 void downloadBootstrap();
 void applyBootstrap();

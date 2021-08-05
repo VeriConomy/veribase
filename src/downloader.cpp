@@ -37,6 +37,13 @@ void set_xferinfo_data(void* d)
     xferinfo_data = d;
 }
 
+std::string getClientUrl() {
+    if( IsVerium() )
+        return CLIENT_URL_VRM;
+    else
+        return CLIENT_URL_VRC;
+}
+
 void downloadFile(std::string url, const fs::path& target_file_path) {
 
     LogPrintf("Download: Downloading from %s. \n", url);
@@ -150,7 +157,7 @@ void downloadBootstrap() {
     boost::filesystem::path pathBootstrapZip = GetDataDir() / "bootstrap.zip";
 
     try {
-        downloadFile(strprintf("%s/%d.%d%s", CLIENT_URL, CLIENT_VERSION_MAJOR, CLIENT_VERSION_MINOR, BOOTSTRAP_PATH), pathBootstrapZip);
+        downloadFile(strprintf("%s/%d.%d%s", getClientUrl(), CLIENT_VERSION_MAJOR, CLIENT_VERSION_MINOR, BOOTSTRAP_PATH), pathBootstrapZip);
     } catch (...) {
         throw;
     }
@@ -181,7 +188,7 @@ void downloadVersionFile() {
     boost::filesystem::path pathVersionFile = GetDataDir() / "VERSION.json";
 
     try {
-        downloadFile(strprintf("%s/%d.%d/releases/%s%s", CLIENT_URL,
+        downloadFile(strprintf("%s/%d.%d/releases/%s%s", getClientUrl(),
             CLIENT_VERSION_MAJOR, CLIENT_VERSION_MINOR,
             FormatVersion(CLIENT_VERSION),
             VERSIONFILE_PATH), pathVersionFile
@@ -199,7 +206,7 @@ void downloadClient(std::string fileName) {
     boost::filesystem::path pathClientFile = GetDataDir() / fileName;
 
     try {
-        downloadFile(strprintf("%s/%d.%d/releases/%s", CLIENT_URL, CLIENT_VERSION_MAJOR, CLIENT_VERSION_MINOR, fileName), pathClientFile);
+        downloadFile(strprintf("%s/%d.%d/releases/%s", getClientUrl(), CLIENT_VERSION_MAJOR, CLIENT_VERSION_MINOR, fileName), pathClientFile);
     } catch (...) {
         throw;
     }

@@ -35,7 +35,6 @@ if test "x$client_is_verium" = xyes; then
   AC_PACKAGE_NAME=Verium
   PACKAGE_NAME=Verium
 fi
-AM_CONDITIONAL([CLIENT_IS_VERIUM],[test x$client_is_verium = xyes])
 
 dnl Unless the user specified ARFLAGS, force it to be cr
 AC_ARG_VAR(ARFLAGS, [Flags for the archiver, defaults to <cr> if not set])
@@ -1547,6 +1546,12 @@ if test x$build_bitcoin_wallet$build_bitcoin_cli$build_bitcoin_tx$build_bitcoin_
   AC_MSG_ERROR([No targets! Please specify at least one of: --with-utils --with-libs --with-daemon --with-gui --enable-bench or --enable-tests])
 fi
 
+if test x$client_is_verium != xno; then
+    AC_DEFINE_UNQUOTED([CLIENT_IS_VERIUM],[1],[Define to 1 to select verium])
+else
+    AC_DEFINE_UNQUOTED([CLIENT_IS_VERIUM],[0],[Define to 1 to select verium])
+fi
+
 AM_CONDITIONAL([TARGET_DARWIN], [test x$TARGET_OS = xdarwin])
 AM_CONDITIONAL([BUILD_DARWIN], [test x$BUILD_OS = xdarwin])
 AM_CONDITIONAL([TARGET_WINDOWS], [test x$TARGET_OS = xwindows])
@@ -1567,6 +1572,7 @@ AM_CONDITIONAL([ENABLE_SHANI],[test x$enable_shani = xyes])
 AM_CONDITIONAL([ENABLE_ARM_CRC],[test x$enable_arm_crc = xyes])
 AM_CONDITIONAL([USE_ASM],[test x$use_asm = xyes])
 AM_CONDITIONAL([WORDS_BIGENDIAN],[test x$ac_cv_c_bigendian = xyes])
+AM_CONDITIONAL([CLIENT_IS_VERIUM],[test x$client_is_verium = xyes])
 
 AC_DEFINE(CLIENT_VERSION_MAJOR, _CLIENT_VERSION_MAJOR, [Major version])
 AC_DEFINE(CLIENT_VERSION_MINOR, _CLIENT_VERSION_MINOR, [Minor version])

@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <clientversion.h>
 #include <primitives/block.h>
 
 #include <crypto/scrypt.h>
@@ -11,11 +12,11 @@
 
 uint256 CBlockHeader::GetHash() const
 {
-#if CLIENT_IS_VERIUM
-    return this->GetVeriumHash();
-#else
-    return this->GetWorkHash();
-#endif
+    if(IsVerium())
+        return this->GetVeriumHash();
+    else
+        return this->GetWorkHash();
+
 }
 
 uint256 CBlockHeader::GetVeriumHash() const

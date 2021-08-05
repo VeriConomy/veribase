@@ -6,6 +6,10 @@
 #ifndef BITCOIN_INIT_H
 #define BITCOIN_INIT_H
 
+#if defined(HAVE_CONFIG_H)
+#include <config/bitcoin-config.h>
+#endif
+
 #include <memory>
 #include <string>
 #include <util/system.h>
