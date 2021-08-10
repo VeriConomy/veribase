@@ -111,6 +111,10 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     coinbaseTx.vin[0].prevout.SetNull();
     coinbaseTx.vout.resize(1);
     coinbaseTx.vout[0].scriptPubKey = scriptPubKeyIn;
+    coinbaseTx.vin[0].scriptSig = CScript() << nHeight << OP_0;
+
+    if( ! fPos )
+        coinbaseTx.vout[0].nValue = GetProofOfWorkReward(nFees, pindexPrev);
 
     // Add dummy coinbase tx as first transaction
     pblock->vtx.emplace_back();
@@ -184,12 +188,9 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     m_last_block_num_txs = nBlockTx;
     m_last_block_weight = nBlockWeight;
 
-    coinbaseTx.vin[0].scriptSig = CScript() << nHeight << OP_0;
     pblock->vtx[0] = MakeTransactionRef(std::move(coinbaseTx));
     pblocktemplate->vTxFees[0] = -nFees;
 
-    if( ! fPos )
-        coinbaseTx.vout[0].nValue = GetProofOfWorkReward(nFees, pindexPrev);
 
     LogPrintf("CreateNewBlock(): block weight: %u txs: %u fees: %ld sigops %d\n", GetBlockWeight(*pblock), nBlockTx, nFees, nBlockSigOpsCost);
 

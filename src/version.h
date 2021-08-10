@@ -5,6 +5,10 @@
 #ifndef BITCOIN_VERSION_H
 #define BITCOIN_VERSION_H
 
+#if defined(HAVE_CONFIG_H)
+#include <config/bitcoin-config.h>
+#endif
+
 /**
  * network protocol versioning
  */
@@ -18,7 +22,11 @@ static const int INIT_PROTO_VERSION = 70012;
 static const int GETHEADERS_VERSION = 31800;
 
 //! disconnect from peers older than this proto version
+#if CLIENT_IS_VERIUM
+static const int MIN_PEER_PROTO_VERSION = 80004;
+#else
 static const int MIN_PEER_PROTO_VERSION = 70012;
+#endif
 
 //! nTime field added to CAddress, starting with this version;
 //! if possible, avoid requesting addresses nodes older than this

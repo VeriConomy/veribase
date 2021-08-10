@@ -619,13 +619,23 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
     aMutable.push_back("transactions");
     aMutable.push_back("prevblock");
 
+    // to permit most famous cpuminer to work
+    if( !Params().IsVericoin() )
+        aMutable.push_back("version/force");
+
     UniValue result(UniValue::VOBJ);
     result.pushKV("capabilities", aCaps);
 
     UniValue aRules(UniValue::VARR);
     aRules.push_back("csv");
     aRules.push_back("!segwit");
-    result.pushKV("version", pblock->nVersion); // XXX: We Could do a little hack to keep veriumMiner working
+
+    // to permit most famous cpuminer to work
+    if( Params().IsVericoin() )
+        result.pushKV("version", pblock->nVersion);
+    else
+        result.pushKV("version", 3);
+
     result.pushKV("rules", aRules);
 
     result.pushKV("previousblockhash", pblock->hashPrevBlock.GetHex());

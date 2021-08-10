@@ -190,7 +190,7 @@ public:
         strNetworkID = CBaseChainParams::VERIUM;
         strCoinName = "Verium";
         strCurrencyName = "VRM";
-        consensus.BIP34Height = 1;
+        consensus.BIP34Height = 600000;
         consensus.BIP65Height = 600000; // 00000000007f6655f22f98e72ed80d8b06dc761d5da09df0fa1dc4be4f861eb6
         consensus.BIP66Height = 600000; // 000000002104c8c45e99a8853285a3b592602a3ccde2b832481da85e9e4ba182
         consensus.CSVHeight = 600000; // 00000000025e930139bac5c6c31a403776da130831ab85be56578f3fa75369bb
@@ -216,8 +216,8 @@ public:
         consensus.nModifierInterval = 0; // No use for verium
         consensus.nTargetTimespan = 0;
 
-        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000000000");
-        consensus.defaultAssumeValid = uint256S("0x0000000000000000000000000000000000000000000000000000000000000000"); // 654683
+        consensus.nMinimumChainWork = uint256S("00000000000000000000000000000000000000000000000000000caa7ae09617"); // 550000
+        consensus.defaultAssumeValid = uint256S("cf444659c13aa06daae3cb6cbd697780a355e10b6a4d758ace78660bfd91ea61"); // 550000
 
         consensus.fIsVericoin = false;
 
@@ -263,14 +263,16 @@ public:
                 {     1, uint256S("0x3f2566fc0abcc9b2e26c737d905ff3e639a49d44cd5d11d260df3cfb62663012")},
                 {  1500, uint256S("0x0458cc7c7093cea6e78eed03a8f57d0eed200aaf5171eea82e63b8e643891cce")},
                 {100000, uint256S("0x0510c6cb8c5a2a5437fb893853f10e298654361a05cf611b1c54c1750dfbdad6")},
+                {100000, uint256S("0x0510c6cb8c5a2a5437fb893853f10e298654361a05cf611b1c54c1750dfbdad6")},
+                {550000, uint256S("0xcf444659c13aa06daae3cb6cbd697780a355e10b6a4d758ace78660bfd91ea61")},
             }
         };
 
         chainTxData = ChainTxData{
-            // Data from RPC: getchaintxstats 4096 00000000000000b7ab6ce61eb6d571003fbe5fe892da4c9b740c49a07542462d
-            /* nTime    */ 1499513240,
-            /* nTxCount */ 1499513240,
-            /* dTxRate  */ 0.0013,
+            // Data from RPC: getchaintxstats 4096 68d9229ed462cd1f2e7f87151f5eaf53b59b6a662e179ed0144dfe7966270ed0
+            /* nTime    */ 1628620987,
+            /* nTxCount */ 728227,
+            /* dTxRate  */ 0.003821978324894454,
         };
     }
 };
