@@ -1426,15 +1426,12 @@ bool AppInitMain(NodeContext& node)
     LogPrintf("* Using %.1f MiB for chain state database\n", nCoinDBCache * (1.0 / 1024 / 1024));
     LogPrintf("* Using %.1f MiB for in-memory UTXO set (plus up to %.1f MiB of unused mempool space)\n", nCoinCacheUsage * (1.0 / 1024 / 1024), nMempoolSizeMax * (1.0 / 1024 / 1024));
 
-    //bool fUseFastIndex = gArgs.GetBoolArg("-fastindex", true);
-
     bool fLoaded = false;
     while (!fLoaded && !ShutdownRequested()) {
         bool fReset = fReindex;
         std::string strLoadError;
 
         uiInterface.InitMessage(_("Loading block index...").translated);
-        LogPrintf("Loading block index...\n");
         do {
             const int64_t load_block_index_start_time = GetTimeMillis();
             bool is_coinsview_empty;

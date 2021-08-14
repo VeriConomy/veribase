@@ -119,8 +119,12 @@ static const unsigned int BLOCK_DOWNLOAD_WINDOW = 1024;
 static const unsigned int DATABASE_WRITE_INTERVAL = 60 * 60;
 /** Time to wait (in seconds) between flushing chainstate to disk. */
 static const unsigned int DATABASE_FLUSH_INTERVAL = 24 * 60 * 60;
-/** Block download timeout base, expressed in millionths of the block interval (i.e. 10 min) */
-static const int64_t BLOCK_DOWNLOAD_TIMEOUT_BASE = 1000000;
+/** Block download timeout base, expressed in millionths of the block interval (i.e. 5 min) */
+#if CLIENT_IS_VERIUM
+static const int64_t BLOCK_DOWNLOAD_TIMEOUT_BASE = 500000;
+#else
+static const int64_t BLOCK_DOWNLOAD_TIMEOUT_BASE = 30000;
+#endif
 /** Additional block download timeout per parallel downloading peer (i.e. 5 min) */
 static const int64_t BLOCK_DOWNLOAD_TIMEOUT_PER_PEER = 500000;
 
@@ -162,6 +166,8 @@ struct BlockHasher
     size_t operator()(const uint256& hash) const { return ReadLE64(hash.begin()); }
 };
 
+extern CScript COINBASE_FLAGS;
+
 /** If false, override the minRelayTxfee when fee change **/
 extern bool fEnforceMinRelayTxFee;
 extern RecursiveMutex cs_main;
@@ -201,11 +207,11 @@ static const unsigned int MIN_BLOCKS_TO_KEEP = 288;
 static const unsigned int NODE_NETWORK_LIMITED_MIN_BLOCKS = 288;
 
 #if CLIENT_IS_VERIUM
-static const signed int DEFAULT_CHECKBLOCKS = 6;
+static const signed int DEFAULT_CHECKBLOCKS = 20;
 static const unsigned int DEFAULT_CHECKLEVEL = 3;
 #else
 static const signed int DEFAULT_CHECKBLOCKS = 10;
-static const unsigned int DEFAULT_CHECKLEVEL = 1;
+static const unsigned int DEFAULT_CHECKLEVEL = 3;
 #endif
 
 // Require that user allocate at least 550 MiB for block & undo files (blk???.dat and rev???.dat)
@@ -794,6 +800,11 @@ extern std::unique_ptr<CBlockTreeDB> pblocktree;
  * This is also true for mempool checks.
  */
 int GetSpendHeight(const CCoinsViewCache& inputs);
+
+/**
+ * Determine what nVersion a new block should use.
+ */
+int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Params& params);
 
 /** Get block file info entry for one block file */
 CBlockFileInfo* GetBlockFileInfo(size_t n);

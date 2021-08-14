@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2018 The Bitcoin Core developers
+// Copyright (c) 2009-2017 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -21,12 +21,10 @@
 
 double GetDifficulty(const CBlockIndex* blockindex = nullptr);
 
-// Get next required mining work
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const Consensus::Params& params)
 {
     if (pindexLast->nHeight <= 2)
         return UintToArith256(params.powLimit).GetCompact(); // first few blocks
-
     const CBlockIndex* pindexPrev = pindexLast->pprev;
     const CBlockIndex* pindexPrevPrev = pindexPrev->pprev;
     unsigned int nTargetSpacing = CalculateBlocktime(pindexPrev);
@@ -34,11 +32,13 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const Consensus:
     int64_t targetTimespan;
 
     // Two hour target timespan on launch needed to prevent accelerated blocktime while difficulty first equilibrates
-    if (pindexLast->nHeight+1 <= 2394)
+    if (pindexLast->nHeight+1 <= 2394) {
         targetTimespan = 2 * 60 * 60;
-    // 48 hour normal target timespan with more stable difficulty equilibrium
-    else
+    }
+    else {
+        // 48 hour normal target timespan with more stable difficulty equilibrium
         targetTimespan = params.nPowTargetTimespan;
+    }
 
     // ppcoin: retarget with exponential moving toward target spacing (variable in Verium)
     CBigNum bnNew;
@@ -53,39 +53,27 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const Consensus:
     return bnNew.GetCompact();
 }
 
-
 // Check whether a block hash satisfies the proof-of-work requirement specified by nBits
 bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
-    bool fNegative;
-    bool fOverflow;
-    arith_uint256 bnTarget;
-
-    bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
+    CBigNum bnTarget;
+    bnTarget.SetCompact(nBits);
 
     // Check range
-    if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
-        return false;
+    if (bnTarget <= 0 || bnTarget > CBigNum(params.powLimit))
+        return error("CheckProofOfWork() : nBits below minimum work");
 
     // Check proof of work matches claimed amount
-    if (UintToArith256(hash) > bnTarget)
-        return false;
+    if (UintToArith256(hash) > UintToArith256(bnTarget.getuint256()))
+        return error("CheckProofOfWork() : hash doesn't match nBits");
 
     return true;
 }
 
-// Get reward amount for a solved work
-int64_t GetProofOfWorkReward(int64_t nFees,const CBlockIndex* pindex)
+CAmount calculateMinerReward(const CBlockIndex* pindex)
 {
     int64_t nReward;
-
-    if( IsVericoin() )
-    {
-        return (2500 * COIN) + nFees;
-    }
-
     unsigned int nBlockTime = CalculateBlocktime(pindex);
-
     int height = pindex->nHeight+1;
     if (height == 1)
     {
@@ -101,8 +89,19 @@ int64_t GetProofOfWorkReward(int64_t nFees,const CBlockIndex* pindex)
         double dReward = 0.25*exp(0.0116*nBlockTime); // Reward schedule up to 10x VRC supply parity
         nReward = dReward * COIN;
     }
+    return nReward;
+}
 
-    return nReward + nFees;
+// miner's coin base reward
+int64_t GetProofOfWorkReward(int64_t nFees,const CBlockIndex* pindex)
+{
+    if( IsVericoin() )
+    {
+        return (2500 * COIN) + nFees;
+    }
+
+    CAmount nSubsidy = calculateMinerReward(pindex);
+    return nSubsidy + nFees;
 }
 
 // Get block time

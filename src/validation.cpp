@@ -147,6 +147,8 @@ arith_uint256 nMinimumChainWork;
 
 CFeeRate minRelayTxFee;
 CTxMemPool mempool;
+/** Constant stuff for coinbase transactions we create: */
+CScript COINBASE_FLAGS;
 
 // Internal stuff
 namespace {
@@ -4661,6 +4663,11 @@ bool IsProofOfStake(const Consensus::Params& consensusParams, int nHeight)
     }
 
     return false;
+}
+
+int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Params& params)
+{
+    return CBlock::CURRENT_VERSION;
 }
 
 class CMainCleanup

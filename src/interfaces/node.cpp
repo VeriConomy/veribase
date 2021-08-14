@@ -315,43 +315,36 @@ public:
 
     double getCurrentInterestRate() override
     {
-        LOCK(::cs_main);
         return GetCurrentInterestRate(::ChainActive().Tip(), Params().GetConsensus());
     }
 
     double getCurrentInflationRate() override
     {
-        LOCK(::cs_main);
         return GetCurrentInflationRate(GetAverageStakeWeight(::ChainActive().Tip()));
     }
 
     double getNetworkStakeWeight() override
     {
-        LOCK(::cs_main);
         return GetPoSKernelPS();
     }
 
     double getBlockReward() override
     {
-        LOCK(::cs_main);
         return GetProofOfWorkReward(0,::ChainActive().Tip());
     }
 
     double getBlockTime() override
     {
-        LOCK(::cs_main);
         return CalculateBlocktime(::ChainActive().Tip());
     }
 
     double getHashRate() override
     {
-        LOCK(::cs_main);
         return GetHashRate();
     }
 
     double getPoWKHashPM() override
     {
-        LOCK(::cs_main);
         return GetPoWKHashPM(Params());
     }
 
