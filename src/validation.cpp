@@ -51,7 +51,7 @@
 #include <boost/thread.hpp>
 
 #if defined(NDEBUG)
-# error "Bitcoin cannot be compiled without assertions."
+# error "Vericonomy cannot be compiled without assertions."
 #endif
 
 #define MICRO 0.000001
@@ -670,6 +670,15 @@ bool MemPoolAccept::PreChecks(ATMPArgs& args, Workspace& ws)
     if (nSigOpsCost > MAX_STANDARD_TX_SIGOPS_COST)
         return state.Invalid(TxValidationResult::TX_NOT_STANDARD, "bad-txns-too-many-sigops",
                 strprintf("%d", nSigOpsCost));
+
+    // No transactions are allowed below minRelayTxFee except from disconnected
+    // blocks
+    if (!CheckFeeRate(nSize, nModifiedFees, state)) return false;
+
+    CAmount requiredFee = GetMinTxFeeRate().GetFee(nSize, true);
+    if( nFees < requiredFee)
+        return state.Invalid(TxValidationResult::TX_CONSENSUS, "bad-fee-amount",
+            strprintf("PreChecks(): %s not paying required fee=%s, paid=%s", tx.GetHash().ToString(), requiredFee, nFees));
 
     const CTxMemPool::setEntries setIterConflicting = m_pool.GetIterSet(setConflicts);
     // Calculate in-mempool ancestors, up to a limit.
@@ -1908,6 +1917,18 @@ bool CChainState::ConnectBlock(const CBlock& block, BlockValidationState& state,
                 return error("ConnectBlock(): CheckInputScripts on %s failed with %s",
                     tx.GetHash().ToString(), state.ToString());
             }
+
+            // Check TX Fee
+            if(fScriptChecks && !tx.IsCoinStake()) {
+                int64_t nTxValueIn = view.GetValueIn(tx);
+                int64_t nTxValueOut = tx.GetValueOut();
+
+                CAmount requiredFee = GetMinTxFeeRate(pindex->nHeight).GetFee(tx.GetTotalSize(), true);
+                if( (nTxValueIn - nTxValueOut) < requiredFee)
+                    return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "bad-fee-amount",
+                    strprintf("ConnectBlock(): %s not paying required fee=%s, paid=%s", tx.GetHash().ToString(), requiredFee, nTxValueIn - nTxValueOut));
+            }
+
             control.Add(vChecks);
         }
 
@@ -1930,7 +1951,6 @@ bool CChainState::ConnectBlock(const CBlock& block, BlockValidationState& state,
 
     if( block.IsProofOfStake())
     {
-
         if ( nStakeReward > GetProofOfStakeReward(nCoinAge, nFees, pindex->pprev, chainparams.GetConsensus() ))
             return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "bad-txns-coinstake-too-large");
     }
@@ -3089,7 +3109,6 @@ bool CheckBlock(const CBlock& block, BlockValidationState& state, const Consensu
         if (block.GetBlockTime() < (int64_t)tx->nTime)
             return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "bad-tx-time", strprintf("%s : block timestamp earlier than transaction timestamp", __func__));
     }
-
 
     unsigned int nSigOps = 0;
     for (const auto& tx : block.vtx)

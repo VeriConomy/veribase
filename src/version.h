@@ -54,6 +54,6 @@ static const int INVALID_CB_NO_BAN_VERSION = 80003;
 static const int POS_INFO_HEADERS_VERSION = 90000;
 
 //! Enable cmpct2
-static const int NET_CMPCT2_VERSION = 90001;
+static const int NET_CMPCT2_VERSION = 90000;
 
 #endif // BITCOIN_VERSION_H

@@ -620,19 +620,18 @@ void Miner(std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* memp
     if(!scratchbuf){memory = false;}
 
     // Each thread has it's own nonce
-    OutputType output_type = pwallet->m_default_change_type != OutputType::CHANGE_AUTO ? pwallet->m_default_change_type : pwallet->m_default_address_type;
+    OutputType output_type = OutputType::LEGACY;
     ReserveDestination reservedest(pwallet.get(), output_type);
 
     CTxDestination dest;
     bool ret = reservedest.GetReservedDestination(dest, true);
-    if (!ret){
+    if (!ret)
+    {
         fGenerateVerium = false;
         return;
     }
 
-    CScript scriptChange;
-    scriptChange = GetScriptForDestination(dest);
-
+    
     unsigned int nExtraNonce = 0;
     try
     {
@@ -662,11 +661,12 @@ void Miner(std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* memp
             // Create new block
             unsigned int nTransactionsUpdatedLast = mempool->GetTransactionsUpdated();
             CBlockIndex* pindexPrev = ::ChainActive().Tip();
+            CScript scriptPubKey = GetScriptForDestination(dest);
 
             std::unique_ptr<CBlockTemplate> pblocktemplate;
             try
             {
-                pblocktemplate = BlockAssembler(*mempool, Params()).CreateNewBlock(scriptChange, false, pwallet.get());
+                pblocktemplate = BlockAssembler(*mempool, Params()).CreateNewBlock(scriptPubKey, false, pwallet.get());
             }
             catch(std::runtime_error& e)
             {

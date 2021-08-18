@@ -91,7 +91,7 @@ static const unsigned int BLOCKFILE_CHUNK_SIZE = 0x1000000; // 16 MiB
 static const unsigned int UNDOFILE_CHUNK_SIZE = 0x100000; // 1 MiB
 
 /** Maximum number of dedicated script-checking threads allowed */
-static const int MAX_SCRIPTCHECK_THREADS = 15;
+static const int MAX_SCRIPTCHECK_THREADS = 16;
 /** -par default (number of script-checking threads, 0 = auto) */
 static const int DEFAULT_SCRIPTCHECK_THREADS = 0;
 /** Number of blocks that can be requested at any given time from a single peer. */
@@ -149,14 +149,6 @@ static const int MAX_UNCONNECTING_HEADERS = 10;
 
 /** Default for -stopatheight */
 static const int DEFAULT_STOPATHEIGHT = 0;
-
-/**
- * Compute minimum transaction fee by KB base on the current block height
- * Implement VIP1
- */
-unsigned int GetMinTxFee(int nBlockHeight = 0);
-CFeeRate GetMinTxFeeRate(int nBlockHeight = 0);
-CFeeRate GetMinRelayTxFeeRate();
 
 struct BlockHasher
 {
@@ -223,6 +215,14 @@ static const unsigned int DEFAULT_CHECKLEVEL = 3;
 // one 128MB block file + added 15% undo data = 147MB greater for a total of 545MB
 // Setting the target to >= 550 MiB will make it likely we can respect the target.
 static const uint64_t MIN_DISK_SPACE_FOR_BLOCK_FILES = 550 * 1024 * 1024;
+
+/**
+ * Compute minimum transaction fee by KB base on the current block height
+ * Implement VIP1
+ */
+unsigned int GetMinTxFee(int nBlockHeight = 0);
+CFeeRate GetMinTxFeeRate(int nBlockHeight = 0);
+CFeeRate GetMinRelayTxFeeRate();
 
 /**
  * Process an incoming block. This only returns after the best known valid
