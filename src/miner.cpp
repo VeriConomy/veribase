@@ -620,7 +620,7 @@ void Miner(std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* memp
     if(!scratchbuf){memory = false;}
 
     // Each thread has it's own nonce
-    OutputType output_type = OutputType::LEGACY;
+    OutputType output_type = pwallet->m_default_change_type != OutputType::CHANGE_AUTO ? pwallet->m_default_change_type : pwallet->m_default_address_type;
     ReserveDestination reservedest(pwallet.get(), output_type);
 
     CTxDestination dest;
@@ -631,7 +631,6 @@ void Miner(std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* memp
         return;
     }
 
-    
     unsigned int nExtraNonce = 0;
     try
     {
@@ -705,6 +704,7 @@ void Miner(std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* memp
                         // Found a solution
                         SetThreadPriority(THREAD_PRIORITY_NORMAL);
                         CheckWork(pblock);
+                        reservedest.KeepDestination();
                         SetThreadPriority(THREAD_PRIORITY_LOWEST);
                     }
                     nHashesDone += nHashes;
@@ -731,7 +731,7 @@ void Miner(std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* memp
                             nHPSTimerStart = GetTimeMillis();
                             nHashCounter = 0;
                             updateHashrate(dHashesPerMin);
-                            LogPrintf("Total local hashrate: %6.0f hashes/min\n", hashrate);
+                            LogPrintf("Total local hashrate: %6.0f H/m\n", hashrate);
                         }
                     }
                 }

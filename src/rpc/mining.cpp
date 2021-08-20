@@ -694,49 +694,66 @@ static UniValue submitblock(const JSONRPCRequest& request)
                 },
             }.Check(request);
 
+    LogPrintf("1\n");
     std::shared_ptr<CBlock> blockptr = std::make_shared<CBlock>();
     CBlock& block = *blockptr;
     if (!DecodeHexBlk(block, request.params[0].get_str())) {
+        LogPrintf("Fail to deserialize !!!");
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Block decode failed");
     }
+        LogPrintf("2\n");
 
     if (block.vtx.empty() || !block.vtx[0]->IsCoinBase()) {
+        LogPrintf("Block does not start with coinbase");
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Block does not start with a coinbase");
     }
 
+
+    LogPrintf("3\n");
     uint256 hash = block.GetHash();
     {
+    LogPrintf("4\n");
         LOCK(cs_main);
         const CBlockIndex* pindex = LookupBlockIndex(hash);
+    LogPrintf("5\n");
         if (pindex) {
+    LogPrintf("6\n");
             if (pindex->IsValid(BLOCK_VALID_SCRIPTS)) {
                 return "duplicate";
             }
+    LogPrintf("7\n");
             if (pindex->nStatus & BLOCK_FAILED_MASK) {
                 return "duplicate-invalid";
             }
         }
     }
-
+    LogPrintf("8\n");
     {
         LOCK(cs_main);
         const CBlockIndex* pindex = LookupBlockIndex(block.hashPrevBlock);
+    LogPrintf("9\n");
         if (pindex) {
+    LogPrintf("10\n");
             UpdateUncommittedBlockStructures(block, pindex, Params().GetConsensus());
         }
     }
+    LogPrintf("11\n");
 
     bool new_block;
     auto sc = std::make_shared<submitblock_StateCatcher>(block.GetHash());
     RegisterSharedValidationInterface(sc);
+    LogPrintf("12\n");
     bool accepted = ProcessNewBlock(Params(), blockptr, /* fForceProcessing */ true, /* fNewBlock */ &new_block);
+    LogPrintf("13\n");
     UnregisterSharedValidationInterface(sc);
     if (!new_block && accepted) {
         return "duplicate";
     }
+    LogPrintf("14\n");
     if (!sc->found) {
         return "inconclusive";
     }
+    LogPrintf("15\n");
     return BIP22ValidationResult(sc->state);
 }
 

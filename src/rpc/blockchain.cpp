@@ -16,6 +16,7 @@
 #include <hash.h>
 #include <index/blockfilterindex.h>
 #include <miner.h>
+#include <net.h>
 #include <node/coinstats.h>
 #include <node/context.h>
 #include <node/utxo_snapshot.h>
@@ -125,14 +126,20 @@ UniValue bootstrap(const JSONRPCRequest& request)
     }.Check(request);
 
     UniValue ret(UniValue::VOBJ);
+    
+    bool currentNetworkState = g_rpc_node->connman->GetNetworkActive();
+    g_rpc_node->connman->SetNetworkActive(false);
 
     try {
         downloadBootstrap();
     } catch (const std::exception &e) {
+        g_rpc_node->connman->SetNetworkActive(currentNetworkState);
         ret.pushKV("success", false);
         ret.pushKV("message", e.what());
         return ret;
     }
+
+    g_rpc_node->connman->SetNetworkActive(currentNetworkState);
 
     ret.pushKV("success", true);
     ret.pushKV("message", "Bootstrap successful; wallet has been stopped, please restart.");
