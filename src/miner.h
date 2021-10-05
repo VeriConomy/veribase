@@ -204,8 +204,11 @@ private:
 void IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned int& nExtraNonce);
 int64_t UpdateTime(CBlockHeader* pblock);
 
-/** Base sha256 mining transform */
 void SHA256Transform(void* pstate, void* pinput, const void* pinit);
+int FormatHashBlocks(void* pbuffer, unsigned int len);
+void FormatHashBuffers(CBlock* pblock, char* pmidstate, char* pdata, char* phash1);
+
+bool CheckWork(CBlock* pblock);
 
 void GenerateVerium(bool fGenerate, std::shared_ptr<CWallet> pwallet, int nThreads, CConnman* connman, CTxMemPool* mempool);
 void GenerateVericoin(bool fGenerate, std::shared_ptr<CWallet> pwallet, CConnman* connman, CTxMemPool* mempool);

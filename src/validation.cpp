@@ -963,8 +963,12 @@ bool ReadBlockFromDisk(CBlock& block, const FlatFilePos& pos, const Consensus::P
     }
 
     // Check the header
+    // Only on vericoin as it will slow too much verium
     if (consensusParams.fIsVericoin && block.IsProofOfWork() && !CheckProofOfWork(block.GetHash(), block.nBits, consensusParams))
         return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
+
+    if (block.IsProofOfStake())
+        block.nFlags |= CBlockIndex::BLOCK_PROOF_OF_STAKE;
 
     return true;
 }
@@ -4684,7 +4688,7 @@ bool IsProofOfStake(const Consensus::Params& consensusParams, int nHeight)
     return false;
 }
 
-int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Params& params)
+int32_t ComputeBlockVersion()
 {
     return CBlock::CURRENT_VERSION;
 }
