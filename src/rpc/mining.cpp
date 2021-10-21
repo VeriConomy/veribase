@@ -4,9 +4,11 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <amount.h>
+#include <bignum.h>
 #include <chain.h>
 #include <chainparams.h>
 #include <consensus/consensus.h>
+#include <consensus/merkle.h>
 #include <consensus/params.h>
 #include <consensus/validation.h>
 #include <core_io.h>
@@ -36,11 +38,13 @@
 #include <memory>
 #include <stdint.h>
 
+static CTxDestination dest;
+static bool setDest = false;
+
 double getPoWKHashPM()
 {
     return GetPoWKHashPM(Params());
 }
-
 
 static UniValue generateBlocks(const CTxMemPool& mempool, const CScript& coinbase_script, int nGenerate, uint64_t nMaxTries)
 {
@@ -621,8 +625,8 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
     aMutable.push_back("prevblock");
 
     // to permit most famous cpuminer to work
-    if( !Params().IsVericoin() )
-        aMutable.push_back("version/force");
+//    if( !Params().IsVericoin() )
+//        aMutable.push_back("version/force");
 
     UniValue result(UniValue::VOBJ);
     result.pushKV("capabilities", aCaps);
@@ -632,10 +636,10 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
     aRules.push_back("!segwit");
 
     // to permit most famous cpuminer to work
-    if( Params().IsVericoin() )
+//    if( Params().IsVericoin() )
         result.pushKV("version", pblock->nVersion);
-    else
-        result.pushKV("version", 3);
+//    else
+//        result.pushKV("version", 3);
 
     result.pushKV("rules", aRules);
 
@@ -694,14 +698,12 @@ static UniValue submitblock(const JSONRPCRequest& request)
                 },
             }.Check(request);
 
-    LogPrintf("1\n");
     std::shared_ptr<CBlock> blockptr = std::make_shared<CBlock>();
     CBlock& block = *blockptr;
     if (!DecodeHexBlk(block, request.params[0].get_str())) {
         LogPrintf("Fail to deserialize !!!");
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Block decode failed");
     }
-        LogPrintf("2\n");
 
     if (block.vtx.empty() || !block.vtx[0]->IsCoinBase()) {
         LogPrintf("Block does not start with coinbase");
@@ -709,51 +711,38 @@ static UniValue submitblock(const JSONRPCRequest& request)
     }
 
 
-    LogPrintf("3\n");
     uint256 hash = block.GetHash();
     {
-    LogPrintf("4\n");
         LOCK(cs_main);
         const CBlockIndex* pindex = LookupBlockIndex(hash);
-    LogPrintf("5\n");
         if (pindex) {
-    LogPrintf("6\n");
             if (pindex->IsValid(BLOCK_VALID_SCRIPTS)) {
                 return "duplicate";
             }
-    LogPrintf("7\n");
             if (pindex->nStatus & BLOCK_FAILED_MASK) {
                 return "duplicate-invalid";
             }
         }
     }
-    LogPrintf("8\n");
     {
         LOCK(cs_main);
         const CBlockIndex* pindex = LookupBlockIndex(block.hashPrevBlock);
-    LogPrintf("9\n");
         if (pindex) {
-    LogPrintf("10\n");
             UpdateUncommittedBlockStructures(block, pindex, Params().GetConsensus());
         }
     }
-    LogPrintf("11\n");
 
     bool new_block;
     auto sc = std::make_shared<submitblock_StateCatcher>(block.GetHash());
     RegisterSharedValidationInterface(sc);
-    LogPrintf("12\n");
     bool accepted = ProcessNewBlock(Params(), blockptr, /* fForceProcessing */ true, /* fNewBlock */ &new_block);
-    LogPrintf("13\n");
     UnregisterSharedValidationInterface(sc);
     if (!new_block && accepted) {
         return "duplicate";
     }
-    LogPrintf("14\n");
     if (!sc->found) {
         return "inconclusive";
     }
-    LogPrintf("15\n");
     return BIP22ValidationResult(sc->state);
 }
 
@@ -908,6 +897,153 @@ UniValue minerstop(const JSONRPCRequest& request)
     return obj;
 }
 
+UniValue getwork(const JSONRPCRequest& request)
+{
+    RPCHelpMan{"getwork",
+        "\nVERIUM ONLY - If 'data' is not specified, it returns the formatted hash data to work on\n"
+        "If 'data' is specified, tries to solve the block and returns true if it was successful.\n",
+        {
+            {"data", RPCArg::Type::STR_HEX, RPCArg::Optional::OMITTED, "The hex encoded data to solve."},
+        },
+        RPCResult{
+            RPCResult{RPCResult::Type::NONE, "", "Returns JSON data for mining if data is null or check the block and return a boolean if data is not null "},
+        },
+        RPCExamples{
+            HelpExampleCli("getwork", "")
+    + HelpExampleRpc("getwork", "")
+        },
+    }.Check(request);
+
+    if( Params().IsVericoin())
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Action impossible on Vericoin");
+
+    LOCK(cs_main);
+
+    if(!g_rpc_node->connman)
+        throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
+
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+
+    if (!EnsureWalletIsAvailable(wallet.get(), request.fHelp)) {
+        return false;
+    }
+
+    CWallet* const pwallet = wallet.get();
+
+    typedef std::map<uint256, std::pair<CBlock*, CScript> > mapNewBlock_t;
+    static mapNewBlock_t mapNewBlock;
+
+    // To CODE
+    if (request.params[0].isNull())
+    {
+        if( ! setDest )
+        {
+            OutputType output_type = pwallet->m_default_change_type != OutputType::CHANGE_AUTO ? pwallet->m_default_change_type : pwallet->m_default_address_type;
+            ReserveDestination reservedest(pwallet, output_type);
+            reservedest.GetReservedDestination(dest, true);
+            setDest = true;
+        }
+
+        static unsigned int nTransactionsUpdatedLast = 0;
+        const CTxMemPool& mempool = EnsureMemPool();
+
+        g_rpc_node->connman->interruptNet.sleep_for(std::chrono::milliseconds(500));
+
+        // Update block
+        static CBlockIndex* pindexPrev;
+        static int64_t nStart;
+        static std::unique_ptr<CBlockTemplate> pblocktemplate;
+
+        if (pindexPrev != ::ChainActive().Tip() ||
+            (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 60))
+        {
+            // Clear pindexPrev so future calls make a new block, despite any failures from here on
+            pindexPrev = nullptr;
+
+            // Store the pindexBest used before CreateNewBlock, to avoid races
+            nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
+            CBlockIndex* pindexPrevNew = ::ChainActive().Tip();
+            nStart = GetTime();
+
+            CScript scriptPubKey = GetScriptForDestination(dest);
+
+            // Create new block
+            pblocktemplate = BlockAssembler(mempool, Params()).CreateNewBlock(scriptPubKey, false, pwallet);
+            if (!pblocktemplate)
+                throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");
+
+            // Need to update only after we know CreateNewBlock succeeded
+            pindexPrev = pindexPrevNew;
+        }
+        CHECK_NONFATAL(pindexPrev);
+        CBlock* pblock = &pblocktemplate->block; // pointer for convenience
+
+        // Update nTime
+        UpdateTime(pblock);
+        pblock->nNonce = 0;
+
+        static unsigned int nExtraNonce = 0;
+
+        {
+            LOCK(cs_main);
+            IncrementExtraNonce(pblock, ::ChainActive().Tip(), nExtraNonce);
+        }
+
+        // Save
+        mapNewBlock[pblock->hashMerkleRoot] = std::make_pair(pblock, pblock->vtx[0]->vin[0].scriptSig);
+
+        // Pre-build hash buffers
+        char pmidstate[32];
+        char pdata[128];
+        char phash1[64];
+        FormatHashBuffers(pblock, pmidstate, pdata, phash1);
+
+	uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
+
+        UniValue obj(UniValue::VOBJ);
+        obj.pushKV("midstate", HexStr(BEGIN(pmidstate), END(pmidstate)));
+        obj.pushKV("data",     HexStr(BEGIN(pdata), END(pdata)));
+        obj.pushKV("hash1",    HexStr(BEGIN(phash1), END(phash1)));
+        obj.pushKV("target",   HexStr(BEGIN(hashTarget), END(hashTarget)));
+
+        return obj;
+    }
+    else
+    {
+        // Parse parameters
+        std::vector<unsigned char> vchData = ParseHex(request.params[0].get_str());
+        if (vchData.size() != 128)
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter");
+        CBlock* pdata = (CBlock*)&vchData[0];
+
+        // Byte reverse
+        for (int i = 0; i < 128/4; i++)
+            ((unsigned int*)pdata)[i] = ByteReverse(((unsigned int*)pdata)[i]);
+
+        // Get saved block
+        if (!mapNewBlock.count(pdata->hashMerkleRoot))
+            return false;
+        CBlock* pblock = mapNewBlock[pdata->hashMerkleRoot].first;
+
+        pblock->nTime = pdata->nTime;
+        pblock->nNonce = pdata->nNonce;
+
+        CMutableTransaction txCoinbase(*pblock->vtx[0]);
+        txCoinbase.vin[0].scriptSig = mapNewBlock[pdata->hashMerkleRoot].second;
+        pblock->vtx[0] = MakeTransactionRef(std::move(txCoinbase));
+        pblock->hashMerkleRoot = BlockMerkleRoot(*pblock);
+
+        return CheckWork(pblock);
+    }
+
+    UniValue obj(UniValue::VOBJ);
+    obj.pushKV("status",   "active");
+
+    return obj;
+}
+
+
+
 UniValue stakingstatus(const JSONRPCRequest& request)
 {
     RPCHelpMan{"stakingstatus",
@@ -1024,6 +1160,8 @@ static const CRPCCommand commands[] =
     { "mining",             "getblocktemplate",       &getblocktemplate,       {"template_request"} },
     { "mining",             "submitblock",            &submitblock,            {"hexdata","dummy"} },
     { "mining",             "submitheader",           &submitheader,           {"hexdata"} },
+    { "mining",             "getwork",                &getwork,                {"data"} },
+
 
     { "miner",              "minerstatus",            &minerstatus,            {} },
     { "miner",              "minerstop",              &minerstop,              {} },

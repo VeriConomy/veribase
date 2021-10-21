@@ -3,8 +3,13 @@
 #ifndef BITCOIN_BIGNUM_H
 #define BITCOIN_BIGNUM_H
 
+#include <algorithm>
+#include <limits>
 #include <stdexcept>
 #include <vector>
+#include <serialize.h>
+#include <version.h>
+#include <uint256.h>
 #include <openssl/bn.h>
 
 /** Errors thrown by the bignum class */

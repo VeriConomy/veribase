@@ -6,6 +6,7 @@
 #ifndef BITCOIN_PRIMITIVES_BLOCK_H
 #define BITCOIN_PRIMITIVES_BLOCK_H
 
+#include <clientversion.h>
 #include <primitives/transaction.h>
 #include <serialize.h>
 #include <uint256.h>
@@ -111,7 +112,10 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITEAS(CBlockHeader, *this);
         READWRITE(vtx);
-        READWRITE(vchBlockSig);
+
+        if( IsVericoin() )
+            READWRITE(vchBlockSig);
+
     }
 
     void SetNull()
@@ -138,6 +142,9 @@ public:
     // ppcoin: two types of block: proof-of-work or proof-of-stake
     bool IsProofOfStake() const
     {
+        if( !IsVericoin() ) {
+            return false;
+        }
         return (vtx.size() > 1 && vtx[1]->IsCoinStake());
     }
 
