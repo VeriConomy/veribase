@@ -33,7 +33,7 @@ if test "x$client_is_verium" = xyes; then
   BITCOIN_GUI_NAME=verium-qt
   BITCOIN_CLI_NAME=verium-cli
   BITCOIN_TX_NAME=verium-tx
-  BITCOIN_WALLET_TOOL_NAME=vericoin-wallet
+  BITCOIN_WALLET_TOOL_NAME=verium-wallet
 fi
 
 dnl Unless the user specified ARFLAGS, force it to be cr

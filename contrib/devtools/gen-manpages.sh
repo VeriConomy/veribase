@@ -10,11 +10,20 @@ BUILDDIR=${BUILDDIR:-$TOPDIR}
 BINDIR=${BINDIR:-$BUILDDIR/src}
 MANDIR=${MANDIR:-$TOPDIR/doc/man}
 
-BITCOIND=${BITCOIND:-$BINDIR/vericoind}
-BITCOINCLI=${BITCOINCLI:-$BINDIR/vericoin-cli}
-BITCOINTX=${BITCOINTX:-$BINDIR/vericoin-tx}
-WALLET_TOOL=${WALLET_TOOL:-$BINDIR/vericoin-wallet}
-BITCOINQT=${BITCOINQT:-$BINDIR/qt/vericoin-qt}
+BITCOIND=${BITCOIND:-$BINDIR/veriumd}
+BITCOINCLI=${BITCOINCLI:-$BINDIR/verium-cli}
+BITCOINTX=${BITCOINTX:-$BINDIR/verium-tx}
+WALLET_TOOL=${WALLET_TOOL:-$BINDIR/verium-wallet}
+BITCOINQT=${BITCOINQT:-$BINDIR/qt/verium-qt}
+if grep -Fxq "client_is_verium=no" "$TOPDIR/configure.ac"
+then
+    BITCOIND=${BITCOIND:-$BINDIR/vericoind}
+    BITCOINCLI=${BITCOINCLI:-$BINDIR/vericoin-cli}
+    BITCOINTX=${BITCOINTX:-$BINDIR/vericoin-tx}
+    WALLET_TOOL=${WALLET_TOOL:-$BINDIR/vericoin-wallet}
+    BITCOINQT=${BITCOINQT:-$BINDIR/qt/vericoin-qt}
+fi
+
 
 [ ! -x $BITCOIND ] && echo "$BITCOIND not found or not executable." && exit 1
 
