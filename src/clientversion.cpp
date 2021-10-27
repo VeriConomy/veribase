@@ -6,25 +6,6 @@
 
 #include <tinyformat.h>
 
-bool IsVerium()
-{
-#if CLIENT_IS_VERIUM
-    return true;
-#else
-    return false;
-#endif
-}
-
-bool IsVericoin()
-{
-#if CLIENT_IS_VERIUM
-    return false;
-#else
-    return true;
-#endif
-}
-
-
 /**
  * Name of client reported in the 'version' message. Report the same name
  * for both bitcoind and bitcoin-qt, to make it harder for attackers to
@@ -38,7 +19,7 @@ const std::string CLIENT_NAME("Vericonomy");
 #define CLIENT_VERSION_SUFFIX ""
 
 
-/**
+/**t
  * The following part of the code determines the CLIENT_BUILD variable.
  * Several mechanisms are used for this:
  * * first, if HAVE_BUILD_INFO is defined, include build.h, a file that is

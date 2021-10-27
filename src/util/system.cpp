@@ -891,10 +891,10 @@ std::string ArgsManager::GetChainName() const
     if (fVerium)
         return CBaseChainParams::VERIUM;
 
-    if( IsVerium() )
-        return GetArg("-chain", CBaseChainParams::VERIUM);
-    else
+    if( IsVericoin() )
         return GetArg("-chain", CBaseChainParams::VERICOIN);
+    else
+        return GetArg("-chain", CBaseChainParams::VERIUM);
 }
 
 bool ArgsManager::UseDefaultSection(const std::string& arg) const

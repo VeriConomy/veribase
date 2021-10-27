@@ -38,10 +38,10 @@ void set_xferinfo_data(void* d)
 }
 
 std::string getClientUrl() {
-    if( IsVerium() )
-        return CLIENT_URL_VRM;
-    else
+    if( IsVericoin() )
         return CLIENT_URL_VRC;
+    else
+        return CLIENT_URL_VRM;
 }
 
 void downloadFile(std::string url, const fs::path& target_file_path) {

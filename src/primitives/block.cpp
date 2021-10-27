@@ -3,19 +3,19 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <clientversion.h>
 #include <primitives/block.h>
 
+#include <clientversion.h>
 #include <crypto/scrypt.h>
 #include <hash.h>
 #include <tinyformat.h>
 
 uint256 CBlockHeader::GetHash() const
 {
-    if(IsVerium())
-        return this->GetVeriumHash();
-    else
+    if(IsVericoin())
         return this->GetWorkHash();
+    else
+        return this->GetVeriumHash();
 
 }
 

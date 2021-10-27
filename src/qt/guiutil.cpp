@@ -924,18 +924,18 @@ bool IsVericoin()
 
 QString GetCoinName()
 {
-    if( IsVerium() )
-        return QString("Verium");
-    else
+    if( IsVericoin() )
         return QString("Vericoin");
+    else
+        return QString("Verium");
 }
 
 QString GetCurrencyName()
 {
-    if( IsVerium() )
-        return QString("VRM");
-    else
+    if( IsVericoin() )
         return QString("VRC");
+    else
+        return QString("VRM");
 }
 
 } // namespace GUIUtil

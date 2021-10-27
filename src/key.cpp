@@ -236,7 +236,7 @@ bool CKey::VerifyPubKey(const CPubKey& pubkey) const {
     }
     unsigned char rnd[8];
     std::string str = "Vericoin key verification\n";
-    if( IsVerium() )
+    if( ! IsVericoin() )
         str = "Verium key verification\n";
 
     GetRandBytes(rnd, sizeof(rnd));

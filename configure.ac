@@ -27,13 +27,13 @@ dnl Define Verium as default coin type
 client_is_verium=yes
 if test "x$client_is_verium" = xyes; then
   AC_DEFINE(CLIENT_IS_VERIUM, 1, [Set verium as default coin type])
+  AC_PACKAGE_NAME=Verium
+  PACKAGE_NAME=Verium
   BITCOIN_DAEMON_NAME=veriumd
   BITCOIN_GUI_NAME=verium-qt
   BITCOIN_CLI_NAME=verium-cli
   BITCOIN_TX_NAME=verium-tx
   BITCOIN_WALLET_TOOL_NAME=vericoin-wallet
-  AC_PACKAGE_NAME=Verium
-  PACKAGE_NAME=Verium
 fi
 
 dnl Unless the user specified ARFLAGS, force it to be cr
