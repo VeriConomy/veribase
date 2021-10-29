@@ -10,14 +10,11 @@
 #endif //HAVE_CONFIG_H
 
 /** Define if the current app is Vericoin **/
-static bool IsVericoin()
-{
 #if CLIENT_IS_VERIUM
-    return false;
+static const bool IsVericoin = false;
 #else
-    return true;
+static const bool IsVericoin = true;
 #endif
-}
 
 // Check that required client information is defined
 #if !defined(CLIENT_VERSION_MAJOR) || !defined(CLIENT_VERSION_MINOR) || !defined(CLIENT_VERSION_REVISION) || !defined(CLIENT_VERSION_BUILD) || !defined(CLIENT_VERSION_IS_RELEASE) || !defined(COPYRIGHT_YEAR)

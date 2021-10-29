@@ -113,7 +113,7 @@ public:
         READWRITEAS(CBlockHeader, *this);
         READWRITE(vtx);
 
-        if( IsVericoin() )
+        if( IsVericoin )
             READWRITE(vchBlockSig);
 
     }
@@ -142,7 +142,7 @@ public:
     // ppcoin: two types of block: proof-of-work or proof-of-stake
     bool IsProofOfStake() const
     {
-        if( !IsVericoin() ) {
+        if( !IsVericoin ) {
             return false;
         }
         return (vtx.size() > 1 && vtx[1]->IsCoinStake());

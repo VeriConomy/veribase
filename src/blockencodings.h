@@ -115,7 +115,7 @@ public:
     {
         READWRITE(obj.header, obj.nonce);
 
-        if (IsVericoin() || (s.GetType() & SER_POSMARKER))
+        if (IsVericoin || (s.GetType() & SER_POSMARKER))
             READWRITE(obj.vchBlockSig);
 
         READWRITE(Using<VectorFormatter<CustomUintFormatter<SHORTTXIDS_LENGTH>>>(obj.shorttxids), obj.prefilledtxn);

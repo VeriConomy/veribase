@@ -42,7 +42,7 @@ bool VerifyWallets(interfaces::Chain& chain, const std::vector<std::string>& wal
         LogPrintf("No wallet found, trying to copy one from a previous version...\n");
 
         fs::path oldWalletPath = GetDataPathForAppName("vericoin");
-        if( ! IsVericoin() )
+        if( ! IsVericoin )
             oldWalletPath = GetDataPathForAppName("verium");
 
         std::string oldWalletDatPath = strprintf("%s/%s", oldWalletPath.string(), "wallet.dat");

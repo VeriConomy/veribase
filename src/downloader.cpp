@@ -38,7 +38,7 @@ void set_xferinfo_data(void* d)
 }
 
 std::string getClientUrl() {
-    if( IsVericoin() )
+    if( IsVericoin )
         return CLIENT_URL_VRC;
     else
         return CLIENT_URL_VRM;

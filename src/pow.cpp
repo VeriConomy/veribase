@@ -98,7 +98,7 @@ CAmount calculateMinerReward(const CBlockIndex* pindex)
 // miner's coin base reward
 int64_t GetProofOfWorkReward(int64_t nFees,const CBlockIndex* pindex)
 {
-    if( IsVericoin() )
+    if( IsVericoin )
     {
         return (2500 * COIN) + nFees;
     }
