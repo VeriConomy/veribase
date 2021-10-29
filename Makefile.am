@@ -30,9 +30,10 @@ BITCOIN_WIN_INSTALLER=$(PACKAGE)-$(PACKAGE_VERSION)-win64-setup$(EXEEXT)
 empty :=
 space := $(empty) $(empty)
 
-OSX_APP=Vericoin-Qt.app
 if CLIENT_IS_VERIUM
 OSX_APP=Verium-Qt.app
+else
+OSX_APP=Vericoin-Qt.app
 endif
 
 OSX_VOLNAME = $(subst $(space),-,$(PACKAGE_NAME))
@@ -44,9 +45,10 @@ OSX_DSSTORE_GEN=$(top_srcdir)/contrib/macdeploy/custom_dsstore.py
 OSX_DEPLOY_SCRIPT=$(top_srcdir)/contrib/macdeploy/macdeployqtplus
 OSX_FANCY_PLIST=$(top_srcdir)/contrib/macdeploy/fancy.plist
 
-OSX_INSTALLER_ICONS=$(top_srcdir)/src/qt/res/icons/vericoin.icns
 if CLIENT_IS_VERIUM
 OSX_INSTALLER_ICONS=$(top_srcdir)/src/qt/res/icons/verium.icns
+else
+OSX_INSTALLER_ICONS=$(top_srcdir)/src/qt/res/icons/vericoin.icns
 endif
 
 OSX_PLIST=$(top_builddir)/share/qt/Info.plist #not installed
