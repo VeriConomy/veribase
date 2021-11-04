@@ -37,7 +37,7 @@ void BootstrapDialog::on_startButton_clicked()
     bootstrap_callback_instance = this;
     set_xferinfo_data((void*)xfer_callback);
 
-    QMessageBox::information(this, "Bootstrap", "The client will now bootstrap the chain. \n\nThe wallet will exit after extracting the bootstrap and need to be restarted.", QMessageBox::Ok, QMessageBox::Ok);
+    QMessageBox::information(this, "Bootstrap", "The client will now bootstrap the chain. \n\nThe wallet will exit after extracting the bootstrap and need to be restarted \n\nA rescan might automatically start on the next launch and take a few minutes.", QMessageBox::Ok, QMessageBox::Ok);
     try {
         downloadBootstrap();
     } catch (const std::runtime_error& e) {

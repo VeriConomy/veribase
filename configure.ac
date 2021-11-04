@@ -1,11 +1,11 @@
 AC_PREREQ([2.69])
 define(_CLIENT_VERSION_MAJOR, 2)
 define(_CLIENT_VERSION_MINOR, 0)
-define(_CLIENT_VERSION_REVISION, 0)
+define(_CLIENT_VERSION_REVISION, 1)
 define(_CLIENT_VERSION_BUILD, 1)
 define(_CLIENT_VERSION_RC, 0)
 define(_CLIENT_VERSION_IS_RELEASE, false)
-define(_COPYRIGHT_YEAR, 2020)
+define(_COPYRIGHT_YEAR, 2021)
 define(_COPYRIGHT_HOLDERS,[The %s developers])
 define(_COPYRIGHT_HOLDERS_SUBSTITUTION,[[Vericonomy Core]])
 AC_INIT([Verium],m4_join([.], _CLIENT_VERSION_MAJOR, _CLIENT_VERSION_MINOR, _CLIENT_VERSION_REVISION, m4_if(_CLIENT_VERSION_BUILD, [0], [], _CLIENT_VERSION_BUILD))m4_if(_CLIENT_VERSION_RC, [0], [], [rc]_CLIENT_VERSION_RC),[https://github.com/VeriConomy/veribase/issues],[Verium],[https://vericonomy.com/])
@@ -24,7 +24,7 @@ BITCOIN_TX_NAME=vericoin-tx
 BITCOIN_WALLET_TOOL_NAME=vericoin-wallet
 
 dnl Define Verium as default coin type
-client_is_verium=yes
+client_is_verium=no
 if test "x$client_is_verium" = xyes; then
   AC_DEFINE(CLIENT_IS_VERIUM, 1, [Set verium as default coin type])
   AC_PACKAGE_NAME=Verium

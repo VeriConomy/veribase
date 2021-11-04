@@ -1129,7 +1129,7 @@ void BitcoinGUI::checkForBootStrap()
 
         QMessageBox bootstrapSuggestion;
         bootstrapSuggestion.setWindowTitle(tr("Old chain detected"));
-        bootstrapSuggestion.setText(tr("Your chain seems to be way behind by at least a year.\n\nYou can download the blockchain from the Vericonomy servers to speed up the sync !"));
+        bootstrapSuggestion.setText(tr("Your chain seems to be way behind by at least 60 days.\n\nYou can download the blockchain from the Vericonomy servers to speed up the sync !"));
         bootstrapSuggestion.setIcon(QMessageBox::Information);
         bootstrapSuggestion.exec();
 
