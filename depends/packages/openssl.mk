@@ -26,7 +26,6 @@ $(package)_config_opts+=no-rdrand
 $(package)_config_opts+=no-rfc3779
 $(package)_config_opts+=no-sctp
 $(package)_config_opts+=no-seed
-$(package)_config_opts+=no-shared
 $(package)_config_opts+=no-ssl-trace
 $(package)_config_opts+=no-ssl3
 $(package)_config_opts+=no-unit-test
@@ -48,6 +47,7 @@ $(package)_config_opts_riscv32_linux=linux-generic32
 $(package)_config_opts_riscv64_linux=linux-generic64
 $(package)_config_opts_x86_64_darwin=darwin64-x86_64-cc
 $(package)_config_opts_x86_64_mingw32=mingw64
+$(package)_config_opts_x86_64_mingw32+= -I/usr/share/mingw-w64/include
 $(package)_config_opts_i686_mingw32=mingw
 endef
 
