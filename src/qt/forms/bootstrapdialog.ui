@@ -23,7 +23,10 @@
     </rect>
    </property>
    <property name="text">
-    <string>The client will bootstrap the chain. Please be patient.</string>
+    <string>
+        The client will bootstrap the chain.
+        Please be patient.
+    </string>
    </property>
   </widget>
   <widget class="QProgressBar" name="progressBar">

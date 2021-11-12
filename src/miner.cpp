@@ -99,7 +99,6 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     if(!pblocktemplate.get())
         return nullptr;
     pblock = &pblocktemplate->block; // pointer for convenience
-    pblock->nTime = GetAdjustedTime();
 
     // Add dummy coinbase tx as first transaction
     pblock->vtx.emplace_back();
@@ -124,6 +123,12 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     coinbaseTx.vout.resize(1);
     coinbaseTx.vout[0].scriptPubKey = scriptPubKeyIn;
     coinbaseTx.vin[0].scriptSig = CScript() << nHeight << OP_0;
+
+    // nBits
+    if (fPos)
+        pblock->nBits = GetNextTargetRequired(pindexPrev, true, chainparams.GetConsensus());
+    else
+        pblock->nBits = GetNextWorkRequired(pindexPrev, chainparams.GetConsensus());
 
     // if coinstake available add coinstake tx
     static int64_t nLastCoinStakeSearchTime = GetAdjustedTime();  // only initialized at startup
@@ -154,6 +159,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
         pblock->nFlags = CBlockIndex::BLOCK_PROOF_OF_STAKE;
     }
 
+    pblock->nTime = GetAdjustedTime();
     const int64_t nMedianTimePast = pindexPrev->GetMedianTimePast();
 
     nLockTimeCutoff = (STANDARD_LOCKTIME_VERIFY_FLAGS & LOCKTIME_MEDIAN_TIME_PAST)
@@ -182,12 +188,6 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
 
     if( ! fPos )
         coinbaseTx.vout[0].nValue = GetProofOfWorkReward(nFees, pindexPrev);
-
-    // nBits
-    if (fPos)
-        pblock->nBits = GetNextTargetRequired(pindexPrev, true, chainparams.GetConsensus());
-    else
-        pblock->nBits = GetNextWorkRequired(pindexPrev, chainparams.GetConsensus());
 
     pblock->vtx[0] = MakeTransactionRef(std::move(coinbaseTx));
     pblocktemplate->vTxFees[0] = -nFees;
