@@ -11,6 +11,13 @@
 #include <config/bitcoin-config.h>
 #endif //HAVE_CONFIG_H
 
+/** Define if the current app is Vericoin **/
+#if CLIENT_IS_VERIUM
+static const bool IsVericoin = false;
+#else
+static const bool IsVericoin = true;
+#endif
+
 // Check that required client information is defined
 #if !defined(CLIENT_VERSION_MAJOR) || !defined(CLIENT_VERSION_MINOR) || !defined(CLIENT_VERSION_BUILD) || !defined(CLIENT_VERSION_IS_RELEASE) || !defined(COPYRIGHT_YEAR)
 #error Client version information missing: version is not defined by bitcoin-config.h or in any other way

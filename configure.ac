@@ -19,15 +19,34 @@ if test "x$PKG_CONFIG" = x; then
   AC_MSG_ERROR([pkg-config not found])
 fi
 
-BITCOIN_DAEMON_NAME=bitcoind
-BITCOIN_GUI_NAME=bitcoin-qt
-BITCOIN_CLI_NAME=bitcoin-cli
-BITCOIN_TX_NAME=bitcoin-tx
-BITCOIN_UTIL_NAME=bitcoin-util
-BITCOIN_WALLET_TOOL_NAME=bitcoin-wallet
+AM_PROG_AS
+
+BITCOIN_DAEMON_NAME=vericoind
+BITCOIN_GUI_NAME=vericoin-qt
+BITCOIN_CLI_NAME=vericoin-cli
+BITCOIN_TX_NAME=vericoin-tx
+BITCOIN_UTIL_NAME=vericoin-util
+BITCOIN_WALLET_TOOL_NAME=vericoin-wallet
 dnl Multi Process
-BITCOIN_MP_NODE_NAME=bitcoin-node
-BITCOIN_MP_GUI_NAME=bitcoin-gui
+BITCOIN_MP_NODE_NAME=vericoin-node
+BITCOIN_MP_GUI_NAME=vericoin-gui
+
+dnl Define Verium as default coin type
+client_is_verium=no
+if test "x$client_is_verium" = xyes; then
+  BITCOIN_DAEMON_NAME=veriumd
+  BITCOIN_GUI_NAME=verium-qt
+  BITCOIN_CLI_NAME=verium-cli
+  BITCOIN_TX_NAME=verium-tx
+  BITCOIN_UTIL_NAME=verium-util
+  BITCOIN_WALLET_TOOL_NAME=verium-wallet
+  dnl Multi Process
+  BITCOIN_MP_NODE_NAME=verium-node
+  BITCOIN_MP_GUI_NAME=verium-gui
+fi
+AM_CONDITIONAL([CLIENT_IS_VERIUM],[test x$client_is_verium = xyes])
+
+
 
 dnl Unless the user specified ARFLAGS, force it to be cr
 AC_ARG_VAR(ARFLAGS, [Flags for the archiver, defaults to <cr> if not set])
@@ -1909,6 +1928,7 @@ esac
 
 echo
 echo "Options used to compile and link:"
+echo "  is verium       = $client_is_verium"
 echo "  external signer = $use_external_signer"
 echo "  multiprocess    = $build_multiprocess"
 echo "  with libs       = $build_bitcoin_libs"

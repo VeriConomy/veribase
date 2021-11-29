@@ -629,7 +629,7 @@ bool CWallet::CreateTransactionInternal(
         CHECK_NONFATAL(IsValidDestination(dest) != scriptChange.empty());
     }
     CTxOut change_prototype_txout(0, scriptChange);
-    coin_selection_params.change_output_size = GetSerializeSize(change_prototype_txout);
+    coin_selection_params.change_output_size = GetSerializeSize(change_prototype_txout, SER_DISK);
 
     // Get size of spending the change output
     int change_spend_size = CalculateMaximumSignedInputSize(change_prototype_txout, this);

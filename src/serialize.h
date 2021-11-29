@@ -138,6 +138,9 @@ enum
     SER_NETWORK         = (1 << 0),
     SER_DISK            = (1 << 1),
     SER_GETHASH         = (1 << 2),
+    SER_SKIPSIG         = (1 << 16),
+    SER_BLOCKHEADERONLY = (1 << 17),
+    SER_POSMARKER       = (1 << 18),  // pos: for sending block headers with PoS marker, to allow headers-first syncronization
 };
 
 //! Convert the reference base type to X, without changing constness or reference type.
@@ -978,9 +981,10 @@ class CSizeComputer
 protected:
     size_t nSize;
 
+    const int nType;
     const int nVersion;
 public:
-    explicit CSizeComputer(int nVersionIn) : nSize(0), nVersion(nVersionIn) {}
+    explicit CSizeComputer(int nTypeIn, int nVersionIn) : nSize(0), nType(nTypeIn), nVersion(nVersionIn) {}
 
     void write(const char *psz, size_t _nSize)
     {
@@ -1004,6 +1008,7 @@ public:
         return nSize;
     }
 
+    int GetType() const { return nType; }
     int GetVersion() const { return nVersion; }
 };
 
@@ -1077,15 +1082,15 @@ inline void WriteCompactSize(CSizeComputer &s, uint64_t nSize)
 }
 
 template <typename T>
-size_t GetSerializeSize(const T& t, int nVersion = 0)
+size_t GetSerializeSize(const T& t, int nType, int nVersion = 0)
 {
-    return (CSizeComputer(nVersion) << t).size();
+    return (CSizeComputer(nType, nVersion) << t).size();
 }
 
 template <typename... T>
 size_t GetSerializeSizeMany(int nVersion, const T&... t)
 {
-    CSizeComputer sc(nVersion);
+    CSizeComputer sc(0, nVersion);
     SerializeMany(sc, t...);
     return sc.size();
 }
