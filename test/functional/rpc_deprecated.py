@@ -9,7 +9,7 @@ class DeprecatedRpcTest(BitcoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 2
         self.setup_clean_chain = True
-        self.extra_args = [[], ['-deprecatedrpc=bumpfee']]
+        self.extra_args = [[]]
 
     def run_test(self):
         # This test should be used to verify correct behaviour of deprecated

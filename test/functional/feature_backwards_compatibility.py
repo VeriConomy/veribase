@@ -97,14 +97,12 @@ class BackwardsCompatibilityTest(BitcoinTestFramework):
         # Create a conflicting transaction using RBF
         return_address = self.nodes[0].getnewaddress()
         tx1_id = self.nodes[1].sendtoaddress(return_address, 1)
-        tx2_id = self.nodes[1].bumpfee(tx1_id)["txid"]
         # Confirm the transaction
         self.sync_mempools()
         self.nodes[0].generate(1)
         self.sync_blocks()
         # Create another conflicting transaction using RBF
         tx3_id = self.nodes[1].sendtoaddress(return_address, 1)
-        tx4_id = self.nodes[1].bumpfee(tx3_id)["txid"]
         # Abandon transaction, but don't confirm
         self.nodes[1].abandontransaction(tx3_id)
 
@@ -227,14 +225,10 @@ class BackwardsCompatibilityTest(BitcoinTestFramework):
             txs = wallet.listtransactions()
             assert_equal(len(txs), 5)
             assert_equal(txs[1]["txid"], tx1_id)
-            assert_equal(txs[2]["walletconflicts"], [tx1_id])
-            assert_equal(txs[1]["replaced_by_txid"], tx2_id)
             assert not(txs[1]["abandoned"])
             assert_equal(txs[1]["confirmations"], -1)
             assert_equal(txs[2]["blockindex"], 1)
             assert txs[3]["abandoned"]
-            assert_equal(txs[4]["walletconflicts"], [tx3_id])
-            assert_equal(txs[3]["replaced_by_txid"], tx4_id)
             assert not(hasattr(txs[3], "blockindex"))
 
             node_v19.loadwallet("w2")
@@ -258,14 +252,10 @@ class BackwardsCompatibilityTest(BitcoinTestFramework):
             txs = wallet.listtransactions()
             assert_equal(len(txs), 5)
             assert_equal(txs[1]["txid"], tx1_id)
-            assert_equal(txs[2]["walletconflicts"], [tx1_id])
-            assert_equal(txs[1]["replaced_by_txid"], tx2_id)
             assert not(txs[1]["abandoned"])
             assert_equal(txs[1]["confirmations"], -1)
             assert_equal(txs[2]["blockindex"], 1)
             assert txs[3]["abandoned"]
-            assert_equal(txs[4]["walletconflicts"], [tx3_id])
-            assert_equal(txs[3]["replaced_by_txid"], tx4_id)
             assert not(hasattr(txs[3], "blockindex"))
 
             node_v18.loadwallet("w2")

@@ -120,43 +120,6 @@ class NotificationsTest(BitcoinTestFramework):
             self.sync_mempools()
             self.expect_wallet_notify([(tx1, -1, UNCONFIRMED_HASH_STRING)])
 
-            # Generate bump transaction, sync mempools, and check for bump1
-            # notification. In the future, per
-            # https://github.com/bitcoin/bitcoin/pull/9371, it might be better
-            # to have notifications for both tx1 and bump1.
-            bump1 = self.nodes[0].bumpfee(tx1)["txid"]
-            assert_equal(bump1 in self.nodes[0].getrawmempool(), True)
-            self.sync_mempools()
-            self.expect_wallet_notify([(bump1, -1, UNCONFIRMED_HASH_STRING)])
-
-            # Add bump1 transaction to new block, checking for a notification
-            # and the correct number of confirmations.
-            blockhash1 = self.nodes[0].generatetoaddress(1, ADDRESS_BCRT1_UNSPENDABLE)[0]
-            blockheight1 = self.nodes[0].getblockcount()
-            self.sync_blocks()
-            self.expect_wallet_notify([(bump1, blockheight1, blockhash1)])
-            assert_equal(self.nodes[1].gettransaction(bump1)["confirmations"], 1)
-
-            # Generate a second transaction to be bumped.
-            tx2 = self.nodes[0].sendtoaddress(address=ADDRESS_BCRT1_UNSPENDABLE, amount=1, replaceable=True)
-            assert_equal(tx2 in self.nodes[0].getrawmempool(), True)
-            self.sync_mempools()
-            self.expect_wallet_notify([(tx2, -1, UNCONFIRMED_HASH_STRING)])
-
-            # Bump tx2 as bump2 and generate a block on node 0 while
-            # disconnected, then reconnect and check for notifications on node 1
-            # about newly confirmed bump2 and newly conflicted tx2.
-            self.disconnect_nodes(0, 1)
-            bump2 = self.nodes[0].bumpfee(tx2)["txid"]
-            blockhash2 = self.nodes[0].generatetoaddress(1, ADDRESS_BCRT1_UNSPENDABLE)[0]
-            blockheight2 = self.nodes[0].getblockcount()
-            assert_equal(self.nodes[0].gettransaction(bump2)["confirmations"], 1)
-            assert_equal(tx2 in self.nodes[1].getrawmempool(), True)
-            self.connect_nodes(0, 1)
-            self.sync_blocks()
-            self.expect_wallet_notify([(bump2, blockheight2, blockhash2), (tx2, -1, UNCONFIRMED_HASH_STRING)])
-            assert_equal(self.nodes[1].gettransaction(bump2)["confirmations"], 1)
-
         # TODO: add test for `-alertnotify` large fork notifications
 
     def expect_wallet_notify(self, tx_details):
