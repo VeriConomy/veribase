@@ -57,7 +57,7 @@ class BlockchainTest(BitcoinTestFramework):
 
     def run_test(self):
         self.mine_chain()
-        self.restart_node(0, extra_args=['-stopatheight=207', '-prune=1'])  # Set extra args with pruning after rescan is complete
+        self.restart_node(0, extra_args=['-stopatheight=207'])  # Set extra args with pruning after rescan is complete
 
         self._test_getblockchaininfo()
         self._test_getchaintxstats()
@@ -90,7 +90,6 @@ class BlockchainTest(BitcoinTestFramework):
             'headers',
             'initialblockdownload',
             'mediantime',
-            'pruned',
             'size_on_disk',
             'softforks',
             'verificationprogress',
@@ -98,36 +97,18 @@ class BlockchainTest(BitcoinTestFramework):
         ]
         res = self.nodes[0].getblockchaininfo()
 
-        # result should have these additional pruning keys if manual pruning is enabled
-        assert_equal(sorted(res.keys()), sorted(['pruneheight', 'automatic_pruning'] + keys))
-
         # size_on_disk should be > 0
         assert_greater_than(res['size_on_disk'], 0)
-
-        # pruneheight should be greater or equal to 0
-        assert_greater_than_or_equal(res['pruneheight'], 0)
-
-        # check other pruning fields given that prune=1
-        assert res['pruned']
-        assert not res['automatic_pruning']
 
         self.restart_node(0, ['-stopatheight=207'])
         res = self.nodes[0].getblockchaininfo()
         # should have exact keys
         assert_equal(sorted(res.keys()), keys)
 
-        self.restart_node(0, ['-stopatheight=207', '-prune=550'])
+        self.restart_node(0, ['-stopatheight=207'])
         res = self.nodes[0].getblockchaininfo()
-        # result should have these additional pruning keys if prune=550
-        assert_equal(sorted(res.keys()), sorted(['pruneheight', 'automatic_pruning', 'prune_target_size'] + keys))
 
-        # check related fields
-        assert res['pruned']
-        assert_equal(res['pruneheight'], 0)
-        assert res['automatic_pruning']
-        assert_equal(res['prune_target_size'], 576716800)
         assert_greater_than(res['size_on_disk'], 0)
-
         assert_equal(res['softforks'], {
             'bip34': {'type': 'buried', 'active': False, 'height': 500},
             'bip66': {'type': 'buried', 'active': False, 'height': 1251},

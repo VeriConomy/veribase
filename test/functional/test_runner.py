@@ -217,8 +217,6 @@ BASE_SCRIPTS = [
     'rpc_packages.py',
     'feature_versionbits_warning.py',
     'rpc_preciousblock.py',
-    'wallet_importprunedfunds.py --legacy-wallet',
-    'wallet_importprunedfunds.py --descriptors',
     'p2p_leak_tx.py',
     'p2p_eviction.py',
     'rpc_signmessage.py',
@@ -285,7 +283,6 @@ BASE_SCRIPTS = [
     'feature_anchors.py',
     'feature_coinstatsindex.py',
     'wallet_orphanedreward.py',
-    'p2p_node_network_limited.py',
     'p2p_permissions.py',
     'feature_blocksdir.py',
     'wallet_startup.py',
@@ -298,7 +295,6 @@ BASE_SCRIPTS = [
     'feature_help.py',
     'feature_shutdown.py',
     'p2p_ibd_txrelay.py',
-    'feature_blockfilterindex_prune.py'
     # Don't append tests at the end to avoid merge conflicts
     # Put them in a random line within the section that fits their approximate run-time
 ]

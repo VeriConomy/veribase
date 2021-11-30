@@ -21,9 +21,6 @@
 
 std::atomic_bool fImporting(false);
 std::atomic_bool fReindex(false);
-bool fHavePruned = false;
-bool fPruneMode = false;
-uint64_t nPruneTarget = 0;
 
 // TODO make namespace {
 RecursiveMutex cs_LastBlockFile;
@@ -45,53 +42,6 @@ std::set<int> setDirtyFileInfo;
 static FILE* OpenUndoFile(const FlatFilePos& pos, bool fReadOnly = false);
 static FlatFileSeq BlockFileSeq();
 static FlatFileSeq UndoFileSeq();
-
-bool IsBlockPruned(const CBlockIndex* pblockindex)
-{
-    return (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0);
-}
-
-// If we're using -prune with -reindex, then delete block files that will be ignored by the
-// reindex.  Since reindexing works by starting at block file 0 and looping until a blockfile
-// is missing, do the same here to delete any later block files after a gap.  Also delete all
-// rev files since they'll be rewritten by the reindex anyway.  This ensures that vinfoBlockFile
-// is in sync with what's actually on disk by the time we start downloading, so that pruning
-// works correctly.
-void CleanupBlockRevFiles()
-{
-    std::map<std::string, fs::path> mapBlockFiles;
-
-    // Glob all blk?????.dat and rev?????.dat files from the blocks directory.
-    // Remove the rev files immediately and insert the blk file paths into an
-    // ordered map keyed by block file index.
-    LogPrintf("Removing unusable blk?????.dat and rev?????.dat files for -reindex with -prune\n");
-    fs::path blocksdir = gArgs.GetBlocksDirPath();
-    for (fs::directory_iterator it(blocksdir); it != fs::directory_iterator(); it++) {
-        if (fs::is_regular_file(*it) &&
-            it->path().filename().string().length() == 12 &&
-            it->path().filename().string().substr(8,4) == ".dat")
-        {
-            if (it->path().filename().string().substr(0, 3) == "blk") {
-                mapBlockFiles[it->path().filename().string().substr(3, 5)] = it->path();
-            } else if (it->path().filename().string().substr(0, 3) == "rev") {
-                remove(it->path());
-            }
-        }
-    }
-
-    // Remove all block files that aren't part of a contiguous set starting at
-    // zero by walking the ordered map (keys are block file indices) by
-    // keeping a separate counter.  Once we hit a gap (or if 0 doesn't exist)
-    // start removing block files.
-    int nContigCounter = 0;
-    for (const std::pair<const std::string, fs::path>& item : mapBlockFiles) {
-        if (atoi(item.first) == nContigCounter) {
-            nContigCounter++;
-            continue;
-        }
-        remove(item.second);
-    }
-}
 
 std::string CBlockFileInfo::ToString() const
 {
@@ -197,19 +147,9 @@ uint64_t CalculateCurrentUsage()
     return retval;
 }
 
-void UnlinkPrunedFiles(const std::set<int>& setFilesToPrune)
-{
-    for (std::set<int>::iterator it = setFilesToPrune.begin(); it != setFilesToPrune.end(); ++it) {
-        FlatFilePos pos(*it, 0);
-        fs::remove(BlockFileSeq().FileName(pos));
-        fs::remove(UndoFileSeq().FileName(pos));
-        LogPrintf("Prune: %s deleted blk/rev (%05u)\n", __func__, *it);
-    }
-}
-
 static FlatFileSeq BlockFileSeq()
 {
-    return FlatFileSeq(gArgs.GetBlocksDirPath(), "blk", gArgs.GetBoolArg("-fastprune", false) ? 0x4000 /* 16kb */ : BLOCKFILE_CHUNK_SIZE);
+    return FlatFileSeq(gArgs.GetBlocksDirPath(), "blk", BLOCKFILE_CHUNK_SIZE);
 }
 
 static FlatFileSeq UndoFileSeq()
@@ -244,7 +184,7 @@ bool FindBlockPos(FlatFilePos& pos, unsigned int nAddSize, unsigned int nHeight,
 
     bool finalize_undo = false;
     if (!fKnown) {
-        while (vinfoBlockFile[nFile].nSize + nAddSize >= (gArgs.GetBoolArg("-fastprune", false) ? 0x10000 /* 64kb */ : MAX_BLOCKFILE_SIZE)) {
+        while (vinfoBlockFile[nFile].nSize + nAddSize >= MAX_BLOCKFILE_SIZE) {
             // when the undo file is keeping up with the block file, we want to flush it explicitly
             // when it is lagging behind (more blocks arrive than are being connected), we let the
             // undo block write case handle it
@@ -275,12 +215,9 @@ bool FindBlockPos(FlatFilePos& pos, unsigned int nAddSize, unsigned int nHeight,
 
     if (!fKnown) {
         bool out_of_space;
-        size_t bytes_allocated = BlockFileSeq().Allocate(pos, nAddSize, out_of_space);
+        BlockFileSeq().Allocate(pos, nAddSize, out_of_space);
         if (out_of_space) {
             return AbortNode("Disk space is too low!", _("Disk space is too low!"));
-        }
-        if (bytes_allocated != 0 && fPruneMode) {
-            fCheckForPruning = true;
         }
     }
 
@@ -299,12 +236,9 @@ static bool FindUndoPos(BlockValidationState& state, int nFile, FlatFilePos& pos
     setDirtyFileInfo.insert(nFile);
 
     bool out_of_space;
-    size_t bytes_allocated = UndoFileSeq().Allocate(pos, nAddSize, out_of_space);
+    UndoFileSeq().Allocate(pos, nAddSize, out_of_space);
     if (out_of_space) {
         return AbortNode(state, "Disk space is too low!", _("Disk space is too low!"));
-    }
-    if (bytes_allocated != 0 && fPruneMode) {
-        fCheckForPruning = true;
     }
 
     return true;

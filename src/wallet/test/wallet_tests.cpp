@@ -124,13 +124,6 @@ BOOST_FIXTURE_TEST_CASE(scan_for_wallet_transactions, TestChain100Setup)
         BOOST_CHECK_EQUAL(wallet.GetBalance().m_mine_immature, 100 * COIN);
     }
 
-    // Prune the older block file.
-    {
-        LOCK(cs_main);
-        Assert(m_node.chainman)->m_blockman.PruneOneBlockFile(oldTip->GetBlockPos().nFile);
-    }
-    UnlinkPrunedFiles({oldTip->GetBlockPos().nFile});
-
     // Verify ScanForWalletTransactions only picks transactions in the new block
     // file.
     {
@@ -149,13 +142,6 @@ BOOST_FIXTURE_TEST_CASE(scan_for_wallet_transactions, TestChain100Setup)
         BOOST_CHECK_EQUAL(*result.last_scanned_height, newTip->nHeight);
         BOOST_CHECK_EQUAL(wallet.GetBalance().m_mine_immature, 50 * COIN);
     }
-
-    // Prune the remaining block file.
-    {
-        LOCK(cs_main);
-        Assert(m_node.chainman)->m_blockman.PruneOneBlockFile(newTip->GetBlockPos().nFile);
-    }
-    UnlinkPrunedFiles({newTip->GetBlockPos().nFile});
 
     // Verify ScanForWalletTransactions scans no blocks.
     {
@@ -183,13 +169,6 @@ BOOST_FIXTURE_TEST_CASE(importmulti_rescan, TestChain100Setup)
     GetBlockFileInfo(oldTip->GetBlockPos().nFile)->nSize = MAX_BLOCKFILE_SIZE;
     CreateAndProcessBlock({}, GetScriptForRawPubKey(coinbaseKey.GetPubKey()));
     CBlockIndex* newTip = m_node.chainman->ActiveChain().Tip();
-
-    // Prune the older block file.
-    {
-        LOCK(cs_main);
-        Assert(m_node.chainman)->m_blockman.PruneOneBlockFile(oldTip->GetBlockPos().nFile);
-    }
-    UnlinkPrunedFiles({oldTip->GetBlockPos().nFile});
 
     // Verify importmulti RPC returns failure for a key whose creation time is
     // before the missing block, and success for a key whose creation time is

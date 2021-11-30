@@ -160,9 +160,6 @@ bool AbortNode(BlockValidationState& state, const std::string& strMessage, const
 /** Guess verification progress (as a fraction between 0.0=genesis and 1.0=current tip). */
 double GuessVerificationProgress(const ChainTxData& data, const CBlockIndex* pindex);
 
-/** Prune block files up to a given height */
-void PruneBlockFilesManual(CChainState& active_chainstate, int nManualPruneHeight);
-
 /**
 * Validation result for a single transaction mempool acceptance.
 */
@@ -395,28 +392,7 @@ struct CBlockIndexWorkComparator
 class BlockManager
 {
     friend CChainState;
-
-private:
-    /* Calculate the block/rev files to delete based on height specified by user with RPC command pruneblockchain */
-    void FindFilesToPruneManual(std::set<int>& setFilesToPrune, int nManualPruneHeight, int chain_tip_height);
-
-    /**
-     * Prune block and undo files (blk???.dat and undo???.dat) so that the disk space used is less than a user-defined target.
-     * The user sets the target (in MB) on the command line or in config file.  This will be run on startup and whenever new
-     * space is allocated in a block or undo file, staying below the target. Changing back to unpruned requires a reindex
-     * (which in this case means the blockchain must be re-downloaded.)
-     *
-     * Pruning functions are called from FlushStateToDisk when the global fCheckForPruning flag has been set.
-     * Block and undo files are deleted in lock-step (when blk00003.dat is deleted, so is rev00003.dat.)
-     * Pruning cannot take place until the longest chain is at least a certain length (100000 on mainnet, 1000 on testnet, 1000 on regtest).
-     * Pruning will never delete a block within a defined distance (currently 288) from the active chain's tip.
-     * The block index is updated by unsetting HAVE_DATA and HAVE_UNDO for any blocks that were stored in the deleted files.
-     * A db flag records the fact that at least some block files have been pruned.
-     *
-     * @param[out]   setFilesToPrune   The set of file indices that can be unlinked will be returned
-     */
-    void FindFilesToPrune(std::set<int>& setFilesToPrune, uint64_t nPruneAfterHeight, int chain_tip_height, int prune_height, bool is_ibd);
-
+    
 public:
     BlockMap m_block_index GUARDED_BY(cs_main);
 
@@ -466,9 +442,6 @@ public:
     CBlockIndex* AddToBlockIndex(const CBlockHeader& block) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
     /** Create a new block index entry for a given block hash */
     CBlockIndex* InsertBlockIndex(const uint256& hash) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
-
-    //! Mark one block file as pruned (modify associated database entries)
-    void PruneOneBlockFile(const int fileNumber) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
 
     /**
      * If a block header hasn't already been seen, call CheckBlockHeader on it, ensure
@@ -690,21 +663,15 @@ public:
      * or always and in all cases if we're in prune mode and are deleting files.
      *
      * If FlushStateMode::NONE is used, then FlushStateToDisk(...) won't do anything
-     * besides checking if we need to prune.
      *
      * @returns true unless a system error occurred
      */
     bool FlushStateToDisk(
         BlockValidationState& state,
-        FlushStateMode mode,
-        int nManualPruneHeight = 0);
+        FlushStateMode mode);
 
     //! Unconditionally flush all changes to disk.
     void ForceFlushStateToDisk();
-
-    //! Prune blockfiles from the disk if necessary and then flush chainstate changes
-    //! if we pruned.
-    void PruneAndFlush();
 
     /**
      * Find the best known block, and make it the tip of the block chain. The

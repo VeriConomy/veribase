@@ -126,7 +126,7 @@ IMPORT_VARIANTS = [Variant(*variants) for variants in itertools.product(Call, Da
 # rescans, in order to prevent rescans during later imports picking up
 # transactions associated with earlier imports. This makes it easier to keep
 # track of expected balances and transactions.
-ImportNode = collections.namedtuple("ImportNode", "prune rescan")
+ImportNode = collections.namedtuple("ImportNode", "rescan")
 IMPORT_NODES = [ImportNode(*fields) for fields in itertools.product((False, True), repeat=2)]
 
 # Rescans start at the earliest block up to 2 hours before the key timestamp.
@@ -151,9 +151,6 @@ class ImportRescanTest(BitcoinTestFramework):
 
     def setup_network(self):
         self.extra_args = [[] for _ in range(self.num_nodes)]
-        for i, import_node in enumerate(IMPORT_NODES, 2):
-            if import_node.prune:
-                self.extra_args[i] += ["-prune=1"]
 
         self.add_nodes(self.num_nodes, extra_args=self.extra_args)
 
