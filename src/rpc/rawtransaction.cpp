@@ -17,7 +17,6 @@
 #include <node/transaction.h>
 #include <policy/packages.h>
 #include <policy/policy.h>
-#include <policy/rbf.h>
 #include <primitives/transaction.h>
 #include <psbt.h>
 #include <random.h>
@@ -388,7 +387,7 @@ static RPCHelpMan createrawtransaction()
                                 {
                                     {"txid", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The transaction id"},
                                     {"vout", RPCArg::Type::NUM, RPCArg::Optional::NO, "The output number"},
-                                    {"sequence", RPCArg::Type::NUM, RPCArg::DefaultHint{"depends on the value of the 'replaceable' and 'locktime' arguments"}, "The sequence number"},
+                                    {"sequence", RPCArg::Type::NUM, RPCArg::DefaultHint{"depends on the value of the 'locktime' arguments"}, "The sequence number"},
                                 },
                                 },
                         },
@@ -411,8 +410,6 @@ static RPCHelpMan createrawtransaction()
                         },
                         },
                     {"locktime", RPCArg::Type::NUM, RPCArg::Default{0}, "Raw locktime. Non-0 value also locktime-activates inputs"},
-                    {"replaceable", RPCArg::Type::BOOL, RPCArg::Default{false}, "Marks this transaction as BIP125-replaceable.\n"
-            "                             Allows this transaction to be replaced by a transaction with higher fees. If provided, it is an error if explicit sequence numbers are incompatible."},
                 },
                 RPCResult{
                     RPCResult::Type::STR_HEX, "transaction", "hex string of the transaction"
@@ -429,15 +426,10 @@ static RPCHelpMan createrawtransaction()
         UniValue::VARR,
         UniValueType(), // ARR or OBJ, checked later
         UniValue::VNUM,
-        UniValue::VBOOL
         }, true
     );
 
-    bool rbf = false;
-    if (!request.params[3].isNull()) {
-        rbf = request.params[3].isTrue();
-    }
-    CMutableTransaction rawTx = ConstructTransaction(request.params[0], request.params[1], request.params[2], rbf);
+    CMutableTransaction rawTx = ConstructTransaction(request.params[0], request.params[1], request.params[2]);
 
     return EncodeHexTx(CTransaction(rawTx));
 },
@@ -1456,7 +1448,7 @@ static RPCHelpMan createpsbt()
                                 {
                                     {"txid", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The transaction id"},
                                     {"vout", RPCArg::Type::NUM, RPCArg::Optional::NO, "The output number"},
-                                    {"sequence", RPCArg::Type::NUM, RPCArg::DefaultHint{"depends on the value of the 'replaceable' and 'locktime' arguments"}, "The sequence number"},
+                                    {"sequence", RPCArg::Type::NUM, RPCArg::DefaultHint{"depends on the value of the 'locktime' arguments"}, "The sequence number"},
                                 },
                                 },
                         },
@@ -1479,8 +1471,6 @@ static RPCHelpMan createpsbt()
                         },
                         },
                     {"locktime", RPCArg::Type::NUM, RPCArg::Default{0}, "Raw locktime. Non-0 value also locktime-activates inputs"},
-                    {"replaceable", RPCArg::Type::BOOL, RPCArg::Default{false}, "Marks this transaction as BIP125 replaceable.\n"
-                            "                             Allows this transaction to be replaced by a transaction with higher fees. If provided, it is an error if explicit sequence numbers are incompatible."},
                 },
                 RPCResult{
                     RPCResult::Type::STR, "", "The resulting raw transaction (base64-encoded string)"
@@ -1495,15 +1485,10 @@ static RPCHelpMan createpsbt()
         UniValue::VARR,
         UniValueType(), // ARR or OBJ, checked later
         UniValue::VNUM,
-        UniValue::VBOOL,
         }, true
     );
 
-    bool rbf = false;
-    if (!request.params[3].isNull()) {
-        rbf = request.params[3].isTrue();
-    }
-    CMutableTransaction rawTx = ConstructTransaction(request.params[0], request.params[1], request.params[2], rbf);
+    CMutableTransaction rawTx = ConstructTransaction(request.params[0], request.params[1], request.params[2]);
 
     // Make a blank psbt
     PartiallySignedTransaction psbtx;

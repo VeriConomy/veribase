@@ -22,8 +22,8 @@ class WalletSendTest(BitcoinTestFramework):
         self.num_nodes = 2
         # whitelist all peers to speed up tx relay / mempool sync
         self.extra_args = [
-            ["-whitelist=127.0.0.1","-walletrbf=1"],
-            ["-whitelist=127.0.0.1","-walletrbf=1"],
+            ["-whitelist=127.0.0.1"],
+            ["-whitelist=127.0.0.1"],
         ]
         getcontext().prec = 8 # Satoshi precision for Decimal
 
@@ -34,7 +34,7 @@ class WalletSendTest(BitcoinTestFramework):
                   arg_conf_target=None, arg_estimate_mode=None, arg_fee_rate=None,
                   conf_target=None, estimate_mode=None, fee_rate=None, add_to_wallet=None, psbt=None,
                   inputs=None, add_inputs=None, include_unsafe=None, change_address=None, change_position=None, change_type=None,
-                  include_watching=None, locktime=None, lock_unspents=None, replaceable=None, subtract_fee_from_outputs=None,
+                  include_watching=None, locktime=None, lock_unspents=None, subtract_fee_from_outputs=None,
                   expect_error=None):
         assert (amount is None) != (data is None)
 
@@ -88,10 +88,6 @@ class WalletSendTest(BitcoinTestFramework):
             options["locktime"] = locktime
         if lock_unspents is not None:
             options["lock_unspents"] = lock_unspents
-        if replaceable is None:
-            replaceable = True # default
-        else:
-            options["replaceable"] = replaceable
         if subtract_fee_from_outputs is not None:
             options["subtract_fee_from_outputs"] = subtract_fee_from_outputs
 
@@ -146,7 +142,6 @@ class WalletSendTest(BitcoinTestFramework):
             # Ensure transaction exists in the wallet:
             tx = from_wallet.gettransaction(res["txid"])
             assert tx
-            assert_equal(tx["bip125-replaceable"], "yes" if replaceable else "no")
             # Ensure transaction exists in the mempool:
             tx = from_wallet.getrawtransaction(res["txid"], True)
             assert tx
@@ -456,14 +451,6 @@ class WalletSendTest(BitcoinTestFramework):
         # Locked coins are automatically unlocked when manually selected
         res = self.test_send(from_wallet=w0, to_wallet=w1, amount=1, inputs=[utxo1], add_to_wallet=False)
         assert res["complete"]
-
-        self.log.info("Replaceable...")
-        res = self.test_send(from_wallet=w0, to_wallet=w1, amount=1, add_to_wallet=True, replaceable=True)
-        assert res["complete"]
-        assert_equal(self.nodes[0].gettransaction(res["txid"])["bip125-replaceable"], "yes")
-        res = self.test_send(from_wallet=w0, to_wallet=w1, amount=1, add_to_wallet=True, replaceable=False)
-        assert res["complete"]
-        assert_equal(self.nodes[0].gettransaction(res["txid"])["bip125-replaceable"], "no")
 
         self.log.info("Subtract fee from output")
         self.test_send(from_wallet=w0, to_wallet=w1, amount=1, subtract_fee_from_outputs=[0])

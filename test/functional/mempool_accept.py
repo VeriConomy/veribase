@@ -10,7 +10,6 @@ import math
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.key import ECKey
 from test_framework.messages import (
-    BIP125_SEQUENCE_NUMBER,
     COIN,
     COutPoint,
     CTxIn,
@@ -85,19 +84,6 @@ class MempoolAcceptanceTest(BitcoinTestFramework):
             rawtxs=[raw_tx_in_block],
         )
 
-        self.log.info('A transaction not in the mempool')
-        fee = Decimal('0.000007')
-        raw_tx_0 = node.signrawtransactionwithwallet(node.createrawtransaction(
-            inputs=[{"txid": txid_in_block, "vout": 0, "sequence": BIP125_SEQUENCE_NUMBER}],  # RBF is used later
-            outputs=[{node.getnewaddress(): Decimal('0.3') - fee}],
-        ))['hex']
-        tx = tx_from_hex(raw_tx_0)
-        txid_0 = tx.rehash()
-        self.check_mempool_result(
-            result_expected=[{'txid': txid_0, 'allowed': True, 'vsize': tx.get_vsize(), 'fees': {'base': fee}}],
-            rawtxs=[raw_tx_0],
-        )
-
         self.log.info('A final transaction not in the mempool')
         coin = coins.pop()  # Pick a random coin(base) to spend
         output_amount = Decimal('0.025')
@@ -122,31 +108,6 @@ class MempoolAcceptanceTest(BitcoinTestFramework):
         self.check_mempool_result(
             result_expected=[{'txid': txid_0, 'allowed': False, 'reject-reason': 'txn-already-in-mempool'}],
             rawtxs=[raw_tx_0],
-        )
-
-        self.log.info('A transaction that replaces a mempool transaction')
-        tx = tx_from_hex(raw_tx_0)
-        tx.vout[0].nValue -= int(fee * COIN)  # Double the fee
-        tx.vin[0].nSequence = BIP125_SEQUENCE_NUMBER + 1  # Now, opt out of RBF
-        raw_tx_0 = node.signrawtransactionwithwallet(tx.serialize().hex())['hex']
-        tx = tx_from_hex(raw_tx_0)
-        txid_0 = tx.rehash()
-        self.check_mempool_result(
-            result_expected=[{'txid': txid_0, 'allowed': True, 'vsize': tx.get_vsize(), 'fees': {'base': (2 * fee)}}],
-            rawtxs=[raw_tx_0],
-        )
-
-        self.log.info('A transaction that conflicts with an unconfirmed tx')
-        # Send the transaction that replaces the mempool transaction and opts out of replaceability
-        node.sendrawtransaction(hexstring=tx.serialize().hex(), maxfeerate=0)
-        # take original raw_tx_0
-        tx = tx_from_hex(raw_tx_0)
-        tx.vout[0].nValue -= int(4 * fee * COIN)  # Set more fee
-        # skip re-signing the tx
-        self.check_mempool_result(
-            result_expected=[{'txid': tx.rehash(), 'allowed': False, 'reject-reason': 'txn-mempool-conflict'}],
-            rawtxs=[tx.serialize().hex()],
-            maxfeerate=0,
         )
 
         self.log.info('A transaction with missing inputs, that never existed')

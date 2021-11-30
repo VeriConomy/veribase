@@ -187,10 +187,6 @@ TransactionView::TransactionView(const PlatformStyle *platformStyle, QWidget *pa
 
     // Double-clicking on a transaction on the transaction history page shows details
     connect(this, &TransactionView::doubleClicked, this, &TransactionView::showDetails);
-    // Highlight transaction after fee bump
-    connect(this, &TransactionView::bumpedFee, [this](const uint256& txid) {
-      focusTransaction(txid);
-    });
 }
 
 TransactionView::~TransactionView()

@@ -5,7 +5,6 @@
 #include <pubkey.h>
 #include <test/fuzz/util.h>
 #include <test/util/script.h>
-#include <util/rbf.h>
 #include <util/time.h>
 #include <version.h>
 
@@ -300,8 +299,7 @@ uint32_t ConsumeSequence(FuzzedDataProvider& fuzzed_data_provider) noexcept
     return fuzzed_data_provider.ConsumeBool() ?
                fuzzed_data_provider.PickValueInArray({
                    CTxIn::SEQUENCE_FINAL,
-                   CTxIn::SEQUENCE_FINAL - 1,
-                   MAX_BIP125_RBF_SEQUENCE,
+                   CTxIn::SEQUENCE_FINAL - 1
                }) :
                fuzzed_data_provider.ConsumeIntegral<uint32_t>();
 }

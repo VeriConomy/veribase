@@ -8,7 +8,6 @@
 #include <util/check.h>
 #include <util/fees.h>
 #include <util/moneystr.h>
-#include <util/rbf.h>
 #include <util/translation.h>
 #include <wallet/coincontrol.h>
 #include <wallet/fees.h>
@@ -100,37 +99,6 @@ void CWallet::AvailableCoins(std::vector<COutput>& vCoins, const CCoinControl* c
             continue;
 
         bool safeTx = IsTrusted(wtx, trusted_parents);
-
-        // We should not consider coins from transactions that are replacing
-        // other transactions.
-        //
-        // Example: There is a transaction A which is replaced by bumpfee
-        // transaction B. In this case, we want to prevent creation of
-        // a transaction B' which spends an output of B.
-        //
-        // Reason: If transaction A were initially confirmed, transactions B
-        // and B' would no longer be valid, so the user would have to create
-        // a new transaction C to replace B'. However, in the case of a
-        // one-block reorg, transactions B' and C might BOTH be accepted,
-        // when the user only wanted one of them. Specifically, there could
-        // be a 1-block reorg away from the chain where transactions A and C
-        // were accepted to another chain where B, B', and C were all
-        // accepted.
-        if (nDepth == 0 && wtx.mapValue.count("replaces_txid")) {
-            safeTx = false;
-        }
-
-        // Similarly, we should not consider coins from transactions that
-        // have been replaced. In the example above, we would want to prevent
-        // creation of a transaction A' spending an output of A, because if
-        // transaction B were initially confirmed, conflicting with A and
-        // A', we wouldn't want to the user to create a transaction D
-        // intending to replace A', but potentially resulting in a scenario
-        // where A, A', and D could all be accepted (instead of just B and
-        // D, or just A and A' like the user would want).
-        if (nDepth == 0 && wtx.mapValue.count("replaced_by_txid")) {
-            safeTx = false;
-        }
 
         if (only_safe && !safeTx) {
             continue;
@@ -736,13 +704,7 @@ bool CWallet::CreateTransactionInternal(
 
     // Note how the sequence number is set to non-maxint so that
     // the nLockTime set above actually works.
-    //
-    // BIP125 defines opt-in RBF as any nSequence < maxint-1, so
-    // we use the highest possible value in that range (maxint-2)
-    // to avoid conflicting with other possible uses of nSequence,
-    // and in the spirit of "smallest possible change from prior
-    // behavior."
-    const uint32_t nSequence = coin_control.m_signal_bip125_rbf.value_or(m_signal_rbf) ? MAX_BIP125_RBF_SEQUENCE : (CTxIn::SEQUENCE_FINAL - 1);
+    const uint32_t nSequence = (CTxIn::SEQUENCE_FINAL - 1);
     for (const auto& coin : selected_coins) {
         txNew.vin.push_back(CTxIn(coin.outpoint, CScript(), nSequence));
     }

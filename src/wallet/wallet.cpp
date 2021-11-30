@@ -29,7 +29,6 @@
 #include <util/error.h>
 #include <util/fees.h>
 #include <util/moneystr.h>
-#include <util/rbf.h>
 #include <util/string.h>
 #include <util/translation.h>
 #include <wallet/coincontrol.h>
@@ -784,41 +783,6 @@ void CWallet::MarkDirty()
         for (std::pair<const uint256, CWalletTx>& item : mapWallet)
             item.second.MarkDirty();
     }
-}
-
-bool CWallet::MarkReplaced(const uint256& originalHash, const uint256& newHash)
-{
-    LOCK(cs_wallet);
-
-    auto mi = mapWallet.find(originalHash);
-
-    // There is a bug if MarkReplaced is not called on an existing wallet transaction.
-    assert(mi != mapWallet.end());
-
-    CWalletTx& wtx = (*mi).second;
-
-    // Ensure for now that we're not overwriting data
-    assert(wtx.mapValue.count("replaced_by_txid") == 0);
-
-    wtx.mapValue["replaced_by_txid"] = newHash.ToString();
-
-    // Refresh mempool status without waiting for transactionRemovedFromMempool
-    // notification so the wallet is in an internally consistent state and
-    // immediately knows the old transaction should not be considered trusted
-    // and is eligible to be abandoned
-    wtx.fInMempool = chain().isInMempool(originalHash);
-
-    WalletBatch batch(GetDatabase());
-
-    bool success = true;
-    if (!batch.WriteTx(wtx)) {
-        WalletLogPrintf("%s: Updating batch tx %s failed\n", __func__, wtx.GetHash().ToString());
-        success = false;
-    }
-
-    NotifyTransactionChanged(originalHash, CT_UPDATED);
-
-    return success;
 }
 
 void CWallet::SetSpentKeyState(WalletBatch& batch, const uint256& hash, unsigned int n, bool used, std::set<CTxDestination>& tx_destinations)
@@ -2699,7 +2663,6 @@ std::shared_ptr<CWallet> CWallet::Create(interfaces::Chain* chain, const std::st
 
     walletInstance->m_confirm_target = gArgs.GetArg("-txconfirmtarget", DEFAULT_TX_CONFIRM_TARGET);
     walletInstance->m_spend_zero_conf_change = gArgs.GetBoolArg("-spendzeroconfchange", DEFAULT_SPEND_ZEROCONF_CHANGE);
-    walletInstance->m_signal_rbf = gArgs.GetBoolArg("-walletrbf", DEFAULT_WALLET_RBF);
 
     walletInstance->WalletLogPrintf("Wallet completed loading in %15dms\n", GetTimeMillis() - nStart);
 

@@ -115,7 +115,7 @@ class NotificationsTest(BitcoinTestFramework):
 
             # Generate transaction on node 0, sync mempools, and check for
             # notification on node 1.
-            tx1 = self.nodes[0].sendtoaddress(address=ADDRESS_BCRT1_UNSPENDABLE, amount=1, replaceable=True)
+            tx1 = self.nodes[0].sendtoaddress(address=ADDRESS_BCRT1_UNSPENDABLE, amount=1)
             assert_equal(tx1 in self.nodes[0].getrawmempool(), True)
             self.sync_mempools()
             self.expect_wallet_notify([(tx1, -1, UNCONFIRMED_HASH_STRING)])
