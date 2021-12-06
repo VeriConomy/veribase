@@ -20,6 +20,5 @@ bool CWalletTx::InMempool() const
 
 int64_t CWalletTx::GetTxTime() const
 {
-    int64_t n = nTimeSmart;
-    return n ? n : nTimeReceived;
+    return tx->nTime;
 }

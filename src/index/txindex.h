@@ -7,6 +7,7 @@
 
 #include <chain.h>
 #include <index/base.h>
+#include <index/disktxpos.h>
 #include <txdb.h>
 
 /**
@@ -46,6 +47,8 @@ public:
     /// @param[out]  tx  The transaction itself.
     /// @return  true if transaction is found, false otherwise
     bool FindTx(const uint256& tx_hash, uint256& block_hash, CTransactionRef& tx) const;
+
+    bool FindTxPosition(const uint256& txid, CDiskTxPos& pos) const;
 };
 
 /// The global transaction index, used in GetTransaction. May be null.
