@@ -363,6 +363,11 @@ static bool rest_mempool_info(const std::any& context, HTTPRequest* req, const s
 {
     if (!CheckWarmup(req))
         return false;
+
+    ChainstateManager* maybe_chainman = GetChainman(context, req);
+    if (!maybe_chainman) return false;
+    ChainstateManager& chainman = *maybe_chainman;
+
     const CTxMemPool* mempool = GetMemPool(context, req);
     if (!mempool) return false;
     std::string param;
@@ -370,7 +375,7 @@ static bool rest_mempool_info(const std::any& context, HTTPRequest* req, const s
 
     switch (rf) {
     case RetFormat::JSON: {
-        UniValue mempoolInfoObject = MempoolInfoToJSON(*mempool);
+        UniValue mempoolInfoObject = MempoolInfoToJSON(chainman, *mempool);
 
         std::string strJSON = mempoolInfoObject.write() + "\n";
         req->WriteHeader("Content-Type", "application/json");

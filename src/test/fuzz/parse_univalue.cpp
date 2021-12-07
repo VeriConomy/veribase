@@ -92,11 +92,6 @@ FUZZ_TARGET_INIT(parse_univalue, initialize_parse_univalue)
     } catch (const std::runtime_error&) {
     }
     try {
-        (void)ParseConfirmTarget(univalue, std::numeric_limits<unsigned int>::max());
-    } catch (const UniValue&) {
-    } catch (const std::runtime_error&) {
-    }
-    try {
         (void)ParseDescriptorRange(univalue);
     } catch (const UniValue&) {
     } catch (const std::runtime_error&) {

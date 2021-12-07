@@ -42,7 +42,7 @@ void RPCNotifyBlockChange(const CBlockIndex*);
 UniValue blockToJSON(const CBlock& block, const CBlockIndex* tip, const CBlockIndex* blockindex, bool txDetails = false) LOCKS_EXCLUDED(cs_main);
 
 /** Mempool information to JSON */
-UniValue MempoolInfoToJSON(const CTxMemPool& pool);
+UniValue MempoolInfoToJSON(const ChainstateManager& chainman, const CTxMemPool& pool);
 
 /** Mempool to JSON */
 UniValue MempoolToJSON(const CTxMemPool& pool, bool verbose = false, bool include_mempool_sequence = false);
@@ -61,8 +61,6 @@ CTxMemPool& EnsureMemPool(const NodeContext& node);
 CTxMemPool& EnsureAnyMemPool(const std::any& context);
 ChainstateManager& EnsureChainman(const NodeContext& node);
 ChainstateManager& EnsureAnyChainman(const std::any& context);
-CBlockPolicyEstimator& EnsureFeeEstimator(const NodeContext& node);
-CBlockPolicyEstimator& EnsureAnyFeeEstimator(const std::any& context);
 
 /**
  * Helper to create UTXO snapshots given a chainstate and a file handle.

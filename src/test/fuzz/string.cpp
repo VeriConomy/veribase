@@ -20,7 +20,6 @@
 #include <test/fuzz/fuzz.h>
 #include <test/fuzz/util.h>
 #include <util/error.h>
-#include <util/fees.h>
 #include <util/message.h>
 #include <util/settings.h>
 #include <util/strencodings.h>
@@ -47,8 +46,6 @@ FUZZ_TARGET(string)
     (void)BlockFilterTypeByName(random_string_1, block_filter_type);
     (void)Capitalize(random_string_1);
     (void)CopyrightHolders(random_string_1);
-    FeeEstimateMode fee_estimate_mode;
-    (void)FeeModeFromString(random_string_1, fee_estimate_mode);
     (void)FormatParagraph(random_string_1, fuzzed_data_provider.ConsumeIntegralInRange<size_t>(0, 1000), fuzzed_data_provider.ConsumeIntegralInRange<size_t>(0, 1000));
     (void)FormatSubVersion(random_string_1, fuzzed_data_provider.ConsumeIntegral<int>(), random_string_vector);
     (void)GetDescriptorChecksum(random_string_1);

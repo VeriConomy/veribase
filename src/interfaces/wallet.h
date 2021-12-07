@@ -26,7 +26,6 @@ class CCoinControl;
 class CFeeRate;
 class CKey;
 class CWallet;
-enum class FeeReason;
 enum class OutputType;
 enum class TransactionError;
 enum isminetype : unsigned int;
@@ -219,12 +218,7 @@ public:
 
     //! Get minimum fee.
     virtual CAmount getMinimumFee(unsigned int tx_bytes,
-        const CCoinControl& coin_control,
-        int* returned_target,
-        FeeReason* reason) = 0;
-
-    //! Get tx confirm target.
-    virtual unsigned int getConfirmTarget() = 0;
+        const CCoinControl& coin_control) = 0;
 
     // Return whether HD enabled.
     virtual bool hdEnabled() = 0;

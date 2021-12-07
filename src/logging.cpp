@@ -142,7 +142,6 @@ const CLogCategoryDesc LogCategories[] =
     {BCLog::ZMQ, "zmq"},
     {BCLog::WALLETDB, "walletdb"},
     {BCLog::RPC, "rpc"},
-    {BCLog::ESTIMATEFEE, "estimatefee"},
     {BCLog::ADDRMAN, "addrman"},
     {BCLog::SELECTCOINS, "selectcoins"},
     {BCLog::REINDEX, "reindex"},

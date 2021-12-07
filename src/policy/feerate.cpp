@@ -7,22 +7,34 @@
 
 #include <tinyformat.h>
 
-CFeeRate::CFeeRate(const CAmount& nFeePaid, uint32_t num_bytes)
+CFeeRate::CFeeRate(const CAmount& nFeePaid, uint32_t num_bytes, bool with_start_fee)
 {
-    const int64_t nSize{num_bytes};
+    int64_t nSize{num_bytes};
 
     if (nSize > 0) {
-        nSatoshisPerK = nFeePaid * 1000 / nSize;
+        if (with_start_fee) {
+            nSize -= 1000;
+            if (nSize <= 0) {
+                nSatoshisPerK = 0;
+                return;
+            }
+        }
+
+         nSatoshisPerK = nFeePaid * 1000 / nSize;
     } else {
         nSatoshisPerK = 0;
     }
 }
 
-CAmount CFeeRate::GetFee(uint32_t num_bytes) const
+CAmount CFeeRate::GetFee(uint32_t num_bytes, bool add_start_fee) const
 {
     const int64_t nSize{num_bytes};
 
-    CAmount nFee = nSatoshisPerK * nSize / 1000;
+   CAmount nFee = nSatoshisPerK * int(nSize / 1000);
+
+    // Let's add startFee that are equal to nSatoshisPerK
+    if (add_start_fee)
+        nFee += nSatoshisPerK;
 
     if (nFee == 0 && nSize != 0) {
         if (nSatoshisPerK > 0) nFee = CAmount(1);
@@ -32,10 +44,10 @@ CAmount CFeeRate::GetFee(uint32_t num_bytes) const
     return nFee;
 }
 
-std::string CFeeRate::ToString(const FeeEstimateMode& fee_estimate_mode) const
+std::string CFeeRate::ToString() const
 {
-    switch (fee_estimate_mode) {
-    case FeeEstimateMode::SAT_VB: return strprintf("%d.%03d %s/vB", nSatoshisPerK / 1000, nSatoshisPerK % 1000, CURRENCY_ATOM);
-    default:                      return strprintf("%d.%08d %s/kvB", nSatoshisPerK / COIN, nSatoshisPerK % COIN, CURRENCY_UNIT);
-    }
+    if (withStartFee)
+        return strprintf("minfee: %d.%08d %s, feerate:%d.%08d %s/kB", nSatoshisPerK / COIN, nSatoshisPerK % COIN, CURRENCY_UNIT, nSatoshisPerK / COIN, nSatoshisPerK % COIN, CURRENCY_UNIT);
+    else
+        return strprintf("%d.%08d %s/kB", nSatoshisPerK / COIN, nSatoshisPerK % COIN, CURRENCY_UNIT);
 }

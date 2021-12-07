@@ -134,7 +134,6 @@ BASE_SCRIPTS = [
     # vv Tests less than 30s vv
     'wallet_keypool_topup.py --legacy-wallet',
     'wallet_keypool_topup.py --descriptors',
-    'feature_fee_estimation.py',
     'rpc_invalid_address_message.py',
     'interface_bitcoin_cli.py',
     'feature_bind_extra.py',
@@ -252,7 +251,6 @@ BASE_SCRIPTS = [
     'wallet_resendwallettransactions.py --descriptors',
     'rpc_dumptxoutset.py',
     'feature_minchainwork.py',
-    'rpc_estimatefee.py',
     'rpc_getblockstats.py',
     'wallet_create_tx.py --legacy-wallet',
     'wallet_send.py --legacy-wallet',

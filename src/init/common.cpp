@@ -20,6 +20,7 @@
 
 #include <memory>
 
+bool fEnforceMinRelayTxFee = false;
 static std::unique_ptr<ECCVerifyHandle> globalVerifyHandle;
 
 namespace init {

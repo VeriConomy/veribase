@@ -97,8 +97,6 @@ const std::vector<std::string> RPC_COMMANDS_SAFE_FOR_FUZZING{
     "disconnectnode",
     "echo",
     "echojson",
-    "estimaterawfee",
-    "estimatesmartfee",
     "finalizepsbt",
     "generate",
     "generateblock",

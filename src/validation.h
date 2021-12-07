@@ -59,6 +59,20 @@ struct PrecomputedTransactionData;
 struct LockPoints;
 struct AssumeutxoData;
 
+/** Fee Settings */
+/** If false, override the minRelayTxfee when fee change **/
+extern bool fEnforceMinRelayTxFee;
+#if CLIENT_IS_VERIUM
+/** Original Min fee to authorize a TX */
+static const unsigned int MIN_TX_FEE = 20000000;
+/** VIP1 Min fee */
+static const unsigned int VIP1_MIN_TX_FEE = 100000;
+#else
+/** Original Min fee to authorize a TX */
+static const unsigned int MIN_TX_FEE = 10000;
+/** VIP1 Min fee */
+static const unsigned int VIP1_MIN_TX_FEE = 10000;
+#endif
 /** Default for -minrelaytxfee, minimum relay fee for transactions */
 static const unsigned int DEFAULT_MIN_RELAY_TX_FEE = 1000;
 /** Default for -limitancestorcount, max number of in-mempool ancestors */
@@ -133,6 +147,14 @@ extern CBlockIndex *pindexBestHeader;
 
 /** Documentation for argument 'checklevel'. */
 extern const std::vector<std::string> CHECKLEVEL_DOC;
+
+/**
+ * Compute minimum transaction fee by KB base on the current block height
+ * Implement VIP1
+ */
+unsigned int GetMinTxFee(int nBlockHeight);
+CFeeRate GetMinTxFeeRate(int nBlockHeight);
+CFeeRate GetMinRelayTxFeeRate(int nBlockHeight);
 
 /** Unload database information */
 void UnloadBlockIndex(CTxMemPool* mempool, ChainstateManager& chainman);
